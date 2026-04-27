@@ -1,0 +1,2764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDG PRO · Training Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<style>
+:root{
+  --bg:#f0f4f8;--surface:#fff;--surface2:#f8fafc;--surface3:#eef2f7;
+  --border:#e2e8f0;--border2:#cbd5e1;--text:#0f172a;--text2:#334155;--text3:#94a3b8;
+  --accent:#2563eb;--accent-h:#1d4ed8;--accent-lt:#eff6ff;
+  --green:#10b981;--green-lt:#ecfdf5;--orange:#f59e0b;--orange-lt:#fffbeb;
+  --red:#ef4444;--red-lt:#fef2f2;--purple:#8b5cf6;--purple-lt:#f5f3ff;
+  --teal:#06b6d4;--teal-lt:#ecfeff;--pink:#ec4899;--pink-lt:#fdf2f8;
+  --sidebar-w:220px;--nav-h:58px;--radius:12px;--radius-lg:16px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08);--shadow:0 4px 12px rgba(0,0,0,.08);--shadow-lg:0 12px 32px rgba(0,0,0,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;line-height:1.5;display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto;}
+.sb-brand{padding:18px 18px 14px;border-bottom:1px solid var(--border);}
+.sb-logo{font-size:19px;font-weight:800;color:var(--accent);letter-spacing:-.5px;}
+.sb-tag{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+.sb-score-wrap{margin:12px;background:linear-gradient(135deg,var(--accent),#7c3aed);border-radius:14px;padding:14px;color:#fff;}
+.sb-score-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.score-circle{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;}
+.score-label{font-size:10px;opacity:.8;text-transform:uppercase;letter-spacing:.5px;}
+.score-status{font-size:13px;font-weight:700;}
+.score-bar{background:rgba(255,255,255,.25);border-radius:100px;height:4px;}
+.score-bar-fill{background:#fff;border-radius:100px;height:4px;transition:width .5s;}
+.sb-nav{padding:8px;}
+.sb-section{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:10px 10px 4px;}
+.sb-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s;margin-bottom:1px;}
+.sb-item:hover{background:var(--surface3);color:var(--text);}
+.sb-item.active{background:var(--accent-lt);color:var(--accent);font-weight:600;}
+.sb-icon{font-size:15px;width:18px;text-align:center;}
+.sb-footer{padding:12px;border-top:1px solid var(--border);margin-top:auto;}
+.sb-quote{font-size:10px;color:var(--text3);font-style:italic;line-height:1.5;}
+
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;}
+.topnav{height:var(--nav-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;gap:12px;position:sticky;top:0;z-index:90;box-shadow:var(--shadow-sm);}
+.topnav-title{font-size:16px;font-weight:700;color:var(--text);flex:1;}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;}
+.content{flex:1;padding:20px;}
+
+/* PAGES */
+.page{display:none;} .page.active{display:block;}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);transition:all .15s;}
+.kpi:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
+.kpi-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.kpi-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.kpi-ico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.kpi-val{font-size:26px;font-weight:800;color:var(--text);line-height:1;}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:3px;}
+.trend{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:700;padding:2px 6px;border-radius:100px;margin-top:5px;}
+.trend-up{background:var(--green-lt);color:var(--green);}
+.trend-dn{background:var(--red-lt);color:var(--red);}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);}
+.card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.card-sub{font-size:11px;color:var(--text3);margin-bottom:12px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+
+/* METRIC BADGE */
+.metric-grid{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;}
+.mbadge{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;text-align:center;min-width:80px;transition:all .15s;}
+.mbadge.editable{cursor:pointer;}
+.mbadge.editable:hover{border-color:var(--accent);background:var(--accent-lt);}
+.mbadge.editable:hover .mbadge-lbl::after{content:' ✏️';font-size:9px;}
+.mbadge-val{font-size:18px;font-weight:800;color:var(--text);line-height:1;}
+.mbadge-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+.mbadge-unit{font-size:10px;color:var(--text3);}
+
+/* PROG */
+.prog-wrap{background:var(--surface3);border-radius:100px;height:6px;overflow:hidden;}
+.prog-bar{height:100%;border-radius:100px;transition:width .5s ease;}
+.prog-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+
+/* ZONE BARS */
+.zone-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.zone-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.zone-name{font-size:11px;color:var(--text2);width:80px;}
+.zone-bar-wrap{flex:1;background:var(--surface3);border-radius:3px;height:8px;overflow:hidden;}
+.zone-bar{height:100%;border-radius:3px;transition:width .5s;}
+.zone-time{font-size:10px;color:var(--text3);width:40px;text-align:right;font-family:'JetBrains Mono',monospace;}
+
+/* EXERCISE TABLE */
+.ex-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);}
+.ex-header{background:var(--surface2);display:grid;grid-template-columns:30px 1fr 90px 100px 1fr 70px 36px;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border);}
+.ex-col{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;}
+.ex-row{display:grid;grid-template-columns:30px 1fr 90px 100px 1fr 70px 36px;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);align-items:start;transition:background .15s;}
+.ex-row:last-child{border-bottom:none;}
+.ex-row:hover{background:var(--surface2);}
+.ex-num{width:26px;height:26px;border-radius:7px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.ex-name{font-size:13px;font-weight:600;color:var(--text);}
+.ex-note{font-size:10px;color:var(--text3);margin-top:1px;}
+.series-ctrl{display:flex;align-items:center;gap:5px;}
+.sc-btn{width:22px;height:22px;border-radius:5px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.sc-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
+.sc-val{font-size:13px;font-weight:700;min-width:18px;text-align:center;}
+.reps-input{width:90px;font-size:12px;padding:4px 8px;font-family:'JetBrains Mono',monospace;}
+.weights-chips{display:flex;gap:4px;flex-wrap:wrap;}
+.wchip{background:var(--surface2);border:1.5px solid var(--border2);border-radius:7px;padding:3px 6px;text-align:center;min-width:58px;}
+.wchip-lbl{font-size:9px;color:var(--text3);font-weight:600;display:block;}
+.wchip-in{width:52px;border:none;background:transparent;text-align:center;font-size:12px;font-weight:700;color:var(--accent);outline:none;font-family:'JetBrains Mono',monospace;}
+.rest-input{width:60px;font-size:12px;padding:4px 8px;font-family:'JetBrains Mono',monospace;}
+.ai-analyze-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--purple);background:var(--purple-lt);color:var(--purple);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.ai-analyze-btn:hover{background:var(--purple);color:#fff;}
+
+/* ENTRY */
+.entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;box-shadow:var(--shadow-sm);transition:all .15s;margin-bottom:10px;}
+.entry:hover{box-shadow:var(--shadow);border-color:var(--border2);}
+.entry-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
+.entry-date{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+.entry-title{font-size:15px;font-weight:700;color:var(--text);}
+.tag{font-size:11px;font-weight:600;padding:2px 9px;border-radius:100px;}
+.tag-blue{background:var(--accent-lt);color:var(--accent);}
+.tag-green{background:var(--green-lt);color:var(--green);}
+.tag-orange{background:var(--orange-lt);color:var(--orange);}
+.tag-red{background:var(--red-lt);color:var(--red);}
+.tag-purple{background:var(--purple-lt);color:var(--purple);}
+.tag-neutral{background:var(--surface3);color:var(--text3);}
+
+/* IMPORT */
+.import-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:18px;text-align:center;cursor:pointer;transition:all .15s;}
+.import-zone:hover{border-color:var(--accent);background:var(--accent-lt);}
+.fmt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.fmt-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:all .15s;}
+.fmt-card:hover{border-color:var(--accent);background:var(--accent-lt);}
+.fmt-icon{font-size:22px;margin-bottom:4px;}
+.fmt-name{font-size:11px;font-weight:700;color:var(--text2);}
+.fmt-desc{font-size:9px;color:var(--text3);}
+
+/* AI RESULT */
+.ai-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-top:10px;font-size:13px;color:var(--text2);line-height:1.7;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ai-box.ok{border-left:3px solid var(--green);background:var(--green-lt);}
+.ai-box.err{border-left:3px solid var(--red);background:var(--red-lt);color:var(--red);}
+.ai-box.info{border-left:3px solid var(--accent);background:var(--accent-lt);}
+.ai-box.loading{border-left:3px solid var(--orange);background:var(--orange-lt);}
+
+/* PROFILE */
+.profile-grid{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px;}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;font-size:28px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:8px;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.25);}
+.btn-primary:hover{background:var(--accent-h);}
+.btn-ghost{background:var(--surface);border:1px solid var(--border2);color:var(--text2);}
+.btn-ghost:hover{background:var(--surface3);}
+.btn-ai{background:var(--purple-lt);border:1px solid rgba(139,92,246,.3);color:var(--purple);}
+.btn-ai:hover{background:rgba(139,92,246,.15);}
+.btn-green{background:var(--green);color:#fff;}
+.btn-danger{background:transparent;color:var(--red);border:1px solid var(--red);padding:4px 9px;font-size:11px;border-radius:6px;}
+.btn-danger:hover{background:var(--red);color:#fff;}
+.btn-sm{padding:5px 12px;font-size:12px;}
+.btn-save{background:var(--accent);color:#fff;padding:10px 26px;font-size:14px;font-weight:700;border-radius:10px;box-shadow:0 4px 12px rgba(37,99,235,.3);}
+.btn-save:hover{background:var(--accent-h);}
+
+/* UNIT TOGGLE */
+.unit-toggle{display:flex;background:var(--surface3);border-radius:7px;padding:2px;border:1px solid var(--border);}
+.ut-btn{padding:5px 14px;border:none;background:transparent;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text3);transition:all .15s;}
+.ut-btn.active{background:var(--accent);color:#fff;}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:16px;}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:var(--radius-lg);padding:24px;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;border:1px solid var(--border);box-shadow:var(--shadow-lg);position:relative;}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:16px;}
+.modal-close{position:absolute;top:16px;right:18px;background:var(--surface3);border:none;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:13px;color:var(--text3);}
+.modal-close:hover{background:var(--red-lt);color:var(--red);}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);}
+
+/* FORMS */
+.fg{margin-bottom:12px;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.fl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;}
+input,select,textarea{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;width:100%;transition:border-color .15s;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);background:var(--surface);}
+textarea{resize:vertical;min-height:68px;}
+
+/* CHART CONTAINER */
+.chart-wrap{position:relative;height:140px;}
+.chart-wrap-sm{position:relative;height:100px;}
+.chart-wrap-lg{position:relative;height:180px;}
+
+/* STATUS BAR */
+.status-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;display:flex;gap:28px;flex-wrap:wrap;box-shadow:var(--shadow-sm);margin-top:14px;}
+.sb-stat{display:flex;align-items:center;gap:8px;}
+.sb-stat-ico{font-size:18px;}
+.sb-stat-val{font-size:13px;font-weight:700;}
+.sb-stat-lbl{font-size:10px;color:var(--text3);}
+
+/* GOAL CARD */
+.goal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);margin-bottom:10px;}
+.goal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.goal-name{font-size:14px;font-weight:700;color:var(--text);}
+
+/* RECOVERY SCORE */
+.rec-scores{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;}
+.rs-item{text-align:center;}
+.rs-val{font-size:20px;font-weight:800;line-height:1;}
+.rs-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px;}
+
+.mono{font-family:'JetBrains Mono',monospace;}
+.empty{text-align:center;padding:40px;color:var(--text3);border:2px dashed var(--border);border-radius:var(--radius-lg);}
+.empty-icon{font-size:32px;margin-bottom:8px;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.inline-import{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px;box-shadow:var(--shadow-sm);}
+.ii-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.ii-btns{display:flex;gap:6px;flex-wrap:wrap;}
+
+@media(max-width:900px){.sidebar{display:none}.main{margin-left:0}.fg2,.fg3{grid-template-columns:1fr}.grid-2,.grid-3{grid-template-columns:1fr}.ex-header,.ex-row{grid-template-columns:26px 1fr 80px 80px 1fr;}.ex-header > :nth-child(6),.ex-header > :nth-child(7),.ex-row > :nth-child(6),.ex-row > :nth-child(7){display:none}}
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">IVAN PRO</div>
+    <div class="sb-tag">Training Intelligence</div>
+  </div>
+  <div class="sb-score-wrap">
+    <div class="sb-score-top">
+      <div class="score-circle" id="score-circle">78</div>
+      <div><div class="score-label">Score semanal</div><div class="score-status" id="score-status">Bueno</div></div>
+    </div>
+    <div class="score-bar"><div class="score-bar-fill" id="score-fill" style="width:78%"></div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">Principal</div>
+    <button class="sb-item active" onclick="go('dash',this)"><span class="sb-icon">📊</span>Dashboard</button>
+    <button class="sb-item" onclick="go('gym',this)"><span class="sb-icon">🏋️</span>Gym</button>
+    <button class="sb-item" onclick="go('running',this)"><span class="sb-icon">🏃</span>Running</button>
+    <button class="sb-item" onclick="go('cycling',this)"><span class="sb-icon">🚴</span>Ciclismo</button>
+    <div class="sb-section">Análisis</div>
+    <button class="sb-item" onclick="go('weight',this)"><span class="sb-icon">⚖️</span>Peso & Cuerpo</button>
+    <button class="sb-item" onclick="go('recovery',this)"><span class="sb-icon">🔄</span>Recuperación</button>
+    <button class="sb-item" onclick="go('goals',this)"><span class="sb-icon">🎯</span>Metas & IA</button>
+    <div class="sb-section">Config</div>
+    <button class="sb-item" onclick="go('profile',this)"><span class="sb-icon">👤</span>Perfil</button>
+    <button class="sb-item" onclick="go('import',this)"><span class="sb-icon">📥</span>Importar</button>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-quote">La disciplina hoy es el resultado de mañana.<br><strong style="color:var(--accent);font-style:normal;">IVAN PRO</strong></div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+<div class="topnav">
+  <div class="topnav-title" id="topnav-title">Dashboard</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span id="topnav-date" style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;"></span>
+    <div style="font-size:13px;font-weight:600;color:var(--text2);" id="topnav-name">Ivan</div>
+    <div class="avatar">IV</div>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ═══ DASHBOARD ═══ -->
+<div id="p-dash" class="page active">
+  <div class="kpi-row" id="dash-kpis"></div>
+  <div class="grid-2" style="margin-bottom:14px;">
+    <div>
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title">Carga de entrenamiento</div>
+        <div class="card-sub">Últimos 14 días</div>
+        <div class="chart-wrap"><canvas id="chart-load"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Distribución por deporte</div>
+        <div class="card-sub" id="dash-dist-sub"></div>
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="width:110px;height:110px;position:relative;flex-shrink:0;"><canvas id="chart-donut"></canvas></div>
+          <div id="dash-legend" style="display:flex;flex-direction:column;gap:6px;flex:1;"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="card-title" style="margin:0;">Importar actividad</div>
+          <div style="display:flex;gap:4px;">
+            <button onclick="switchIP('files')" id="iptab-f" class="btn btn-sm btn-primary" style="font-size:11px;">📁 Archivos</button>
+            <button onclick="switchIP('ai')" id="iptab-a" class="btn btn-sm btn-ghost" style="font-size:11px;">🤖 IA</button>
+          </div>
+        </div>
+        <div id="ip-files">
+          <div class="fmt-grid">
+            <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'bike')"><div class="fmt-icon">🗺️</div><div class="fmt-name">GPX</div><div class="fmt-desc">Rutas GPS</div></label></div>
+            <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".fit" style="display:none" onchange="importFile(this,'bike')"><div class="fmt-icon">⌚</div><div class="fmt-name">FIT</div><div class="fmt-desc">Garmin/Wahoo</div></label></div>
+            <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'run')"><div class="fmt-icon">🏃</div><div class="fmt-name">Running</div><div class="fmt-desc">GPX/FIT run</div></label></div>
+          </div>
+          <div class="import-zone" onclick="document.getElementById('di').click()">
+            <input type="file" id="di" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'bike')">
+            <div style="font-size:22px;margin-bottom:4px;">☁️</div>
+            <div style="font-size:12px;color:var(--text3);">Arrastra o haz clic · .gpx · .fit</div>
+          </div>
+          <div id="dash-ir"></div>
+        </div>
+        <div id="ip-ai" style="display:none;">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">Sube una captura de Huawei Health, Garmin, Strava o tu smartwatch para análisis automático con IA.</div>
+          <label class="btn btn-ai" style="width:100%;justify-content:center;cursor:pointer;">
+            📸 Subir imagen para análisis IA
+            <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'generic','dash-air')">
+          </label>
+          <div id="dash-air"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="card-title" style="margin:0;">Metas activas</div>
+          <button class="btn btn-sm btn-ghost" style="font-size:11px;" onclick="go('goals',null)">Ver todas →</button>
+        </div>
+        <div id="dash-goals-mini"></div>
+      </div>
+    </div>
+  </div>
+  <div class="status-bar" id="dash-status"></div>
+</div>
+
+<!-- ═══ GYM ═══ -->
+<div id="p-gym" class="page">
+  <!-- Gym: collapse workout form until routine is selected -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+    <select id="g-routine" onchange="onRoutineSelect()" style="font-size:13px;font-weight:600;width:auto;min-width:220px;">
+      <option value="">— Selecciona una rutina para comenzar —</option>
+      <option value="">— Selecciona rutina —</option><option value="1">Día 1 — Cuádriceps + Pantorrilla</option>
+      <option value="2">Día 2 — Isquios + Glúteo</option>
+      <option value="3">Día 3 — Espalda + Antebrazo</option>
+      <option value="4">Día 4 — Pecho + Hombro</option>
+      <option value="5">Día 5 — Bíceps + Tríceps</option>
+      <option value="wod">WOD Ranger</option>
+      <option value="custom">+ Personalizado</option>
+    </select>
+    <div class="unit-toggle">
+      <button class="ut-btn active" id="ut-lbs" onclick="setUnit('lbs')">lbs</button>
+      <button class="ut-btn" id="ut-kg" onclick="setUnit('kg')">kg</button>
+    </div>
+    <div style="flex:1;"></div>
+    <button class="btn btn-ai" onclick="aiGymAdvice()">🤖 Consejo IA</button>
+    <button class="btn btn-save" onclick="saveGym()">💾 Guardar sesión</button>
+  </div>
+
+  <!-- Gym fields -->
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+    <input type="date" id="g-date" style="width:auto;">
+    <input type="number" id="g-dur-h" placeholder="Horas" min="0" max="5" style="width:70px;"><span style="padding:0 4px;font-weight:600;color:var(--text3);">h</span><input type="number" id="g-dur-m" placeholder="Min" min="0" max="59" style="width:70px;"><span style="padding:0 4px;font-weight:600;color:var(--text3);">min</span>
+    <input type="number" id="g-int" placeholder="Intensidad 1-10" min="1" max="10" style="width:140px;">
+    <input type="text" id="g-pain" placeholder="Zona de dolor" style="width:140px;">
+    <input type="number" id="g-plevel" placeholder="Nivel dolor 0-10" style="width:140px;">
+  </div>
+  <textarea id="g-notes" placeholder="Notas generales..." style="margin-bottom:10px;height:56px;"></textarea>
+
+  <!-- Workout form: shown only after routine selected -->
+  <div id="gym-form-wrap" style="display:none;">
+  <!-- Exercise table -->
+  <div class="ex-wrap">
+    <div class="ex-header">
+      <div class="ex-col">#</div>
+      <div class="ex-col">Ejercicio</div>
+      <div class="ex-col">Series</div>
+      <div class="ex-col">Repeticiones</div>
+      <div class="ex-col">Series (peso por serie)</div>
+      <div class="ex-col">Descanso</div>
+      <div class="ex-col">IA</div>
+    </div>
+    <div id="ex-body"></div>
+  </div>
+  <div style="margin-top:8px;border:2px dashed var(--border2);border-radius:10px;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:var(--text3);" onclick="addEx()">+ Agregar ejercicio</div>
+
+  <div id="gym-ai-advice" style="margin-top:10px;"></div>
+
+  <!-- Gym history -->
+  </div><!-- end gym-form-wrap -->
+
+  <div class="card" style="margin-top:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <div class="card-title">📋 Historial de sesiones</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <select id="gym-filter" onchange="renderGym()" style="font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);">
+          <option value="">Todas las rutinas</option>
+          <option value="1">Día 1 — Cuádriceps</option>
+          <option value="2">Día 2 — Isquios + Glúteo</option>
+          <option value="3">Día 3 — Espalda</option>
+          <option value="4">Día 4 — Pecho + Hombro</option>
+          <option value="5">Día 5 — Bíceps + Tríceps</option>
+          <option value="wod">WOD Ranger</option>
+          <option value="custom">Personalizado</option>
+        </select>
+        <button class="btn btn-ai btn-sm" onclick="aiGymHistoryAnalysis()" style="font-size:11px;">🤖 Analizar rutinas IA</button>
+      </div>
+    </div>
+    <div id="gym-history-ai" style="margin-bottom:10px;"></div>
+    <div id="gym-list"></div>
+  </div>
+</div>
+
+<!-- ═══ RUNNING ═══ -->
+<div id="p-running" class="page">
+  <div class="inline-import">
+    <div class="ii-title">📥 Importar / Analizar running</div>
+    <div class="ii-btns">
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer;">🗺️ GPX/FIT<input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'run')"></label>
+      <label class="btn btn-ai btn-sm" style="cursor:pointer;">🤖 Analizar imagen<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'run','run-ir')"></label>
+      <button class="btn btn-ghost btn-sm" onclick="go('goals',null)">🎯 Ver metas running</button>
+    </div>
+    <div id="run-ir"></div>
+  </div>
+  <div style="margin-bottom:10px;"><button class="btn btn-primary" onclick="openM('run')">+ Nueva sesión manual</button></div>
+  <div id="run-list"></div>
+</div>
+
+<!-- ═══ CYCLING ═══ -->
+<div id="p-cycling" class="page">
+  <div class="inline-import">
+    <div class="ii-title">📥 Importar / Analizar ciclismo</div>
+    <div class="ii-btns">
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer;">🗺️ GPX/FIT<input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'bike')"></label>
+      <label class="btn btn-ai btn-sm" style="cursor:pointer;">🤖 Analizar imagen<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'bike','bike-ir')"></label>
+    </div>
+    <div id="bike-ir"></div>
+  </div>
+  <div style="margin-bottom:10px;"><button class="btn btn-primary" onclick="openM('bike')">+ Nueva ruta manual</button></div>
+  <div id="bike-list"></div>
+</div>
+
+<!-- ═══ WEIGHT ═══ -->
+<div id="p-weight" class="page">
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    <label class="btn btn-ai" style="cursor:pointer;">📸 Foto balanza → IA<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'weight','weight-air')"></label>
+    <button class="btn btn-primary" onclick="openM('weight')">+ Registrar manual</button>
+  </div>
+  <div id="weight-air" style="margin-bottom:10px;"></div>
+  <div id="weight-summary" style="margin-bottom:12px;"></div>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="card-title" style="margin-bottom:10px;">Evolución de peso</div>
+    <div class="chart-wrap"><canvas id="chart-weight"></canvas></div>
+  </div>
+  <div id="weight-list"></div>
+</div>
+
+<!-- ═══ RECOVERY ═══ -->
+<div id="p-recovery" class="page">
+  <div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="openM('rec')">+ Registrar recuperación</button>
+    <button class="btn btn-ai" onclick="aiRecAdvice()">🤖 Consejo IA basado en último entreno</button>
+  </div>
+  <div id="rec-advice" style="margin-bottom:12px;"></div>
+  <div class="grid-2" style="margin-bottom:12px;">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px;">Calidad de sueño</div>
+      <div class="chart-wrap-sm"><canvas id="chart-sleep"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px;">Energía & Ánimo</div>
+      <div class="chart-wrap-sm"><canvas id="chart-energy"></canvas></div>
+    </div>
+  </div>
+  <div id="rec-list"></div>
+</div>
+
+<!-- ═══ GOALS ═══ -->
+<div id="p-goals" class="page">
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="openM('goal')">+ Nueva meta</button>
+    <button class="btn btn-ai" onclick="aiGoalPlan()">🤖 Plan IA personalizado</button>
+  </div>
+  <div id="goals-ai" style="margin-bottom:12px;"></div>
+  <div id="goals-list"></div>
+</div>
+
+<!-- ═══ PROFILE ═══ -->
+<div id="p-profile" class="page">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">👤 Perfil del Atleta</div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+        <div class="profile-avatar" id="prof-avatar">IV</div>
+        <div>
+          <div id="prof-name-display" style="font-size:18px;font-weight:700;"></div>
+          <div id="prof-age-display" style="font-size:13px;color:var(--text3);"></div>
+        </div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Nombre</label><input id="prof-name" placeholder="Tu nombre" oninput="updateProfileDisplay()"></div>
+        <div class="fg"><label class="fl">Edad</label><input id="prof-age" type="number" placeholder="46"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Peso (kg)</label><input id="prof-weight" type="number" step="0.1" placeholder="67.5"></div>
+        <div class="fg"><label class="fl">Altura (cm)</label><input id="prof-height" type="number" placeholder="175"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">FC máxima</label><input id="prof-fcmax" type="number" placeholder="178" oninput="updateZones()"></div>
+        <div class="fg"><label class="fl">FC reposo</label><input id="prof-fcrest" type="number" placeholder="58" oninput="updateZones()"></div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">⚡ Zonas de Frecuencia Cardíaca (personalizar)</div>
+        <div id="zones-form" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:6px;">Se calculan automáticamente desde tu FC máx. Puedes ajustar manualmente cada zona.</div>
+      </div>
+      <div class="fg"><label class="fl">Deportes principales</label>
+        <select id="prof-sports" multiple style="height:72px;">
+          <option value="cycling" selected>🚴 Ciclismo</option>
+          <option value="running" selected>🏃 Running</option>
+          <option value="gym" selected>🏋️ Gym</option>
+          <option value="triathlon">🏊 Triatlón</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Objetivo principal</label>
+        <select id="prof-goal">
+          <option value="rendimiento">Mejorar rendimiento deportivo</option>
+          <option value="masa">Ganar masa muscular</option>
+          <option value="perdida">Bajar peso</option>
+          <option value="resistencia">Aumentar resistencia aeróbica</option>
+          <option value="ironman">Preparar Ironman / Triatlón</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">API Key OpenRouter (para IA)</label>
+        <input type="password" id="prof-apikey" placeholder="sk-or-v1-...">
+        <div style="font-size:10px;color:var(--text3);margin-top:3px;">Obtén una gratis en openrouter.ai · Activa claude-3.5-sonnet o llama gratuito</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="saveProfile()">💾 Guardar perfil</button>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:10px;">📊 Resumen del atleta</div>
+        <div id="prof-summary"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:8px;">🤖 Análisis IA de mi perfil</div>
+        <button class="btn btn-ai" style="width:100%;margin-bottom:8px;" onclick="aiProfileAnalysis()">Analizar mi perfil y recomendar</button>
+        <div id="prof-ai"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ IMPORT ═══ -->
+<div id="p-import" class="page">
+  <!-- Quick backup row -->
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+    <div style="font-size:12px;color:var(--text3);font-weight:600;">💾 Backup manual:</div>
+    <button class="btn btn-ghost btn-sm" onclick="exportBackup()" style="font-size:11px;">⬇️ Exportar JSON</button>
+    <button class="btn btn-ghost btn-sm" onclick="importBackup()" style="font-size:11px;">⬆️ Importar JSON</button>
+    <div style="font-size:10px;color:var(--text3);">Guarda el JSON en OneDrive, Google Drive o iCloud para sincronizar entre dispositivos</div>
+  </div>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="card-title" style="margin-bottom:12px;">📥 Importar archivos de actividad</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <label class="btn btn-ghost" style="cursor:pointer;">🗺️ GPX<input type="file" accept=".gpx" style="display:none" onchange="importFile(this,'bike')"></label>
+      <label class="btn btn-ghost" style="cursor:pointer;">⌚ FIT (Garmin)<input type="file" accept=".fit" style="display:none" onchange="importFile(this,'bike')"></label>
+      <label class="btn btn-ai" style="cursor:pointer;">🤖 Analizar imagen IA<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'generic','imp-air')"></label>
+    </div>
+    <div id="imp-air"></div>
+  </div>
+  <div class="card" style="margin-bottom:12px;border:1.5px solid var(--accent);background:var(--accent-lt);">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <span style="font-size:20px;">🔑</span>
+      <div class="card-title" style="margin:0;">Configuración OpenRouter (IA Gratuita)</div>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">
+      Regístrate gratis en <strong>openrouter.ai</strong> → crea una API key → pégala aquí.<br>
+      Usamos <strong>solo modelos gratuitos</strong> con soporte de imágenes: Gemma-3, Qwen2.5-VL, Mistral Small.
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+      <input type="password" id="api-key-cfg" placeholder="sk-or-v1-..." style="flex:1;min-width:200px;font-size:13px;font-family:'JetBrains Mono',monospace;">
+      <button class="btn btn-primary" onclick="saveApiKeyCfg()">💾 Guardar</button>
+    </div>
+    <div id="api-cfg-status" style="font-size:12px;font-weight:600;"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="testApiKey()" style="font-size:11px;">🔍 Verificar key y ver saldo</button>
+      <button class="btn btn-ghost btn-sm" onclick="testModels()" style="font-size:11px;">⚡ Probar modelos disponibles</button>
+    </div>
+    <div id="api-test-result" style="margin-top:8px;"></div>
+    <div style="margin-top:8px;font-size:11px;color:var(--text2);background:rgba(37,99,235,.08);padding:8px 12px;border-radius:8px;">
+      📋 <strong>Recomendado:</strong> <code style="background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;">google/gemini-flash-2.5</code> — más rápido, análisis de imágenes en 2-3s, $0.001/consulta<br>
+      📋 <strong>Gratis:</strong> mistral-small:free · llama-4-maverick:free · gemma-3-27b:free
+    </div>
+    <div style="margin-top:8px;">
+      <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Modelo preferido (dejar vacío = auto-selección)</label>
+      <div style="display:flex;gap:8px;">
+        <select id="preferred-model" style="flex:1;font-size:12px;" onchange="savePreferredModel()">
+          <option value="">🔄 Auto — prueba modelos disponibles</option>
+          <optgroup label="⚡ Recomendados (de pago)">
+            <option value="google/gemini-flash-2.5">google/gemini-flash-2.5 — Más rápido, imágenes ✅</option>
+            <option value="google/gemini-flash-1.5">google/gemini-flash-1.5 — Rápido, imágenes ✅</option>
+            <option value="anthropic/claude-sonnet-4-5">anthropic/claude-sonnet-4-5 — Mejor calidad</option>
+            <option value="meta-llama/llama-3.3-70b-instruct">meta-llama/llama-3.3-70b — Rápido y barato</option>
+          </optgroup>
+          <optgroup label="🆓 Gratuitos">
+            <option value="mistralai/mistral-small-3.2-24b-instruct:free">mistral-small:free — Texto rápido</option>
+            <option value="meta-llama/llama-4-maverick:free">llama-4-maverick:free — Texto bueno</option>
+            <option value="google/gemma-3-27b-it:free">gemma-3-27b:free — Texto e imágenes</option>
+            <option value="qwen/qwen2.5-vl-72b-instruct:free">qwen2.5-vl-72b:free — Imágenes gratis</option>
+            <option value="openrouter/auto">openrouter/auto — El mejor disponible</option>
+          </optgroup>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="testSingleModel()" style="font-size:11px;white-space:nowrap;">⚡ Probar</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:10px;">📌 Guía de exportación</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+      <div>⌚ <strong>Garmin/Wahoo:</strong> Garmin Connect → Actividad → ··· → Exportar GPX o FIT</div>
+      <div>🟠 <strong>Strava:</strong> Actividad → ··· → Exportar GPX → subir aquí</div>
+      <div>📱 <strong>Huawei Health:</strong> Captura la pantalla de la sesión → botón "Analizar imagen IA"</div>
+      <div>🍎 <strong>Apple Salud:</strong> Captura de pantalla → "Analizar imagen IA"</div>
+      <div style="margin-top:8px;padding:8px 12px;background:var(--orange-lt);border-radius:8px;font-size:12px;color:var(--orange);">
+        💡 La IA usa <strong>modelos gratuitos de OpenRouter</strong> con fallback automático. Si un modelo falla, prueba el siguiente. Configura tu API key en Perfil o aquí arriba.
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ══ ONEDRIVE SYNC CARD ══ -->
+<div class="card" style="margin-top:12px;border:1.5px solid #0078d4;background:linear-gradient(135deg,#f0f7ff,#fff);">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+    <div style="width:40px;height:40px;background:#0078d4;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">☁️</div>
+    <div>
+      <div style="font-size:15px;font-weight:700;color:#0078d4;">Sincronización OneDrive</div>
+      <div style="font-size:11px;color:var(--text3);">Accede a tus datos desde cualquier dispositivo — PC, celular, iPad</div>
+    </div>
+  </div>
+
+  <div id="od-logged-out">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6;">
+      Conecta tu cuenta Microsoft para guardar todos tus entrenamientos en <strong>OneDrive/IvanPro/datos.json</strong> — privado, solo tú tienes acceso, gratis con cualquier cuenta Outlook/Hotmail/Microsoft.
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="odLogin()" style="background:#0078d4;">🔑 Conectar con Microsoft</button>
+    </div>
+  </div>
+
+  <div id="od-logged-in" style="display:none;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;background:rgba(0,120,212,.08);border-radius:10px;">
+      <div style="width:34px;height:34px;border-radius:50%;background:#0078d4;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">MS</div>
+      <div style="flex:1;">
+        <div id="od-username" style="font-size:13px;font-weight:700;color:#0078d4;"></div>
+        <div id="od-last-sync" style="font-size:11px;color:var(--text3);margin-top:1px;"></div>
+      </div>
+      <button onclick="odLogout()" style="font-size:11px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;">Salir</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="btn btn-primary btn-sm" onclick="odSave()" style="background:#0078d4;">☁️ Guardar en OneDrive</button>
+      <button class="btn btn-ghost btn-sm" onclick="odLoad()">📥 Cargar desde OneDrive</button>
+      <button class="btn btn-ghost btn-sm" onclick="odAutoSync()" id="od-autosync-btn">🔄 Auto-sync: OFF</button>
+    </div>
+    <div id="od-sync-result"></div>
+  </div>
+
+  <div style="margin-top:10px;border-top:1px solid rgba(0,120,212,.15);padding-top:10px;">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px;">💾 Sin cuenta Microsoft — usa backup manual:</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="exportBackup()" style="font-size:11px;">⬇️ Exportar JSON</button>
+      <button class="btn btn-ghost btn-sm" onclick="importBackup()" style="font-size:11px;">⬆️ Importar JSON</button>
+      <span style="font-size:10px;color:var(--text3);align-self:center;">Guarda el .json en OneDrive, Google Drive o iCloud</span>
+    </div>
+  </div>
+
+  <div style="margin-top:10px;padding:8px 12px;background:rgba(0,120,212,.06);border-radius:8px;font-size:11px;color:#0078d4;line-height:1.6;">
+    📋 Los datos se guardan en <code style="background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;">OneDrive/IvanPro/datos.json</code><br>
+    La sincronización automática guarda cada 5 minutos mientras usas la app.
+  </div>
+</div>
+
+
+</div><!-- content -->
+</div><!-- main -->
+
+<!-- ═══ MODALS ═══ -->
+<div class="overlay" id="m-run">
+<div class="modal">
+  <button class="modal-close" onclick="closeM('run')">✕</button>
+  <div class="modal-title" id="run-modal-title">🏃 Registrar sesión de running</div>
+  <input type="hidden" id="run-eid">
+  <div class="fg2">
+    <div class="fg"><label class="fl">Fecha</label><input type="date" id="r-date"></div>
+    <div class="fg"><label class="fl">Distancia (km)</label><input type="number" id="r-dist" step="0.01" placeholder="5.72"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Tiempo (min)</label><input type="number" id="r-time" step="0.1" placeholder="32"></div>
+    <div class="fg"><label class="fl">Ritmo (min/km)</label><input type="text" id="r-pace" placeholder="5:35"></div>
+    <div class="fg"><label class="fl">Calorías (kcal)</label><input type="number" id="r-cal" placeholder="380"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">FC prom (bpm)</label><input type="number" id="r-fcavg" placeholder="156"></div>
+    <div class="fg"><label class="fl">FC máx (bpm)</label><input type="number" id="r-fcmax" placeholder="178"></div>
+    <div class="fg"><label class="fl">VO2max est.</label><input type="number" id="r-vo2" step="0.1" placeholder="52"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Cadencia (ppm)</label><input type="number" id="r-cad" placeholder="168"></div>
+    <div class="fg"><label class="fl">Oscilación (cm)</label><input type="number" id="r-osc" step="0.1" placeholder="7.6"></div>
+    <div class="fg"><label class="fl">Contacto suelo (ms)</label><input type="number" id="r-contact" placeholder="268"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Equilibrio Izq (%)</label><input type="number" id="r-balL" step="0.1" placeholder="51.1"></div>
+    <div class="fg"><label class="fl">Equilibrio Der (%)</label><input type="number" id="r-balR" step="0.1" placeholder="48.9"></div>
+    <div class="fg"><label class="fl">Altitud (m)</label><input type="number" id="r-alt" placeholder="947"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Velocidad prom (km/h)</label><input type="number" id="r-spd" step="0.1" placeholder="10.3"></div>
+    <div class="fg"><label class="fl">Long. zancada (m)</label><input type="number" id="r-stride" step="0.01" placeholder="1.08"></div>
+    <div class="fg"><label class="fl">% FC máx</label><input type="number" id="r-fcpct" step="0.1" placeholder="87.6"></div>
+  </div>
+  <div class="fg2">
+    <div class="fg"><label class="fl">Resistencia aeróbica</label><input type="number" id="r-aero" step="0.1" placeholder="3.2"></div>
+    <div class="fg"><label class="fl">Ruta / Lugar</label><input type="text" id="r-route" placeholder="La Gran Feria — Bucaramanga"></div>
+  </div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⏱ Tiempo en zonas cardíacas (minutos)</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z1 (min)</label><input type="number" id="r-z1" placeholder="0" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z2 (min)</label><input type="number" id="r-z2" placeholder="5" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z3 (min)</label><input type="number" id="r-z3" placeholder="15" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z4 (min)</label><input type="number" id="r-z4" placeholder="8" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z5 (min)</label><input type="number" id="r-z5" placeholder="2" style="font-size:12px;padding:6px;"></div>
+    </div>
+  </div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📊 Datos para graficar (opcional — separados por coma)</div>
+    <div class="fg"><label class="fl">Ritmo por km (ej: 5:30,5:28,5:35...)</label><input type="text" id="r-pace-series" placeholder="5:30,5:28,5:35,5:40,5:25"></div>
+    <div class="fg"><label class="fl">FC por km (ej: 150,155,158...)</label><input type="text" id="r-fc-series" placeholder="150,155,158,162,157"></div>
+    <div class="fg"><label class="fl">Cadencia por km (ej: 168,170,172...)</label><input type="text" id="r-cad-series" placeholder="168,170,172,169,175"></div>
+  </div>
+  <div class="fg"><label class="fl">Notas</label><textarea id="r-notes" placeholder="Sensaciones, clima, molestias..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeM('run')">Cancelar</button>
+    <button class="btn btn-ai" onclick="aiRunAnalysis()">🤖 Analizar con IA</button>
+    <button class="btn btn-primary" onclick="saveRun()">Guardar</button>
+  </div>
+  <div id="run-modal-ai" style="margin-top:10px;"></div>
+</div>
+</div>
+
+<div class="overlay" id="m-bike">
+<div class="modal">
+  <button class="modal-close" onclick="closeM('bike')">✕</button>
+  <div class="modal-title" id="bike-modal-title">🚴 Registrar ruta de ciclismo</div>
+  <input type="hidden" id="bike-eid">
+  <div class="fg2">
+    <div class="fg"><label class="fl">Fecha</label><input type="date" id="b-date"></div>
+    <div class="fg"><label class="fl">Tipo</label><select id="b-type"><option>Ruta de fondo</option><option>Montaña</option><option>Cadencia / Plana</option><option>Rodillo / Indoor</option><option>Entrenamiento</option></select></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Distancia (km)</label><input type="number" id="b-dist" step="0.1" placeholder="40.64"></div>
+    <div class="fg"><label class="fl">Tiempo (min)</label><input type="number" id="b-time" placeholder="105"></div>
+    <div class="fg"><label class="fl">Calorías (kcal)</label><input type="number" id="b-cal" placeholder="825"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Vel. prom (km/h)</label><input type="number" id="b-spd" step="0.1" placeholder="23.19"></div>
+    <div class="fg"><label class="fl">Vel. máx (km/h)</label><input type="number" id="b-spdmax" step="0.1" placeholder="56.52"></div>
+    <div class="fg"><label class="fl">Cadencia prom (rpm)</label><input type="number" id="b-cad" placeholder="69"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">FC prom (bpm)</label><input type="number" id="b-fc" placeholder="139"></div>
+    <div class="fg"><label class="fl">FC máx (bpm)</label><input type="number" id="b-fcmax" placeholder="166"></div>
+    <div class="fg"><label class="fl">Potencia virtual (W)</label><input type="number" id="b-power" placeholder="137"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Desnivel total (m)</label><input type="number" id="b-elev" placeholder="560"></div>
+    <div class="fg"><label class="fl">Ascenso (m)</label><input type="number" id="b-asc" placeholder="556"></div>
+    <div class="fg"><label class="fl">Altitud máx (m)</label><input type="number" id="b-altmax" placeholder="979"></div>
+  </div>
+  <div class="fg2">
+    <div class="fg"><label class="fl">Resistencia aeróbica</label><input type="number" id="b-aero" step="0.1" placeholder="3.2"></div>
+    <div class="fg"><label class="fl">Nombre de la ruta</label><input type="text" id="b-route" placeholder="Floridablanca → Girón"></div>
+  </div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⏱ Tiempo en zonas cardíacas (minutos)</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z1 (min)</label><input type="number" id="b-z1" placeholder="0" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z2 (min)</label><input type="number" id="b-z2" placeholder="24" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z3 (min)</label><input type="number" id="b-z3" placeholder="37" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z4 (min)</label><input type="number" id="b-z4" placeholder="5" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z5 (min)</label><input type="number" id="b-z5" placeholder="1" style="font-size:12px;padding:6px;"></div>
+    </div>
+  </div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📊 Datos para graficar (opcional — por km, separados por coma)</div>
+    <div class="fg"><label class="fl">Velocidad por km (ej: 22,24,25...)</label><input type="text" id="b-spd-series" placeholder="22,24,25,23,20"></div>
+    <div class="fg"><label class="fl">FC por km (ej: 130,138,142...)</label><input type="text" id="b-fc-series" placeholder="130,138,142,145,139"></div>
+    <div class="fg"><label class="fl">Cadencia por km (ej: 68,72,75...)</label><input type="text" id="b-cad-series" placeholder="68,72,75,70,65"></div>
+  </div>
+  <div class="fg"><label class="fl">Notas</label><textarea id="b-notes" placeholder="Terreno, sensaciones, posición..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeM('bike')">Cancelar</button>
+    <button class="btn btn-ai" onclick="aiBikeAnalysis()">🤖 Analizar con IA</button>
+    <button class="btn btn-primary" onclick="saveBike()">Guardar</button>
+  </div>
+  <div id="bike-modal-ai" style="margin-top:10px;"></div>
+</div>
+</div>
+
+<div class="overlay" id="m-weight">
+<div class="modal">
+  <button class="modal-close" onclick="closeM('weight')">✕</button>
+  <div class="modal-title">⚖️ Registrar peso / composición</div>
+  <input type="hidden" id="w-eid">
+  <div class="fg2">
+    <div class="fg"><label class="fl">Fecha</label><input type="date" id="w-date"></div>
+    <div class="fg"><label class="fl">Peso (kg)</label><input type="number" id="w-kg" step="0.1" placeholder="67.5" oninput="syncProfileWeight()"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">% Grasa</label><input type="number" id="w-fat" step="0.1" placeholder="18.5"></div>
+    <div class="fg"><label class="fl">% Músculo</label><input type="number" id="w-muscle" step="0.1" placeholder="38.2"></div>
+    <div class="fg"><label class="fl">% Agua</label><input type="number" id="w-water" step="0.1" placeholder="55.0"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">IMC</label><input type="number" id="w-imc" step="0.1" placeholder="23.4"></div>
+    <div class="fg"><label class="fl">Masa ósea (kg)</label><input type="number" id="w-bone" step="0.1" placeholder="3.2"></div>
+    <div class="fg"><label class="fl">Met. basal (kcal)</label><input type="number" id="w-bmr" placeholder="1820"></div>
+  </div>
+  <div class="fg2">
+    <div class="fg"><label class="fl">Momento</label><select id="w-when"><option>Ayunas AM</option><option>Medio día</option><option>Noche</option></select></div>
+    <div class="fg"><label class="fl">Estado de hidratación</label><select id="w-hydra"><option>Normal</option><option>Deshidratado</option><option>Bien hidratado</option></select></div>
+  </div>
+  <div class="fg"><label class="fl">Notas</label><textarea id="w-notes" placeholder="Cómo amaneciste, alimentación especial..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeM('weight')">Cancelar</button>
+    <button class="btn btn-primary" onclick="saveWeight()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<div class="overlay" id="m-rec">
+<div class="modal">
+  <button class="modal-close" onclick="closeM('rec')">✕</button>
+  <div class="modal-title">🔄 Registrar recuperación</div>
+  <input type="hidden" id="rc-eid">
+  <div class="fg2">
+    <div class="fg"><label class="fl">Fecha</label><input type="date" id="rc-date"></div>
+    <div class="fg"><label class="fl">Horas de sueño</label><input type="number" id="rc-sleep" step="0.5" placeholder="7.5"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Calidad sueño 1–10</label><input type="number" id="rc-sleepq" min="1" max="10" placeholder="8"></div>
+    <div class="fg"><label class="fl">Energía 1–10</label><input type="number" id="rc-energy" min="1" max="10" placeholder="7"></div>
+    <div class="fg"><label class="fl">Ánimo 1–10</label><input type="number" id="rc-mood" min="1" max="10" placeholder="8"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Dolor muscular 0–10</label><input type="number" id="rc-sore" min="0" max="10" placeholder="3"></div>
+    <div class="fg"><label class="fl">FC reposo (bpm)</label><input type="number" id="rc-fcrest" placeholder="58"></div>
+    <div class="fg"><label class="fl">HRV (ms)</label><input type="number" id="rc-hrv" placeholder="42"></div>
+  </div>
+  <div class="fg"><label class="fl">Zona de molestia</label><input type="text" id="rc-zone" placeholder="Ej: cuádriceps derecho, hombro"></div>
+  <div class="fg"><label class="fl">Notas</label><textarea id="rc-notes" placeholder="Cómo te sientes, qué hiciste para recuperar..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeM('rec')">Cancelar</button>
+    <button class="btn btn-primary" onclick="saveRec()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<div class="overlay" id="m-goal">
+<div class="modal">
+  <button class="modal-close" onclick="closeM('goal')">✕</button>
+  <div class="modal-title">🎯 Nueva meta</div>
+  <input type="hidden" id="gl-eid">
+  <div class="fg"><label class="fl">Nombre de la meta</label><input type="text" id="gl-name" placeholder="Ej: Completar Ironman 70.3 · Ruta 200 km · Maratón < 4h"></div>
+  <div class="fg2">
+    <div class="fg"><label class="fl">Categoría</label>
+      <select id="gl-cat">
+        <option value="cycling">🚴 Ciclismo</option>
+        <option value="running">🏃 Running</option>
+        <option value="triathlon">🏊 Triatlón / Ironman</option>
+        <option value="gym">🏋️ Gym — Fuerza</option>
+        <option value="weight">⚖️ Peso corporal</option>
+        <option value="aspiration">⭐ Aspiración / Evento</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Fecha límite / Evento</label><input type="date" id="gl-deadline"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Valor actual</label><input type="number" id="gl-current" step="0.1" placeholder="0"></div>
+    <div class="fg"><label class="fl">Valor objetivo</label><input type="number" id="gl-target" step="0.1" placeholder="200"></div>
+    <div class="fg"><label class="fl">Unidad</label><input type="text" id="gl-unit" placeholder="km, kg, h:mm..."></div>
+  </div>
+  <div class="fg"><label class="fl">Descripción / contexto</label><textarea id="gl-desc" placeholder="Describe tu meta, motivación y punto de partida..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeM('goal')">Cancelar</button>
+    <button class="btn btn-ai" onclick="aiGoalGuide()">🤖 Generar guía IA</button>
+    <button class="btn btn-primary" onclick="saveGoal()">Crear meta</button>
+  </div>
+  <div id="goal-modal-ai" style="margin-top:10px;"></div>
+</div>
+</div>
+
+<script>
+// ══ STORAGE ══
+const K={gym:'iv_gym',run:'iv_run',bike:'iv_bike',weight:'iv_wgt',rec:'iv_rec',goals:'iv_goals',profile:'iv_profile'};
+const ld=k=>{try{return JSON.parse(localStorage.getItem(K[k])||'[]');}catch{return[];}};
+const ldObj=k=>{try{return JSON.parse(localStorage.getItem(K[k])||'{}');}catch{return{};}};
+const sv=(k,d)=>localStorage.setItem(K[k],JSON.stringify(d));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const today=()=>new Date().toISOString().split('T')[0];
+let currentUnit='lbs';
+let profile=ldObj('profile');
+let charts={};
+
+// ══ ROUTINES ══
+const R={
+  '1':{name:'Día 1 — Cuádriceps + Pantorrilla',exs:[
+    {n:'Prensa de piernas',s:4,r:'10',lbs:595,rest:90,note:'Explosivo'},
+    {n:'Sentadilla búlgara',s:3,r:'8',lbs:50,rest:75,note:'Por lado — si hay tirón cuád, hazla como step-up'},
+    {n:'Zancadas walking',s:3,r:'16',lbs:44,rest:60,note:'Pasos totales'},
+    {n:'Caminata del granjero',s:3,r:'60s',lbs:66,rest:60,note:'Mancuernas'},
+    {n:'Elevación talones de pie (prensa)',s:4,r:'15',lbs:375,rest:45,note:''},
+    {n:'Elevación talones sentado',s:3,r:'20',lbs:375,rest:45,note:'Sóleo'},
+  ]},
+  '2':{name:'Día 2 — Isquios + Glúteo',exs:[
+    {n:'Peso muerto rumano',s:4,r:'10',lbs:220,rest:90,note:'Bajada 3 seg'},
+    {n:'Hip thrust',s:3,r:'12',lbs:254,rest:75,note:'Pausa 1 seg arriba'},
+    {n:'Curl femoral tumbado',s:4,r:'10-12',lbs:176,rest:75,note:'Máquina'},
+    {n:'Zancada atrás (reverse lunge)',s:3,r:'10',lbs:55,rest:60,note:'Por pierna'},
+    {n:'Abducción cadera externa',s:4,r:'15',lbs:287,rest:45,note:'Máquina'},
+    {n:'Curl femoral sentado',s:3,r:'12',lbs:220,rest:60,note:'Ángulo diferente'},
+  ]},
+  '3':{name:'Día 3 — Espalda + Antebrazo',exs:[
+    {n:'Jalón al pecho (agarre abierto)',s:4,r:'10-12',lbs:220,rest:90,note:''},
+    {n:'Remo con mancuerna (1 mano)',s:3,r:'10',lbs:77,rest:75,note:'Por lado'},
+    {n:'Remo convergente',s:3,r:'10',lbs:154,rest:75,note:''},
+    {n:'Remo polea baja (agarre cerrado)',s:3,r:'12',lbs:220,rest:75,note:''},
+    {n:'Hiperextensiones lumbares',s:3,r:'15',lbs:320,rest:60,note:'Lento'},
+    {n:'Curl inverso barra Z',s:3,r:'12',lbs:48,rest:60,note:''},
+    {n:'Flexión de muñeca (barra)',s:3,r:'15',lbs:37,rest:45,note:'Antebrazo'},
+  ]},
+  '4':{name:'Día 4 — Pecho + Hombro',exs:[
+    {n:'Press militar con mancuernas',s:4,r:'10',lbs:73,rest:90,note:'De pie — OBLIGATORIO'},
+    {n:'Press banca con mancuernas',s:4,r:'10',lbs:82,rest:90,note:''},
+    {n:'Press inclinado (máquina)',s:3,r:'12',lbs:265,rest:75,note:''},
+    {n:'Pec deck (cerrando al centro)',s:3,r:'12',lbs:220,rest:60,note:''},
+    {n:'Face pulls (polea alta)',s:4,r:'15',lbs:77,rest:60,note:'¡No omitir — hombro!'},
+    {n:'Rotación externa hombro (polea)',s:3,r:'15',lbs:22,rest:45,note:'Codo 90°'},
+    {n:'Vuelos laterales',s:4,r:'15',lbs:22,rest:45,note:'Codo semiflexionado'},
+  ]},
+  '5':{name:'Día 5 — Bíceps + Tríceps',exs:[
+    {n:'Curl bíceps barra Z',s:3,r:'10',lbs:46,rest:75,note:''},
+    {n:'Curl martillo (mancuernas)',s:3,r:'12',lbs:44,rest:60,note:'Braquial'},
+    {n:'Curl concentrado',s:3,r:'12',lbs:31,rest:60,note:''},
+    {n:'Copa de tríceps (mancuerna)',s:3,r:'10',lbs:88,rest:75,note:'OBLIGATORIO'},
+    {n:'Extensión tríceps polea/cuerda',s:3,r:'12',lbs:79,rest:60,note:''},
+    {n:'Fondos en máquina',s:3,r:'12',lbs:287,rest:75,note:'Sin impacto hombro'},
+  ]},
+  'wod':{name:'WOD Ranger',exs:[
+    {n:'Flexiones controladas',s:4,r:'10',lbs:0,rest:60,note:'Tempo 3-1, codos 45°'},
+    {n:'Búlgaras explosivas (sin peso)',s:4,r:'8',lbs:0,rest:60,note:'Por pierna'},
+    {n:'Burpees tácticos (sin salto)',s:4,r:'10',lbs:0,rest:60,note:'Plancha perfecta'},
+    {n:'Plancha toque de hombros',s:4,r:'20',lbs:0,rest:45,note:'10 por lado'},
+    {n:'Escaladores de montaña',s:4,r:'40s',lbs:0,rest:45,note:'Core + cardio'},
+  ]},
+  'custom':{name:'Personalizado',exs:[]}
+};
+let customExs=[];
+
+// ══ UNIT ══
+function setUnit(u){
+  currentUnit=u;
+  document.getElementById('ut-lbs').classList.toggle('active',u==='lbs');
+  document.getElementById('ut-kg').classList.toggle('active',u==='kg');
+  loadRT();
+}
+const lbs2kg=v=>+(parseFloat(v)/2.205).toFixed(1);
+const kg2lbs=v=>+(parseFloat(v)*2.205).toFixed(1);
+const dispW=lbs=>currentUnit==='lbs'?lbs:lbs2kg(lbs);
+const stepW=()=>currentUnit==='lbs'?2.5:0.5;
+
+// ══ GYM TABLE ══
+function loadRT(){
+  const key=document.getElementById('g-routine').value;
+  const rt=R[key];
+  const exs=rt&&rt.exs.length?[...rt.exs,...customExs]:customExs;
+  const body=document.getElementById('ex-body');
+  if(!exs.length){body.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);">Elige una rutina o agrega ejercicios</div>';return;}
+  body.innerHTML=exs.map((e,i)=>{
+    const ns=parseInt(e.s)||3;
+    const bv=dispW(e.lbs||0);
+    const chips=Array.from({length:ns},(_,s)=>`
+      <div class="wchip">
+        <span class="wc-lbl">S${s+1}</span>
+        <input class="wchip-in" type="number" step="${stepW()}" id="wc-${i}-${s}"
+          value="${e.weights?dispW(e.weights[s]||e.lbs):bv}" placeholder="—">
+      </div>`).join('');
+    return`<div class="ex-row">
+      <div><div class="ex-num">${i+1}</div></div>
+      <div><div class="ex-name">${e.n}</div>${e.note?`<div class="ex-note">${e.note}</div>`:''}</div>
+      <div>
+        <div class="series-ctrl">
+          <button class="sc-btn" onclick="changeSeries(${i},-1)">−</button>
+          <span class="sc-val" id="sc-${i}">${ns}</span>
+          <button class="sc-btn" onclick="changeSeries(${i},1)">+</button>
+        </div>
+      </div>
+      <div><input class="reps-input" type="text" id="reps-${i}" value="${e.r}"></div>
+      <div><div class="weights-chips" id="wrow-${i}">${chips}</div></div>
+      <div><input class="rest-input" type="number" id="rest-${i}" value="${e.rest||90}"> <span style="font-size:10px;color:var(--text3);">seg</span></div>
+      <div>
+        <button class="ai-analyze-btn" onclick="aiExerciseAnalysis(${i})" title="Analizar ejercicio con IA">🤖</button>
+      </div>
+    </div>
+    <div id="ex-ai-${i}" style="padding:0 14px 6px;display:none;"></div>`;
+  }).join('');
+}
+
+function changeSeries(idx,delta){
+  const key=document.getElementById('g-routine').value;
+  const rt=R[key];
+  const exs=rt&&rt.exs.length?[...rt.exs,...customExs]:customExs;
+  const e=exs[idx];if(!e)return;
+  const cur=parseInt(document.getElementById(`sc-${idx}`)?.textContent)||3;
+  const nv=Math.max(1,Math.min(10,cur+delta));
+  const oldW=[];
+  for(let s=0;s<20;s++){const el=document.getElementById(`wc-${idx}-${s}`);if(el)oldW.push(parseFloat(el.value)||dispW(e.lbs||0));}
+  e.s=nv;e._oldWeights=oldW;
+  // Rebuild just the chips
+  const bv=dispW(e.lbs||0);
+  const chips=Array.from({length:nv},(_,s)=>`
+    <div class="wchip">
+      <span class="wc-lbl">S${s+1}</span>
+      <input class="wchip-in" type="number" step="${stepW()}" id="wc-${idx}-${s}"
+        value="${oldW[s]||bv}" placeholder="—">
+    </div>`).join('');
+  const el=document.getElementById(`wrow-${idx}`);
+  if(el)el.innerHTML=chips;
+  document.getElementById(`sc-${idx}`).textContent=nv;
+}
+
+function addEx(){
+  const name=prompt('Nombre del ejercicio:');if(!name)return;
+  const reps=prompt('Repeticiones:','10')||'10';
+  const series=parseInt(prompt('Número de series:','3')||'3');
+  const wv=parseFloat(prompt(`Peso base (${currentUnit}):`,currentUnit==='lbs'?'45':'20')||'0');
+  const lbs=currentUnit==='lbs'?wv:kg2lbs(wv);
+  customExs.push({n:name,s:series,r:reps,lbs,rest:90,note:'Personalizado'});
+  loadRT();
+}
+
+function getExData(){
+  const key=document.getElementById('g-routine').value;
+  const rt=R[key];
+  const exs=rt&&rt.exs.length?[...rt.exs,...customExs]:customExs;
+  return exs.map((e,i)=>{
+    const ns=parseInt(document.getElementById(`sc-${i}`)?.textContent)||parseInt(e.s)||3;
+    const reps=document.getElementById(`reps-${i}`)?.value||e.r;
+    const rest=parseInt(document.getElementById(`rest-${i}`)?.value||e.rest||90);
+    const ws=Array.from({length:ns},(_,s)=>{
+      const v=parseFloat(document.getElementById(`wc-${i}-${s}`)?.value)||0;
+      return{display:v,unit:currentUnit,lbs:currentUnit==='lbs'?v:kg2lbs(v),kg:currentUnit==='kg'?v:lbs2kg(v)};
+    });
+    return{name:e.n,sets:ns,reps,weights:ws,rest,note:e.note||''};
+  });
+}
+
+// ══ AI — OpenRouter Free Models with auto-fallback ══
+// Vision models (support images) — ordered by reliability
+const OR_VISION = [
+  'qwen/qwen2.5-vl-72b-instruct:free',
+  'google/gemma-3-27b-it:free',
+  'mistralai/mistral-small-3.2-24b-instruct:free',
+  'meta-llama/llama-4-maverick:free',
+  'google/gemma-4-27b-it:free',
+  'openrouter/auto'
+];
+// Text-only models (faster, more reliable)
+const OR_TEXT = [
+  'mistralai/mistral-small-3.2-24b-instruct:free',
+  'meta-llama/llama-4-maverick:free',
+  'google/gemma-3-27b-it:free',
+  'qwen/qwen3-235b-a22b:free',
+  'deepseek/deepseek-r1-0528:free',
+  'openrouter/auto'
+];
+
+function getApiKey(){
+  return profile.apikey||(document.getElementById('prof-apikey')?.value)||
+         (document.getElementById('api-key-cfg')?.value)||'';
+}
+
+async function callAI(prompt,imgB64,imgType){
+  const key=getApiKey();
+  if(!key){return'❌ API key no configurada. Ve a <strong>Importar & IA</strong> e ingresa tu clave de openrouter.ai';}
+
+  const preferred=profile.preferredModel||'';
+  const baseModels=imgB64?OR_VISION:OR_TEXT;
+  const models=preferred&&!baseModels.includes(preferred)?[preferred,...baseModels]:baseModels;
+
+  const messages=[{role:'user',content:imgB64?[
+    {type:'image_url',image_url:{url:'data:'+(imgType||'image/jpeg')+';base64,'+imgB64}},
+    {type:'text',text:prompt}
+  ]:[{type:'text',text:prompt}]}];
+
+  const SKIP=['No endpoints','no models','credits','quota','Provider returned error',
+    'overloaded','rate limit','context length','model_not_found','not found',
+    'unavailable','no available','provider error','503','502','529'];
+
+  const errors=[];
+
+  for(const model of models){
+    try{
+      const controller=new AbortController();
+      const tid=setTimeout(()=>controller.abort(),25000);
+      let res;
+      try{
+        res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+          method:'POST',
+          signal:controller.signal,
+          headers:{
+            'Content-Type':'application/json',
+            'Authorization':'Bearer '+key,
+            'HTTP-Referer':'https://ivanpro.app',
+            'X-Title':'IVAN PRO Training Intelligence'
+          },
+          body:JSON.stringify({model,messages,max_tokens:imgB64?800:900,temperature:0.6})
+        });
+      }finally{clearTimeout(tid);}
+
+      if(!res.ok){
+        let errMsg='HTTP '+res.status;
+        try{const err=await res.json();errMsg=err.error?.message||err.error?.code||errMsg;}catch{}
+        errors.push(model.split('/').pop()+': '+errMsg.slice(0,60));
+        continue;
+      }
+      const data=await res.json();
+      const txt=(data.choices?.[0]?.message?.content||'').trim();
+      if(txt.length>10)return txt;
+      errors.push(model.split('/').pop()+': respuesta vacía');
+    }catch(e){
+      if(e.name==='AbortError'){errors.push(model.split('/').pop()+': timeout 25s');}
+      else{errors.push(model.split('/').pop()+': '+e.message.slice(0,40));}
+    }
+  }
+  return'❌ Sin respuesta de modelos disponibles.<br><small>'+errors.slice(0,4).join(' · ')+'</small><br><small>💡 Ve a <strong>Importar & IA → Probar modelos</strong> para diagnosticar.</small>';
+}
+
+function toB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
+
+async function analyzeImg(input,type,elId){
+  const file=input.files[0];if(!file)return;
+  const el=document.getElementById(elId);if(!el)return;
+  setAI(el,'🤖 Analizando imagen...','loading');
+  const prompts={
+    run:`Analiza esta imagen de una sesión de running (Huawei Health, Garmin, Strava, smartwatch). Extrae TODOS los datos: distancia km, tiempo, ritmo min/km, cadencia ppm, FC promedio y máxima bpm, oscilación vertical cm, contacto suelo ms, equilibrio izq/der %, VO2max estimado, calorías, altitud, resistencia aeróbica. Luego da 4-5 observaciones específicas con números y qué mejorar. Formato claro con secciones. Responde en español.`,
+    bike:`Analiza esta imagen de ciclismo (Huawei Health, Garmin, Strava, Wahoo u otro). Extrae: distancia km, tiempo, velocidad promedio y máxima km/h, FC promedio y máxima bpm, potencia virtual W, cadencia rpm, desnivel m, ascenso m, calorías kcal, altitud máxima m, resistencia aeróbica. Luego da 4-5 análisis con recomendaciones específicas. Responde en español.`,
+    weight:`Analiza esta imagen de balanza digital o bioimpedancia. Extrae TODOS los valores: peso kg/lbs (convierte si es lbs), % grasa, % músculo, % agua, IMC, masa ósea, metabolismo basal kcal. Da valoración para hombre de 46 años activo (ciclismo+running+gym) con meta de 66 kg. Responde en español.`,
+    generic:`Eres coach deportivo experto. Analiza esta imagen de entrenamiento. Extrae todas las métricas numéricas y da análisis completo con 5 recomendaciones específicas para atleta de 46 años (ciclismo, running, gym). Responde en español con formato claro.`
+  };
+  try{
+    const b64=await toB64(file);
+    const text=await callAI(prompts[type]||prompts.generic,b64,file.type);
+    setAI(el,text,'ok');
+    if(type==='weight'){
+      const match=text.match(/(\d{2,3}[.,]\d{1,2})\s*kg/i);
+      if(match){const kg=parseFloat(match[1].replace(',','.'));if(kg>40&&kg<180){
+        el.innerHTML+=`<div style="margin-top:8px;"><button class="btn btn-green btn-sm" onclick="autoWeight(${kg})">✅ Registrar ${kg} kg</button></div>`;
+      }}
+    }
+  }catch(e){setAI(el,'❌ Error: '+e.message,'err');}
+  input.value='';
+}
+
+function setAI(el,msg,type){
+  if(!el)return;
+  const cls={'ok':'ok','err':'err','info':'info','loading':'loading'}[type]||'info';
+  if(type==='loading'){
+    const preferred=profile.preferredModel||'';
+    const modelHint=preferred?`Usando: ${preferred.split('/').pop()}`:'Probando modelos disponibles...';
+    el.innerHTML=`<div class="ai-box loading" id="ai-timer-wrap-${Date.now()}">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:16px;height:16px;border:2px solid var(--orange);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;"></div>
+        <span>${msg}</span>
+        <span class="ai-timer-val" style="font-family:'JetBrains Mono',monospace;margin-left:auto;font-size:11px;color:var(--text3);">0s</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">${modelHint} · Timeout por modelo: 25s</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px;">Si tarda más de 30s, ve a Importar & IA → Probar modelos disponibles</div>
+    </div>`;
+    // Start timer
+    const start=Date.now();
+    const timerEl=el.querySelector('.ai-timer-val');
+    if(timerEl){
+      const iv=setInterval(()=>{
+        if(!el.querySelector('.ai-timer-val')){clearInterval(iv);return;}
+        const elapsed=Math.round((Date.now()-start)/1000);
+        el.querySelector('.ai-timer-val').textContent=elapsed+'s';
+        // Auto-stop after 90s with message
+        if(elapsed>=90){
+          clearInterval(iv);
+          el.innerHTML='<div class="ai-box err">⏱ Tiempo agotado (90s). Los modelos gratuitos están saturados.<br><small>💡 Ve a <strong>Importar & IA</strong> → "Probar modelos disponibles" para diagnosticar.</small></div>';
+        }
+      },1000);
+    }
+  } else {
+    const formatted=msg.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+    const showClose=cls==='ok';
+    const closeBtn=showClose?`<div style="margin-top:12px;display:flex;justify-content:flex-end;">
+      <button onclick="this.closest('.ai-box').style.display='none'" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Plus Jakarta Sans',sans-serif;">
+        ✓ Enterado
+      </button>
+    </div>`:'';
+    el.innerHTML=`<div class="ai-box ${cls}">${formatted}${closeBtn}</div>`;
+  }
+}
+
+async function aiExerciseAnalysis(idx){
+  const key=document.getElementById('g-routine').value;
+  const rt=R[key];
+  const exs=rt&&rt.exs.length?[...rt.exs,...customExs]:customExs;
+  const e=exs[idx];if(!e)return;
+  const ns=parseInt(document.getElementById(`sc-${idx}`)?.textContent)||3;
+  const reps=document.getElementById(`reps-${idx}`)?.value||e.r;
+  const ws=Array.from({length:ns},(_,s)=>document.getElementById(`wc-${idx}-${s}`)?.value||dispW(e.lbs||0)).join(', ');
+  const div=document.getElementById(`ex-ai-${idx}`);
+  if(!div)return;
+  div.style.display='block';
+  setAI(div,'🤖 Analizando ejercicio...','loading');
+  const prof=`Atleta: hombre 46 años, ${profile.weight||67.5}kg, ${profile.height||175}cm, ciclista y runner con gym.`;
+  const prompt=`${prof}\nEjercicio: ${e.n}. Series: ${ns}. Reps: ${reps}. Pesos (${currentUnit}): ${ws}. Nota: ${e.note||'ninguna'}.\nDa: 1) Evaluación de las cargas (¿son apropiadas para el perfil?), 2) Técnica clave a recordar, 3) Progresión recomendada para próxima sesión, 4) Músculos que trabaja y transferencia a ciclismo/running. Conciso, máximo 150 palabras. Responde en español.`;
+  const text=await callAI(prompt);
+  setAI(div,text,'ok');
+}
+
+async function aiGymAdvice(){
+  const div=document.getElementById('gym-ai-advice');
+  setAI(div,'🤖 Generando consejo...','loading');
+  const routine=R[document.getElementById('g-routine').value]?.name||'Gym';
+  const recData=ld('rec')[0];
+  const pain=document.getElementById('g-pain')?.value||'';
+  const prof=`Atleta: 46 años, ${profile.weight||67.5}kg, ciclista y runner.`;
+  const recStr=recData?`Última recuperación: sueño ${recData.sleep}h, energía ${recData.energy}/10, dolor ${recData.sore}/10.`:'';
+  const prompt=`${prof} ${recStr} Va a entrenar: ${routine}. Dolor actual: ${pain||'ninguno'}.\nDa: 1) ¿Es buen día para entrenar fuerte?, 2) Calentamiento específico recomendado, 3) Ajustes de carga si hay dolor, 4) Suplementación/nutrición pre-entreno. Máximo 150 palabras. Responde en español.`;
+  const text=await callAI(prompt);
+  setAI(div,text,'ok');
+}
+
+async function aiRunAnalysis(){
+  const div=document.getElementById('run-modal-ai');
+  setAI(div,'🤖 Analizando sesión con IA...','loading');
+  const userZones=getZones().map(z=>`${z.name}(${z.min}-${z.max}bpm)`).join(', ');
+  const prof=`Atleta: Ivan, 46 años, ${profile.weight||68}kg, ${profile.height||165}cm, FC máx ${profile.fcmax||190}bpm, FC reposo ${profile.fcrest||54}bpm. Zonas FC: ${userZones}.`;
+  const vals={dist:document.getElementById('r-dist').value,pace:document.getElementById('r-pace').value,spd:document.getElementById('r-spd').value,time:document.getElementById('r-time').value,cal:document.getElementById('r-cal').value,fc:document.getElementById('r-fcavg').value,fcmax:document.getElementById('r-fcmax').value,fcpct:document.getElementById('r-fcpct').value,cad:document.getElementById('r-cad').value,osc:document.getElementById('r-osc').value,contact:document.getElementById('r-contact').value,stride:document.getElementById('r-stride').value,balL:document.getElementById('r-balL').value,balR:document.getElementById('r-balR').value,aero:document.getElementById('r-aero').value,vo2:document.getElementById('r-vo2').value,z1:document.getElementById('r-z1').value,z2:document.getElementById('r-z2').value,z3:document.getElementById('r-z3').value,z4:document.getElementById('r-z4').value,z5:document.getElementById('r-z5').value};
+  const zonesStr=[['Z1',vals.z1],['Z2',vals.z2],['Z3',vals.z3],['Z4',vals.z4],['Z5',vals.z5]].filter(([,v])=>parseFloat(v)>0).map(([z,v])=>`${z}:${v}min`).join(', ');
+  const prompt=`${prof}
+
+Datos sesión running:
+- Distancia: ${vals.dist||'?'}km · Tiempo: ${vals.time||'?'}min · Ritmo: ${vals.pace||'?'}min/km · Vel: ${vals.spd||'?'}km/h
+- FC prom/máx: ${vals.fc||'?'}/${vals.fcmax||'?'} bpm · %FC máx: ${vals.fcpct||'?'}% · Cal: ${vals.cal||'?'}kcal
+- Cadencia: ${vals.cad||'?'}ppm · Zancada: ${vals.stride||'?'}m · Oscilación: ${vals.osc||'?'}cm · Contacto: ${vals.contact||'?'}ms
+- Equilibrio: ${vals.balL||'?'}% izq / ${vals.balR||'?'}% der · VO2max: ${vals.vo2||'?'} · Resist. aeróbica: ${vals.aero||'?'}
+- Zonas: ${zonesStr||'no registrado'}
+
+Análisis CONCRETO:
+1) **Evaluación del rendimiento** con números específicos
+2) **Estado cardíaco**: zonas trabajadas, si fue aeróbico o anaeróbico
+3) **Biomecánica**: cadencia (objetivo 172+ppm), oscilación (<7cm objetivo), contacto y equilibrio
+4) **Fortalezas y mejoras urgentes**
+5) **Próxima sesión recomendada**: tipo, ritmo objetivo, duración exacta
+6) **Riesgo de lesión** en cuádriceps/hombro. Responde en español.`;
+  const text=await callAI(prompt);
+  setAI(div,text,'ok');
+}
+
+async function aiBikeAnalysis(){
+  const div=document.getElementById('bike-modal-ai');
+  setAI(div,'🤖 Analizando ruta con IA...','loading');
+  const userZones=getZones().map(z=>`${z.name}(${z.min}-${z.max}bpm)`).join(', ');
+  const dist=document.getElementById('b-dist').value;
+  const time=document.getElementById('b-time').value;
+  const spd=document.getElementById('b-spd').value;
+  const cad=document.getElementById('b-cad').value;
+  const fc=document.getElementById('b-fc').value;
+  const power=document.getElementById('b-power').value;
+  const elev=document.getElementById('b-elev').value;
+  const zonesStr=[['Z1',document.getElementById('b-z1').value],['Z2',document.getElementById('b-z2').value],['Z3',document.getElementById('b-z3').value],['Z4',document.getElementById('b-z4').value],['Z5',document.getElementById('b-z5').value]].filter(([,v])=>parseFloat(v)>0).map(([z,v])=>`${z}:${v}min`).join(', ');
+  const prof=`Atleta Ivan, 46 años, ${profile.weight||68}kg, FC máx ${profile.fcmax||190}bpm. Bici Cipollini M60. Zonas FC: ${userZones}.`;
+  const prompt=`${prof}\n\nDatos ruta ciclismo:\n- Distancia: ${dist||'?'}km · Tiempo: ${time||'?'}min · Vel prom: ${spd||'?'}km/h · Vel máx: ${document.getElementById('b-spdmax').value||'?'}km/h\n- FC prom/máx: ${fc||'?'}/${document.getElementById('b-fcmax').value||'?'} bpm · Cadencia: ${cad||'?'}rpm · Potencia: ${power||'?'}W\n- Desnivel: ${elev||'?'}m · Ascenso: ${document.getElementById('b-asc').value||'?'}m · Alt máx: ${document.getElementById('b-altmax').value||'?'}m\n- Calorías: ${document.getElementById('b-cal').value||'?'}kcal · Resist. aeróbica: ${document.getElementById('b-aero').value||'?'}\n- Zonas FC: ${zonesStr||'no registrado'}\n\nAnálisis CONCRETO:\n1) **Rendimiento general**: velocidad vs capacidad, intensidad adecuada\n2) **Estado cardíaco y zonas**: distribución correcta para el objetivo\n3) **Cadencia**: análisis vs 85-95rpm objetivo, impacto en rodillas\n4) **Potencia y eficiencia**: watts vs peso corporal (W/kg)\n5) **Próxima sesión**: tipo específico, objetivos concretos\n6) **Alerta sobreentrenamiento o lesión**. Responde en español.`;
+  const text=await callAI(prompt);
+  setAI(div,text,'ok');
+}
+
+async function aiRecAdvice(){
+  const div=document.getElementById('rec-advice');
+  setAI(div,'🤖 Analizando recuperación...','loading');
+  const gym=ld('gym')[0],run=ld('run')[0],bike=ld('bike')[0];
+  const rec=ld('rec')[0];
+  const all=[gym,run,bike].filter(Boolean).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const last=all[0];
+  const recStr=rec?`Hoy: sueño ${rec.sleep}h, energía ${rec.energy}/10, dolor muscular ${rec.sore}/10, FC reposo ${rec.fcrest||'?'}bpm.`:'';
+  const lastStr=last?`Último entreno: ${last.routineName||last.route||'actividad'} el ${last.date}.`:'';
+  const prompt=`Atleta 46 años activo (ciclismo+running+gym). ${lastStr} ${recStr} Lesiones históricas: hombro, tirón cuádriceps. Da plan de recuperación para hoy: 1) ¿Entrenar o descansar?, 2) Si entrena, qué y con qué intensidad, 3) Rutina de movilidad específica, 4) Alimentación y suplementación hoy, 5) Tiempo estimado de recuperación. Práctico y concreto. Responde en español.`;
+  const text=await callAI(prompt);
+  setAI(div,text,'ok');
+}
+
+async function aiGoalPlan(){
+  const div=document.getElementById('goals-ai');
+  setAI(div,'🤖 Generando plan personalizado...','loading');
+  const goals=ld('goals');
+  const gym=ld('gym'),run=ld('run'),bike=ld('bike');
+  const goalsStr=goals.map(g=>`${g.name} (${g.cat}): ${g.current}/${g.target} ${g.unit}, fecha ${g.deadline}`).join('; ');
+  const actStr=`Gym: ${gym.length} sesiones, Running: ${run.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(0)}km, Ciclismo: ${bike.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(0)}km`;
+  const prompt=`Atleta: hombre 46 años, ${profile.weight||67.5}kg, ${profile.height||175}cm. Actividad actual: ${actStr}. Metas: ${goalsStr||'ninguna registrada'}. Historial de lesiones: hombro, cuádriceps.\n\nGenera un PLAN SEMANAL PERSONALIZADO con: 1) Distribución óptima gym/bici/running por día, 2) Volumen recomendado por deporte, 3) Alertas de sobreentrenamiento, 4) Ajustes específicos para las metas, 5) Nutrición clave. Formato de tabla por días si es posible. Responde en español.`;
+  const text=await callAI(prompt);
+  setAI(div,text,'ok');
+}
+
+async function aiGoalGuide(){
+  const div=document.getElementById('goal-modal-ai');
+  setAI(div,'🤖 Generando guía...','loading');
+  const name=document.getElementById('gl-name').value;
+  const cat=document.getElementById('gl-cat').value;
+  const deadline=document.getElementById('gl-deadline').value;
+  const target=document.getElementById('gl-target').value;
+  const unit=document.getElementById('gl-unit').value;
+  const prompt=`Atleta 46 años activo (ciclismo+running+gym). Meta: "${name}" (${cat}), objetivo: ${target} ${unit}, fecha límite: ${deadline}.\nGenera guía completa: 1) Fases de preparación con semanas, 2) Distribución semanal gym/bici/running por fase, 3) Métricas clave a monitorear, 4) Alertas de riesgo, 5) Nutrición por fase. Responde en español con formato claro.`;
+  const text=await callAI(prompt);
+  setAI(div,text,'ok');
+}
+
+async function aiProfileAnalysis(){
+  const el=document.getElementById('prof-ai');if(!el)return;
+  setAI(el,'🤖 Analizando perfil completo...','loading');
+  const p=ldObj('profile');
+  const gym=ld('gym'),run=ld('run'),bike=ld('bike'),rec=ld('rec');
+  const imc=p.weight&&p.height?(p.weight/((p.height/100)**2)).toFixed(1):'?';
+  const userZones=getZones().map(z=>`${z.name}:${z.min}-${z.max}bpm`).join(', ');
+  const recLast=rec[0];
+  const recStr=recLast?`sueño ${recLast.sleep}h (cal ${recLast.sleepq}/10), energía ${recLast.energy}/10, dolor ${recLast.sore}/10, FC reposo ${recLast.fcrest||'?'}bpm, HRV ${recLast.hrv||'?'}ms, zona molestia: ${recLast.zone||'ninguna'}`:'Sin datos';
+  const lastRun=run[0],lastBike=bike[0],lastGym=gym[0];
+  const totalKmR=run.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(0);
+  const totalKmB=bike.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(0);
+  const prompt=`Atleta: ${p.name||'Ivan'}, ${p.age||46}a, ${p.weight||68}kg, ${p.height||165}cm, IMC ${imc}, FCmax ${p.fcmax||190}, FCreposo ${p.fcrest||54}bpm. Objetivo: ${p.goal||'rendimiento'}. Zonas: ${userZones}.
+Actividad: Gym ${gym.length}ses (últ: ${lastGym?lastGym.routineName+' '+lastGym.date:'—'}). Running ${totalKmR}km/${run.length}ses (últ: ${lastRun?lastRun.dist+'km '+lastRun.pace+'min/km cad:'+lastRun.cad+'ppm':'—'}). Ciclismo ${totalKmB}km/${bike.length}rutas (últ: ${lastBike?lastBike.dist+'km '+lastBike.spd+'km/h cad:'+lastBike.cad+'rpm':'—'}).
+Recuperación: ${recStr}. Lesiones: hombro operado, tirón cuádriceps activo.
+
+Responde CONCISO en español (máx 600 palabras) con estas secciones en negrita:
+**Estado físico**: evaluación objetiva con datos.
+**Zonas FC**: cómo usar Z1-Z5 en sus deportes.
+**3 mejoras prioritarias**: acciones concretas con números.
+**Lesiones**: riesgos actuales y prevención.
+**Semana tipo**: lun-dom con duración e intensidad.
+**Nutrición clave**: proteína/día, hidratación.`;
+  const text=await callAI(prompt);
+  setAI(el,text,'ok');
+}
+
+
+function importFile(input,type){
+  const f=input.files[0];if(!f)return;
+  const elId=type==='run'?'run-ir':type==='bike'?'bike-ir':'dash-ir';
+  const el=document.getElementById(elId)||document.getElementById('imp-air');
+  if(f.name.toLowerCase().endsWith('.fit'))parseFIT(f,type,el);
+  else parseGPX(f,type,el);
+  input.value='';
+}
+
+function parseFIT(file,type,el){
+  setAI(el,'⏳ Leyendo FIT...','loading');
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const b=new Uint8Array(e.target.result);
+      if(b.length<14||String.fromCharCode(b[8],b[9],b[10],b[11])!=='.FIT'){setAI(el,'❌ FIT inválido. Exporta como GPX desde Garmin Connect.','err');return;}
+      const view=new DataView(e.target.result);
+      const FE=631065600;let ts=0;try{ts=view.getUint32(12,true);}catch{}
+      const dateStr=ts>31536000?new Date((FE+ts)*1000).toISOString().split('T')[0]:today();
+      const name=file.name.replace(/\.fit$/i,'');
+      const entry={id:uid(),date:dateStr,type:type==='bike'?'Importado FIT':'',route:name,notes:`FIT: ${file.name} (${(file.size/1024).toFixed(0)}KB)`,ts:Date.now()};
+      const d=ld(type);d.unshift(entry);sv(type,d);
+      if(type==='run')renderRun();else renderBike();renderDash();
+      setAI(el,`✅ <strong>${name}</strong> · ${dateStr}<br><small>FIT binario Garmin: para datos completos (distancia, FC, potencia) exporta como GPX desde Garmin Connect → Actividad → ··· → Exportar GPX.</small>`,'ok');
+    }catch(e){setAI(el,'❌ Error FIT: '+e.message,'err');}
+  };
+  r.readAsArrayBuffer(file);
+}
+
+function parseGPX(file,type,el){
+  setAI(el,'⏳ Procesando GPX...','loading');
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const xml=new DOMParser().parseFromString(e.target.result,'text/xml');
+      if(xml.querySelector('parsererror')){setAI(el,'❌ GPX inválido.','err');return;}
+      const pts=xml.querySelectorAll('trkpt');
+      if(!pts.length){setAI(el,'❌ Sin puntos de ruta (trkpt).','err');return;}
+      let dist=0,prevLat,prevLon;const times=[],elevs=[];
+      pts.forEach(pt=>{
+        const lat=parseFloat(pt.getAttribute('lat')),lon=parseFloat(pt.getAttribute('lon'));
+        if(isNaN(lat)||isNaN(lon))return;
+        const t=pt.querySelector('time')?.textContent,ele=parseFloat(pt.querySelector('ele')?.textContent);
+        if(t)times.push(new Date(t));if(!isNaN(ele)&&ele>0)elevs.push(ele);
+        if(prevLat!==undefined){
+          const R=6371,dLa=(lat-prevLat)*Math.PI/180,dLo=(lon-prevLon)*Math.PI/180;
+          const a=Math.sin(dLa/2)**2+Math.cos(prevLat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLo/2)**2;
+          const d=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));if(d<1)dist+=d;
+        }
+        prevLat=lat;prevLon=lon;
+      });
+      const dur=times.length>=2?Math.round((times[times.length-1]-times[0])/60000):0;
+      const gain=elevs.length>=2?Math.round(elevs.reduce((acc,v,i,arr)=>{if(i>0&&v>arr[i-1])acc+=v-arr[i-1];return acc;},0)):0;
+      const dateStr=times.length?times[0].toISOString().split('T')[0]:today();
+      const name=xml.querySelector('name')?.textContent||file.name.replace(/\.gpx$/i,'');
+      const avgSpd=dur>0&&dist>0?(dist/(dur/60)).toFixed(1):'';
+      const pace=type==='run'&&dur>0&&dist>0?(Math.floor(dur/dist)+':'+(Math.round((dur/dist%1)*60)).toString().padStart(2,'0')):'';
+      const altMin=elevs.length?Math.round(Math.min(...elevs)):0;
+      const altMax=elevs.length?Math.round(Math.max(...elevs)):0;
+      if(type==='bike'){
+        const entry={id:uid(),date:dateStr,type:'Importado GPX',dist:dist.toFixed(2),time:dur,spd:avgSpd,spdmax:'',elev:gain,asc:gain,altmax:altMax,route:name,notes:`GPX: ${file.name} · ${pts.length} puntos · Alt. ${altMin}–${altMax}m`,_gpxPoints:elevs.slice(0,200),ts:Date.now()};
+        sv('bike',[entry,...ld('bike')]);renderBike();
+      }else{
+        const entry={id:uid(),date:dateStr,dist:dist.toFixed(2),time:dur,pace,route:name,alt:altMax,notes:`GPX: ${file.name} · ${pts.length} puntos`,_gpxPoints:elevs.slice(0,200),ts:Date.now()};
+        sv('run',[entry,...ld('run')]);renderRun();
+      }
+      renderDash();
+      setAI(el,`✅ <strong>${name}</strong> importado correctamente<br>📍 ${dist.toFixed(1)} km &nbsp;·&nbsp; ⏱ ${Math.floor(dur/60)}h${String(dur%60).padStart(2,'0')}min${avgSpd?'&nbsp;·&nbsp; ⚡ '+avgSpd+' km/h':''}${gain?'&nbsp;·&nbsp; ⛰️ '+gain+' m desnivel':''}${pace?'&nbsp;·&nbsp; 👟 '+pace+'/km':''}<br><small style="color:#666;">${pts.length} puntos GPS · Alt. ${altMin}–${altMax} m</small>`,'ok');
+    }catch(e){setAI(el,'❌ Error GPX: '+e.message,'err');}
+  };
+  r.readAsText(file);
+}
+
+// ══ SAVE ══
+function saveGym(){
+  const durH=parseInt(document.getElementById('g-dur-h')?.value||0)||0;
+  const durM=parseInt(document.getElementById('g-dur-m')?.value||0)||0;
+  const durTotal=durH*60+durM;
+  const routineKey=document.getElementById('g-routine').value;
+  const e={id:uid(),date:document.getElementById('g-date').value||today(),routine:routineKey,routineName:R[routineKey]?.name||'Personalizado',durH,durM,dur:durTotal,intensity:document.getElementById('g-int').value,exercises:getExData(),pain:document.getElementById('g-pain').value,painLevel:document.getElementById('g-plevel').value,notes:document.getElementById('g-notes').value,ts:Date.now()};
+  const saveBtn2=document.querySelector('[onclick="saveGym()"]');
+  const editId=saveBtn2?.getAttribute('data-edit-id')||'';
+  if(editId){e.id=editId;const d=ld('gym');const idx=d.findIndex(x=>x.id===editId);if(idx!==-1)d[idx]=e;else d.unshift(e);sv('gym',d);saveBtn2.removeAttribute('data-edit-id');}
+  else{sv('gym',[e,...ld('gym')]);}
+  customExs=[];renderGym();renderDash();showToast(editId?'✅ Sesión actualizada':'✅ Sesión guardada');
+}
+function saveRun(){
+  const eid=document.getElementById('run-eid').value;
+  const parseSeries=id=>document.getElementById(id)?.value?.split(',').map(v=>parseFloat(v.trim())||0).filter(v=>v)||[];
+  const e={id:eid||uid(),date:document.getElementById('r-date').value||today(),
+    dist:document.getElementById('r-dist').value,time:document.getElementById('r-time').value,
+    pace:document.getElementById('r-pace').value,spd:document.getElementById('r-spd').value,
+    fcavg:document.getElementById('r-fcavg').value,fcmax:document.getElementById('r-fcmax').value,
+    fcpct:document.getElementById('r-fcpct').value,cad:document.getElementById('r-cad').value,
+    osc:document.getElementById('r-osc').value,contact:document.getElementById('r-contact').value,
+    stride:document.getElementById('r-stride').value,
+    balL:document.getElementById('r-balL').value,balR:document.getElementById('r-balR').value,
+    alt:document.getElementById('r-alt').value,aero:document.getElementById('r-aero').value,
+    cal:document.getElementById('r-cal').value,vo2:document.getElementById('r-vo2').value,
+    zones:{z1:document.getElementById('r-z1').value,z2:document.getElementById('r-z2').value,
+           z3:document.getElementById('r-z3').value,z4:document.getElementById('r-z4').value,
+           z5:document.getElementById('r-z5').value},
+    paceSeries:parseSeries('r-pace-series'),
+    fcSeries:parseSeries('r-fc-series'),
+    cadSeries:parseSeries('r-cad-series'),
+    route:document.getElementById('r-route').value,notes:document.getElementById('r-notes').value,ts:Date.now()};
+  const d=ld('run');if(eid){const i=d.findIndex(x=>x.id===eid);if(i!==-1)d[i]=e;}else d.unshift(e);
+  sv('run',d);resetRunModal();closeM('run');renderRun();renderDash();showToast(eid?'✅ Sesión actualizada':'✅ Sesión guardada');
+}
+function saveBike(){
+  const eid=document.getElementById('bike-eid').value;
+  const parseSeries=id=>document.getElementById(id)?.value?.split(',').map(v=>parseFloat(v.trim())||0).filter(v=>v)||[];
+  const e={id:eid||uid(),date:document.getElementById('b-date').value||today(),
+    type:document.getElementById('b-type').value,dist:document.getElementById('b-dist').value,
+    time:document.getElementById('b-time').value,spd:document.getElementById('b-spd').value,
+    spdmax:document.getElementById('b-spdmax').value,fc:document.getElementById('b-fc').value,
+    fcmax:document.getElementById('b-fcmax').value,cad:document.getElementById('b-cad').value,
+    power:document.getElementById('b-power').value,elev:document.getElementById('b-elev').value,
+    asc:document.getElementById('b-asc').value,altmax:document.getElementById('b-altmax').value,
+    aero:document.getElementById('b-aero').value,cal:document.getElementById('b-cal').value,
+    zones:{z1:document.getElementById('b-z1').value,z2:document.getElementById('b-z2').value,
+           z3:document.getElementById('b-z3').value,z4:document.getElementById('b-z4').value,
+           z5:document.getElementById('b-z5').value},
+    spdSeries:parseSeries('b-spd-series'),
+    fcSeries:parseSeries('b-fc-series'),
+    cadSeries:parseSeries('b-cad-series'),
+    route:document.getElementById('b-route').value,notes:document.getElementById('b-notes').value,ts:Date.now()};
+  const d=ld('bike');if(eid){const i=d.findIndex(x=>x.id===eid);if(i!==-1)d[i]=e;}else d.unshift(e);
+  sv('bike',d);resetBikeModal();closeM('bike');renderBike();renderDash();showToast(eid?'✅ Ruta actualizada':'✅ Ruta guardada');
+}
+function saveWeight(){
+  const e={id:uid(),date:document.getElementById('w-date').value||today(),kg:document.getElementById('w-kg').value,fat:document.getElementById('w-fat').value,muscle:document.getElementById('w-muscle').value,water:document.getElementById('w-water').value,imc:document.getElementById('w-imc').value,bone:document.getElementById('w-bone').value,bmr:document.getElementById('w-bmr').value,when:document.getElementById('w-when').value,hydra:document.getElementById('w-hydra').value,notes:document.getElementById('w-notes').value,ts:Date.now()};
+  if(!e.kg)return alert('Ingresa el peso');
+  const wEid=document.getElementById('w-eid').value;
+  const wd=ld('weight');
+  if(wEid){const wi=wd.findIndex(x=>x.id===wEid);if(wi!==-1)wd[wi]=e;else wd.unshift(e);sv('weight',wd);}
+  else{sv('weight',[e,...wd]);}
+  document.getElementById('w-eid').value='';
+  if(profile){profile.weight=parseFloat(e.kg);sv('profile',profile);}
+  closeM('weight');renderWeight();renderDash();showToast(wEid?'✅ Peso actualizado':'✅ Peso registrado');
+}
+function saveRec(){
+  const e={id:uid(),date:document.getElementById('rc-date').value||today(),sleep:document.getElementById('rc-sleep').value,sleepq:document.getElementById('rc-sleepq').value,energy:document.getElementById('rc-energy').value,mood:document.getElementById('rc-mood').value,sore:document.getElementById('rc-sore').value,fcrest:document.getElementById('rc-fcrest').value,hrv:document.getElementById('rc-hrv').value,zone:document.getElementById('rc-zone').value,notes:document.getElementById('rc-notes').value,ts:Date.now()};
+  const rcEid=document.getElementById('rc-eid').value;
+  const rcd=ld('rec');
+  if(rcEid){const rci=rcd.findIndex(x=>x.id===rcEid);if(rci!==-1)rcd[rci]=e;else rcd.unshift(e);sv('rec',rcd);}
+  else{sv('rec',[e,...rcd]);}
+  document.getElementById('rc-eid').value='';
+  closeM('rec');renderRec();showToast(rcEid?'✅ Recuperación actualizada':'✅ Recuperación guardada');
+}
+function saveGoal(){
+  const eid=document.getElementById('gl-eid').value;
+  const e={id:eid||uid(),name:document.getElementById('gl-name').value,cat:document.getElementById('gl-cat').value,deadline:document.getElementById('gl-deadline').value,current:parseFloat(document.getElementById('gl-current').value)||0,target:parseFloat(document.getElementById('gl-target').value)||0,unit:document.getElementById('gl-unit').value,desc:document.getElementById('gl-desc').value,ts:Date.now()};
+  if(!e.name)return alert('Ingresa el nombre');
+  const d=ld('goals');if(eid){const i=d.findIndex(x=>x.id===eid);if(i!==-1)d[i]=e;}else d.unshift(e);
+  sv('goals',d);document.getElementById('gl-eid').value='';closeM('goal');renderGoals();renderDash();
+}
+function saveProfile(){
+  profile={name:document.getElementById('prof-name').value,age:document.getElementById('prof-age').value,weight:parseFloat(document.getElementById('prof-weight').value)||67.5,height:document.getElementById('prof-height').value,fcmax:document.getElementById('prof-fcmax').value,fcrest:document.getElementById('prof-fcrest').value,goal:document.getElementById('prof-goal').value,apikey:document.getElementById('prof-apikey').value};
+  saveZones();sv('profile',profile);updateProfileDisplay();renderProfSummary();loadApiKeyStatus();showToast('✅ Perfil guardado');
+}
+function syncProfileWeight(){
+  const v=document.getElementById('w-kg')?.value;
+  const pEl=document.getElementById('prof-weight');
+  if(v&&pEl&&!pEl.value)pEl.value=v;
+}
+function autoWeight(kg){
+  sv('weight',[{id:uid(),date:today(),kg,when:'Auto desde foto IA',ts:Date.now()},...ld('weight')]);
+  if(profile){profile.weight=kg;sv('profile',profile);}
+  renderWeight();renderDash();showToast(`✅ Peso ${kg}kg registrado`);
+}
+function updateGoalProgress(id){
+  const v=prompt('Valor actual:');if(v===null)return;
+  const d=ld('goals');const i=d.findIndex(g=>g.id===id);
+  if(i!==-1){d[i].current=parseFloat(v)||0;sv('goals',d);renderGoals();renderDash();}
+}
+function delEntry(t,id,cb){if(!confirm('¿Eliminar?'))return;sv(t,ld(t).filter(e=>e.id!==id));cb();renderDash();}
+
+// ══ PROFILE DISPLAY ══
+function updateProfileDisplay(){
+  const n=document.getElementById('prof-name')?.value||'Ivan';
+  const a=document.getElementById('prof-age')?.value||'46';
+  const nd=document.getElementById('prof-name-display');
+  const ad=document.getElementById('prof-age-display');
+  const av=document.getElementById('prof-avatar');
+  if(nd)nd.textContent=n;
+  if(ad)ad.textContent=`${a} años · Atleta`;
+  if(av)av.textContent=n.slice(0,2).toUpperCase();
+  document.getElementById('topnav-name').textContent=n;
+}
+function renderProfSummary(){
+  const p=ldObj('profile');
+  const gym=ld('gym'),run=ld('run'),bike=ld('bike');
+  const imc=p.weight&&p.height?(p.weight/((p.height/100)**2)).toFixed(1):'—';
+  const el=document.getElementById('prof-summary');
+  if(!el)return;
+  el.innerHTML=`
+    <div class="metric-grid">
+      <div class="mbadge"><div class="mbadge-val">${p.weight||'—'}</div><div class="mbadge-lbl">Peso kg</div></div>
+      <div class="mbadge"><div class="mbadge-val">${imc}</div><div class="mbadge-lbl">IMC</div></div>
+      <div class="mbadge"><div class="mbadge-val">${p.fcmax||'—'}</div><div class="mbadge-lbl">FC máx</div></div>
+      <div class="mbadge"><div class="mbadge-val">${p.fcrest||'—'}</div><div class="mbadge-lbl">FC reposo</div></div>
+      <div class="mbadge"><div class="mbadge-val">${gym.length}</div><div class="mbadge-lbl">Sesiones gym</div></div>
+      <div class="mbadge"><div class="mbadge-val">${run.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(0)}</div><div class="mbadge-lbl">km running</div></div>
+      <div class="mbadge"><div class="mbadge-val">${bike.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(0)}</div><div class="mbadge-lbl">km ciclismo</div></div>
+      <div class="mbadge"><div class="mbadge-val">${p.age||46}</div><div class="mbadge-lbl">Edad</div></div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--text3);">Objetivo: <strong style="color:var(--accent);">${p.goal||'rendimiento deportivo'}</strong></div>`;
+}
+function loadProfileToForm(){
+  const p=ldObj('profile');
+  ['name','age','weight','height','fcmax','fcrest','apikey'].forEach(f=>{
+    const el=document.getElementById(`prof-${f}`);if(el)el.value=p[f]||'';
+  });
+  const gl=document.getElementById('prof-goal');if(gl&&p.goal)gl.value=p.goal;
+}
+
+// ══ CHART HELPERS ══
+function mkChart(id,type,labels,datasets,opts={}){
+  if(charts[id]){charts[id].destroy();}
+  const ctx=document.getElementById(id);if(!ctx)return;
+  charts[id]=new Chart(ctx,{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:opts.legend||false},tooltip:{mode:'index'}},scales:opts.scales||{x:{grid:{display:false},ticks:{font:{size:10},color:'#94a3b8'}},y:{grid:{color:'rgba(148,163,184,.15)'},ticks:{font:{size:10},color:'#94a3b8'}}},animation:{duration:600},...opts.extra}});
+  return charts[id];
+}
+
+
+// ══ GYM IMPROVEMENTS ══
+function onRoutineSelect(){
+  const key=document.getElementById('g-routine').value;
+  const wrap=document.getElementById('gym-form-wrap');
+  if(!wrap)return;
+  if(!key){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  loadRT();
+}
+
+async function aiGymHistoryAnalysis(){
+  const el=document.getElementById('gym-history-ai');
+  const filter=document.getElementById('gym-filter')?.value||'';
+  const all=ld('gym');
+  const filtered=filter?all.filter(s=>s.routine===filter):all;
+  if(!filtered.length){setAI(el,'Sin sesiones para analizar.','info');return;}
+  setAI(el,'🤖 Analizando historial de sesiones...','loading');
+  const routineName=filter?(R[filter]?.name||filter):'todas las rutinas';
+  const summary=filtered.slice(0,8).map(s=>{
+    const exStr=s.exercises?.slice(0,3).map(x=>`${x.name}: ${x.sets}x${x.reps} @ ${x.weights?.map(w=>w.display+w.unit).join('/')}`).join('; ')||'';
+    return `Sesión ${s.date} (${s.durH||0}h${s.durM||s.dur||0}min, intensidad ${s.intensity||'?'}/10): ${exStr}`;
+  }).join('\n');
+  const prof=`Atleta: 46 años, ${profile.weight||67.5}kg, ciclista y runner.`;
+  const prompt=`${prof}\nHistorial de ${routineName} (${filtered.length} sesiones):\n${summary}\n\nAnaliza: 1) Progresión de cargas en los ejercicios principales, 2) Tendencia de volumen e intensidad, 3) ¿Hay sobrecarga progresiva adecuada?, 4) Recomendaciones para la próxima sesión, 5) Ejercicios donde puede aumentar carga. Responde en español con formato claro.`;
+  const text=await callAI(prompt);
+  setAI(el,text,'ok');
+}
+
+
+// ══ API KEY CONFIG ══
+function saveApiKeyCfg(){
+  const k=document.getElementById('api-key-cfg')?.value?.trim();
+  if(!k){showToast('❌ Ingresa una API key válida');return;}
+  if(!k.startsWith('sk-or')){showToast('❌ La clave debe empezar con sk-or-');return;}
+  profile.apikey=k;
+  sv('profile',profile);
+  loadApiKeyStatus();
+  showToast('✅ API key guardada — IA activada con modelos gratuitos');
+}
+
+function loadApiKeyStatus(){
+  const inp=document.getElementById('api-key-cfg');
+  const profInp=document.getElementById('prof-apikey');
+  const key=profile.apikey||'';
+  if(inp&&key)inp.value=key;
+  if(profInp&&key)profInp.value=key;
+  const el=document.getElementById('api-cfg-status');
+  if(el){
+    if(key){el.innerHTML='✅ OpenRouter activo — Modelos gratuitos habilitados';el.style.color='var(--green)';}
+    else{el.innerHTML='⚪ Sin configurar — Agrega tu API key para activar IA';el.style.color='var(--text3)';}
+  }
+}
+
+
+// ══ HR ZONES ══
+const ZONE_COLORS=['#64748b','#10b981','#f59e0b','#ef4444','#8b5cf6'];
+const ZONE_NAMES=['Z1 Recuperación','Z2 Aeróbico','Z3 Tempo','Z4 Umbral','Z5 VO2max'];
+const ZONE_DEFAULTS=[[.5,.6],[.6,.7],[.7,.8],[.8,.9],[.9,1]];
+
+function getZones(){
+  const fcmax=parseInt(document.getElementById('prof-fcmax')?.value||profile.fcmax||178);
+  const stored=profile.zones||[];
+  return ZONE_NAMES.map((_,i)=>{
+    if(stored[i])return stored[i];
+    return{name:ZONE_NAMES[i],min:Math.round(fcmax*ZONE_DEFAULTS[i][0]),max:Math.round(fcmax*ZONE_DEFAULTS[i][1]),color:ZONE_COLORS[i]};
+  });
+}
+
+function updateZones(){
+  const fcmax=parseInt(document.getElementById('prof-fcmax')?.value)||178;
+  const el=document.getElementById('zones-form');if(!el)return;
+  el.innerHTML=ZONE_NAMES.map((name,i)=>{
+    const stored=(profile.zones||[])[i];
+    const defMin=stored?stored.min:Math.round(fcmax*ZONE_DEFAULTS[i][0]);
+    const defMax=stored?stored.max:Math.round(fcmax*ZONE_DEFAULTS[i][1]);
+    return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="width:10px;height:10px;border-radius:2px;background:${ZONE_COLORS[i]};flex-shrink:0;"></div>
+      <span style="font-size:11px;font-weight:600;color:var(--text2);width:110px;flex-shrink:0;">${name}</span>
+      <input type="number" id="zone-min-${i}" value="${defMin}" style="width:65px;font-size:12px;padding:4px 6px;font-family:'JetBrains Mono',monospace;" placeholder="min">
+      <span style="font-size:11px;color:var(--text3);">–</span>
+      <input type="number" id="zone-max-${i}" value="${defMax}" style="width:65px;font-size:12px;padding:4px 6px;font-family:'JetBrains Mono',monospace;" placeholder="max">
+      <span style="font-size:11px;color:var(--text3);">bpm</span>
+    </div>`;
+  }).join('');
+}
+
+function saveZones(){
+  const zones=ZONE_NAMES.map((_,i)=>({
+    name:ZONE_NAMES[i],color:ZONE_COLORS[i],
+    min:parseInt(document.getElementById(`zone-min-${i}`)?.value)||0,
+    max:parseInt(document.getElementById(`zone-max-${i}`)?.value)||0
+  }));
+  profile.zones=zones;
+  return zones;
+}
+
+
+// ══ API KEY TESTER ══
+async function testApiKey(){
+  const el=document.getElementById('api-test-result');
+  const key=getApiKey();
+  if(!key){setAI(el,'❌ Ingresa primero tu API key','err');return;}
+  setAI(el,'🔍 Verificando key en OpenRouter...','loading');
+  try{
+    // Check credits/account info
+    const res=await fetch('https://openrouter.ai/api/v1/auth/key',{
+      headers:{'Authorization':`Bearer ${key}`,'Content-Type':'application/json'}
+    });
+    if(!res.ok){setAI(el,`❌ Key inválida (HTTP ${res.status}). Verifica que empiece con sk-or-v1-`,'err');return;}
+    const data=await res.json();
+    const d=data.data||data;
+    const limit=d.limit!==null&&d.limit!==undefined?'$'+parseFloat(d.limit).toFixed(2):'Sin límite (prepago)';
+    const used=d.usage!==undefined?'$'+parseFloat(d.usage).toFixed(4):'?';
+    const remaining=d.limit!==null&&d.limit!==undefined&&d.usage!==undefined?
+      '$'+Math.max(0,parseFloat(d.limit)-parseFloat(d.usage)).toFixed(4):'Ver en openrouter.ai/credits';
+    const isKey=d.is_free_tier;
+    setAI(el,`✅ <strong>Key válida y activa</strong><br>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px;">
+        <div style="background:var(--surface3);padding:6px 10px;border-radius:8px;"><span style="color:var(--text3);">Límite:</span> <strong>${limit}</strong></div>
+        <div style="background:var(--surface3);padding:6px 10px;border-radius:8px;"><span style="color:var(--text3);">Usado:</span> <strong>${used}</strong></div>
+        <div style="background:var(--green-lt);padding:6px 10px;border-radius:8px;color:var(--green);"><span>Disponible:</span> <strong>${remaining}</strong></div>
+        <div style="background:var(--surface3);padding:6px 10px;border-radius:8px;"><span style="color:var(--text3);">Tipo:</span> <strong>${isKey?'Free tier':'Con créditos'}</strong></div>
+      </div>`,'ok');
+  }catch(e){setAI(el,'❌ Error verificando: '+e.message,'err');}
+}
+
+async function testSingleModel(){
+  const el=document.getElementById('api-test-result');
+  const key=getApiKey();
+  if(!key){setAI(el,'❌ Ingresa primero tu API key','err');return;}
+  const model=document.getElementById('preferred-model')?.value||'openrouter/auto';
+  setAI(el,`⚡ Probando <code>${model}</code>...`,'loading');
+  const start=Date.now();
+  try{
+    const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`,'HTTP-Referer':'https://ivanpro.app','X-Title':'IVAN PRO Test'},
+      body:JSON.stringify({model,messages:[{role:'user',content:'Di solo: OK'}],max_tokens:10})
+    });
+    const elapsed=((Date.now()-start)/1000).toFixed(1);
+    if(!res.ok){
+      const err=await res.json();
+      setAI(el,`❌ Modelo no disponible: ${err.error?.message||'Error desconocido'}<br><small>Prueba otro modelo del selector.</small>`,'err');
+      return;
+    }
+    const data=await res.json();
+    const txt=data.choices?.[0]?.message?.content||'?';
+    const cost=data.usage?`Tokens: ${data.usage.prompt_tokens||0}+${data.usage.completion_tokens||0}`:'';
+    setAI(el,`✅ <strong>${model}</strong> responde en <strong>${elapsed}s</strong> ✅<br><small style="color:var(--text3);">${cost} · Respuesta: "${txt.trim()}"</small>`,'ok');
+  }catch(e){setAI(el,'❌ Error: '+e.message,'err');}
+}
+
+async function testModels(){
+  const el=document.getElementById('api-test-result');
+  const key=getApiKey();
+  if(!key){setAI(el,'❌ Ingresa primero tu API key','err');return;}
+  el.innerHTML='<div class="ai-box info"><strong>⚡ Probando modelos...</strong> Esto tarda ~20 segundos</div>';
+
+  const toTest=[
+    {id:'google/gemini-flash-2.5',label:'Gemini Flash 2.5 ⭐'},
+    {id:'google/gemini-flash-1.5',label:'Gemini Flash 1.5'},
+    {id:'mistralai/mistral-small-3.2-24b-instruct:free',label:'Mistral Small (gratis)'},
+    {id:'meta-llama/llama-4-maverick:free',label:'Llama 4 Maverick (gratis)'},
+    {id:'google/gemma-3-27b-it:free',label:'Gemma 3 27B (gratis)'},
+    {id:'qwen/qwen2.5-vl-72b-instruct:free',label:'Qwen 2.5 VL 72B (gratis, imágenes)'},
+  ];
+
+  let results='<div class="ai-box ok"><strong>📊 Resultado de modelos disponibles:</strong><div style="margin-top:8px;display:flex;flex-direction:column;gap:5px;">';
+  for(const m of toTest){
+    const start=Date.now();
+    try{
+      const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`,'HTTP-Referer':'https://ivanpro.app','X-Title':'IVAN PRO Test'},
+        body:JSON.stringify({model:m.id,messages:[{role:'user',content:'Di: OK'}],max_tokens:5})
+      });
+      const elapsed=((Date.now()-start)/1000).toFixed(1);
+      if(res.ok){
+        const d=await res.json();const txt=d.choices?.[0]?.message?.content||'';
+        const cost=d.usage?.total_tokens?`${d.usage.total_tokens} tokens`:'';
+        results+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--green-lt);border-radius:6px;font-size:12px;">
+          <span style="color:var(--green);">✅</span>
+          <span style="flex:1;font-weight:600;">${m.label}</span>
+          <span style="color:var(--text3);font-family:'JetBrains Mono',monospace;">${elapsed}s ${cost}</span>
+        </div>`;
+      } else {
+        const err=await res.json();const msg=(err.error?.message||'').slice(0,50);
+        results+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--red-lt);border-radius:6px;font-size:12px;">
+          <span style="color:var(--red);">❌</span>
+          <span style="flex:1;">${m.label}</span>
+          <span style="color:var(--text3);font-size:10px;">${msg}</span>
+        </div>`;
+      }
+    }catch(e){
+      results+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface3);border-radius:6px;font-size:12px;">
+        <span>⚠️</span><span style="flex:1;">${m.label}</span><span style="font-size:10px;color:var(--text3);">Error red</span>
+      </div>`;
+    }
+    el.innerHTML=results+'</div><div style="font-size:11px;color:var(--text3);margin-top:6px;">Probando siguiente...</div></div>';
+  }
+  el.innerHTML=results+'</div><div style="font-size:11px;color:var(--text3);margin-top:8px;">💡 Selecciona el modelo ✅ más rápido en el selector de arriba y guarda.</div></div>';
+}
+
+function savePreferredModel(){
+  const v=document.getElementById('preferred-model')?.value||'';
+  profile.preferredModel=v;
+  sv('profile',profile);
+  if(v)showToast(`✅ Modelo guardado: ${v.split('/').pop()}`);
+}
+
+function loadPreferredModel(){
+  const sel=document.getElementById('preferred-model');
+  if(sel&&profile.preferredModel)sel.value=profile.preferredModel;
+}
+
+
+// ══ EDIT FUNCTIONS ══
+
+
+function editRec(id){
+  const e=ld('rec').find(x=>x.id===id);if(!e)return;
+  document.getElementById('rc-eid').value=e.id;
+  const flds={'rc-date':e.date,'rc-sleep':e.sleep,'rc-sleepq':e.sleepq,
+    'rc-energy':e.energy,'rc-mood':e.mood,'rc-sore':e.sore,
+    'rc-fcrest':e.fcrest,'rc-hrv':e.hrv,'rc-zone':e.zone,'rc-notes':e.notes};
+  Object.entries(flds).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val||'';});
+  document.getElementById('m-rec').classList.add('open');
+}
+function editWeight(id){
+  const e=ld('weight').find(x=>x.id===id);if(!e)return;
+  document.getElementById('w-eid').value=e.id;
+  const flds={'w-date':e.date,'w-kg':e.kg,'w-fat':e.fat,'w-muscle':e.muscle,
+    'w-water':e.water,'w-imc':e.imc,'w-bone':e.bone,'w-bmr':e.bmr,'w-notes':e.notes};
+  Object.entries(flds).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val||'';});
+  const wh=document.getElementById('w-when');if(wh&&e.when)wh.value=e.when;
+  document.getElementById('m-weight').classList.add('open');
+}
+function editRun(id){
+  const e=ld('run').find(x=>x.id===id);if(!e)return;
+  // Fill modal
+  document.getElementById('run-eid').value=e.id;
+  document.getElementById('run-modal-title').textContent='✏️ Editar sesión de running';
+  const flds={
+    'r-date':e.date,'r-dist':e.dist,'r-time':e.time,'r-pace':e.pace,
+    'r-spd':e.spd,'r-fcavg':e.fcavg,'r-fcmax':e.fcmax,'r-fcpct':e.fcpct,
+    'r-cad':e.cad,'r-osc':e.osc,'r-contact':e.contact,'r-stride':e.stride,
+    'r-balL':e.balL,'r-balR':e.balR,'r-alt':e.alt,'r-aero':e.aero,
+    'r-cal':e.cal,'r-vo2':e.vo2,'r-route':e.route,'r-notes':e.notes,
+    'r-z1':e.zones?.z1||'','r-z2':e.zones?.z2||'','r-z3':e.zones?.z3||'',
+    'r-z4':e.zones?.z4||'','r-z5':e.zones?.z5||'',
+    'r-pace-series':(e.paceSeries||[]).join(','),
+    'r-fc-series':(e.fcSeries||[]).join(','),
+    'r-cad-series':(e.cadSeries||[]).join(',')
+  };
+  Object.entries(flds).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val||'';});
+  document.getElementById('m-run').classList.add('open');
+}
+
+function editBike(id){
+  const e=ld('bike').find(x=>x.id===id);if(!e)return;
+  document.getElementById('bike-eid').value=e.id;
+  document.getElementById('bike-modal-title').textContent='✏️ Editar ruta de ciclismo';
+  const flds={
+    'b-date':e.date,'b-dist':e.dist,'b-time':e.time,'b-spd':e.spd,
+    'b-spdmax':e.spdmax,'b-fc':e.fc,'b-fcmax':e.fcmax,'b-cad':e.cad,
+    'b-power':e.power,'b-elev':e.elev,'b-asc':e.asc,'b-altmax':e.altmax,
+    'b-aero':e.aero,'b-cal':e.cal,'b-route':e.route,'b-notes':e.notes,
+    'b-z1':e.zones?.z1||'','b-z2':e.zones?.z2||'','b-z3':e.zones?.z3||'',
+    'b-z4':e.zones?.z4||'','b-z5':e.zones?.z5||'',
+    'b-spd-series':(e.spdSeries||[]).join(','),
+    'b-fc-series':(e.fcSeries||[]).join(','),
+    'b-cad-series':(e.cadSeries||[]).join(',')
+  };
+  Object.entries(flds).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val||'';});
+  const ts=document.getElementById('b-type');if(ts&&e.type)ts.value=e.type;
+  document.getElementById('m-bike').classList.add('open');
+}
+
+function editGym(id){
+  const sess=ld('gym').find(s=>s.id===id);if(!sess)return;
+  // Set routine selector and open form
+  const rSel=document.getElementById('g-routine');
+  if(rSel&&sess.routine)rSel.value=sess.routine;
+  document.getElementById('g-date').value=sess.date||today();
+  // Duration
+  if(document.getElementById('g-dur-h'))document.getElementById('g-dur-h').value=sess.durH||Math.floor((sess.dur||0)/60)||0;
+  if(document.getElementById('g-dur-m'))document.getElementById('g-dur-m').value=sess.durM||(sess.dur||0)%60||0;
+  if(document.getElementById('g-int'))document.getElementById('g-int').value=sess.intensity||'';
+  if(document.getElementById('g-pain'))document.getElementById('g-pain').value=sess.pain||'';
+  if(document.getElementById('g-plevel'))document.getElementById('g-plevel').value=sess.painLevel||'';
+  if(document.getElementById('g-notes'))document.getElementById('g-notes').value=sess.notes||'';
+  // Store edit id in a data attr on save button
+  const saveBtn=document.querySelector('[onclick="saveGym()"]');
+  if(saveBtn)saveBtn.setAttribute('data-edit-id',id);
+  // Show form
+  onRoutineSelect();
+  // After table renders, fill weights
+  setTimeout(()=>{
+    if(!sess.exercises)return;
+    sess.exercises.forEach((ex,i)=>{
+      const repsEl=document.getElementById(`reps-${i}`);
+      if(repsEl)repsEl.value=ex.reps||'';
+      const restEl=document.getElementById(`rest-${i}`);
+      if(restEl)restEl.value=ex.rest||90;
+      (ex.weights||[]).forEach((w,s)=>{
+        const wEl=document.getElementById(`wc-${i}-${s}`);
+        if(wEl)wEl.value=currentUnit==='lbs'?w.lbs:w.kg;
+      });
+    });
+  },200);
+  // Scroll to form
+  document.getElementById('gym-form-wrap')?.scrollIntoView({behavior:'smooth'});
+  showToast('✏️ Editando sesión del '+fmtD(sess.date)+' — modifica y guarda');
+}
+
+function resetRunModal(){
+  document.getElementById('run-eid').value='';
+  const t=document.getElementById('run-modal-title');
+  if(t)t.textContent='🏃 Registrar sesión de running';
+}
+function resetBikeModal(){
+  document.getElementById('bike-eid').value='';
+  const t=document.getElementById('bike-modal-title');
+  if(t)t.textContent='🚴 Registrar ruta de ciclismo';
+}
+
+// ══ RENDER FUNCTIONS ══
+function renderDash(){
+  const gym=ld('gym'),run=ld('run'),bike=ld('bike'),weight=ld('weight'),goals=ld('goals'),rec=ld('rec');
+  const now=new Date(),weekAgo=new Date(now-7*86400000);
+  const wGym=gym.filter(e=>new Date(e.date)>=weekAgo);
+  const wRun=run.filter(e=>new Date(e.date)>=weekAgo);
+  const wBike=bike.filter(e=>new Date(e.date)>=weekAgo);
+  const totalKmR=run.reduce((s,e)=>s+(parseFloat(e.dist)||0),0);
+  const totalKmB=bike.reduce((s,e)=>s+(parseFloat(e.dist)||0),0);
+  const latW=weight[0]?.kg||profile.weight||'—';
+
+  // Score
+  const sc=Math.min(100,Math.round(Math.min(30,wGym.length*10)+Math.min(30,wRun.reduce((s,e)=>s+(parseFloat(e.dist)||0),0)*2+wBike.reduce((s,e)=>s+(parseFloat(e.dist)||0),0))+Math.min(20,(parseFloat(rec[0]?.energy||5)*2))+20));
+  const scEl=document.getElementById('score-circle');const sfEl=document.getElementById('score-fill');const ssEl=document.getElementById('score-status');
+  if(scEl)scEl.textContent=sc;if(sfEl)sfEl.style.width=sc+'%';if(ssEl)ssEl.textContent=sc>=85?'Excelente':sc>=70?'Bueno':sc>=50?'Regular':'Mejora';
+
+  // KPIs
+  document.getElementById('dash-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Entrenamientos</div><div class="kpi-ico" style="background:var(--accent-lt);">📅</div></div><div class="kpi-val">${gym.length+run.length+bike.length}</div><div class="kpi-sub">Total registrados</div><div class="trend trend-up">↑ Esta sem: ${wGym.length+wRun.length+wBike.length}</div></div>
+    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Running km</div><div class="kpi-ico" style="background:var(--green-lt);">🏃</div></div><div class="kpi-val">${totalKmR.toFixed(1)}</div><div class="kpi-sub">Total acumulado</div><div class="trend trend-up">↑ Sem: ${wRun.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(1)}km</div></div>
+    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Ciclismo km</div><div class="kpi-ico" style="background:var(--purple-lt);">🚴</div></div><div class="kpi-val">${totalKmB.toFixed(0)}</div><div class="kpi-sub">Total acumulado</div><div class="trend trend-up">↑ Sem: ${wBike.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(0)}km</div></div>
+    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Peso actual</div><div class="kpi-ico" style="background:var(--orange-lt);">⚖️</div></div><div class="kpi-val">${latW}</div><div class="kpi-sub">Meta: 66 kg</div><div class="trend ${weight.length>=2&&parseFloat(weight[0].kg)<parseFloat(weight[1].kg)?'trend-up':'trend-dn'}">${weight.length>=2?(parseFloat(weight[0].kg)<parseFloat(weight[1].kg)?'↓ Bajando':'↑ Subiendo'):'→ Sin datos'}</div></div>
+    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Score semanal</div><div class="kpi-ico" style="background:var(--teal-lt);">⚡</div></div><div class="kpi-val">${sc}</div><div class="kpi-sub">${sc>=70?'Excelente rendimiento':'Mejora el volumen'}</div><div class="trend trend-up">↑ /100</div></div>
+  `;
+
+  // Load chart
+  const days=14,labels=[],gymV=[],runV=[],bikeV=[];
+  for(let i=days-1;i>=0;i--){
+    const d=new Date(now-i*86400000);const ds=d.toISOString().split('T')[0];
+    labels.push(d.toLocaleDateString('es-CO',{month:'short',day:'numeric'}));
+    gymV.push(gym.filter(e=>e.date===ds).length*25);
+    runV.push(run.filter(e=>e.date===ds).reduce((s,e)=>s+(parseFloat(e.dist)||0),0)*8);
+    bikeV.push(bike.filter(e=>e.date===ds).reduce((s,e)=>s+(parseFloat(e.dist)||0),0)*3);
+  }
+  setTimeout(()=>{
+    mkChart('chart-load','bar',labels,[
+      {label:'Gym',data:gymV,backgroundColor:'rgba(37,99,235,.7)',borderRadius:3},
+      {label:'Running',data:runV,backgroundColor:'rgba(16,185,129,.7)',borderRadius:3},
+      {label:'Ciclismo',data:bikeV,backgroundColor:'rgba(139,92,246,.7)',borderRadius:3},
+    ],{legend:true,scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:9},color:'#94a3b8'}},y:{stacked:true,grid:{color:'rgba(148,163,184,.1)'},ticks:{font:{size:9},color:'#94a3b8'}}}});
+
+    // Donut
+    const total=gym.length+run.length+bike.length||1;
+    const sub=document.getElementById('dash-dist-sub');if(sub)sub.textContent=`Total: ${total} actividades`;
+    const lg=document.getElementById('dash-legend');
+    const sports=[{l:'Running',v:run.length,c:'#10b981'},{l:'Gym',v:gym.length,c:'#2563eb'},{l:'Ciclismo',v:bike.length,c:'#8b5cf6'}];
+    if(lg)lg.innerHTML=sports.map(s=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;"><div style="width:10px;height:10px;border-radius:50%;background:${s.c};flex-shrink:0;"></div><span style="flex:1;color:var(--text2);">${s.l}</span><span style="font-weight:700;">${total>0?Math.round(s.v/total*100):0}% (${s.v})</span></div>`).join('');
+    if(charts['chart-donut'])charts['chart-donut'].destroy();
+    const ctx=document.getElementById('chart-donut');
+    if(ctx)charts['chart-donut']=new Chart(ctx,{type:'doughnut',data:{labels:sports.map(s=>s.l),datasets:[{data:sports.map(s=>s.v),backgroundColor:sports.map(s=>s.c),borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%',animation:{duration:600}}});
+  },100);
+
+  // Mini goals
+  const gEl=document.getElementById('dash-goals-mini');
+  if(gEl){
+    const gs=ld('goals').slice(0,3);
+    gEl.innerHTML=gs.length?gs.map(g=>{
+      const pct=g.target?Math.min(100,(g.current/g.target*100)):0;
+      const dl=g.deadline?Math.ceil((new Date(g.deadline)-now)/86400000):null;
+      return`<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px;"><span>${g.name}</span>${dl!==null?`<span style="color:${dl<7?'var(--red)':'var(--text3)'};">${dl>0?dl+'d':'Vencida'}</span>`:''}</div><div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${pct>=100?'var(--green)':pct>50?'var(--accent)':'var(--orange)'}"></div></div><div class="prog-labels"><span>${g.current} ${g.unit}</span><span>${pct.toFixed(0)}%</span><span>${g.target} ${g.unit}</span></div></div>`;}).join(''):'<div style="font-size:12px;color:var(--text3);">Sin metas. Crea tu primer objetivo.</div>';
+  }
+
+  // Status bar
+  const recL=rec[0];
+  document.getElementById('dash-status').innerHTML=`
+    <div class="sb-stat"><span class="sb-stat-ico">👟</span><div><div class="sb-stat-val">Racha: ${gym.length>0?'Activo':'—'}</div><div class="sb-stat-lbl">Constancia</div></div></div>
+    <div class="sb-stat"><span class="sb-stat-ico">❤️</span><div><div class="sb-stat-val">${recL?`E:${recL.energy}/10 S:${recL.sleep}h`:'Sin datos'}</div><div class="sb-stat-lbl">Recuperación</div></div></div>
+    <div class="sb-stat"><span class="sb-stat-ico">🔥</span><div><div class="sb-stat-val">${sc>=70?'Productivo':sc>=50?'Activo':'Descansando'}</div><div class="sb-stat-lbl">Estado de forma</div></div></div>
+    <div class="sb-stat"><span class="sb-stat-ico">🔄</span><div><div class="sb-stat-val">${new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</div><div class="sb-stat-lbl">Actualizado</div></div></div>
+  `;
+}
+
+function renderGym(){
+  const all=ld('gym');
+  const filter=document.getElementById('gym-filter')?.value||'';
+  const data=filter?all.filter(s=>s.routine===filter):all;
+  const el=document.getElementById('gym-list');
+  if(!data.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">🏋️</div>${filter?'Sin sesiones para esta rutina.':'Sin sesiones aún. ¡Guarda tu primer entrenamiento!'}</div>`;
+    return;
+  }
+  el.innerHTML=data.map(e=>{
+    const durStr=e.durH!==undefined?`${e.durH}h ${e.durM||0}min`:(e.dur?`${Math.floor(e.dur/60)}h ${e.dur%60}min`:'');
+    return`<div class="entry">
+      <div class="entry-header">
+        <div>
+          <div class="entry-date mono">${fmtD(e.date)}</div>
+          <div class="entry-title">${e.routineName||'Gym'}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;">
+            ${durStr?`<span class="tag tag-neutral">⏱ ${durStr}</span>`:''}
+            ${e.intensity?`<span class="tag tag-blue">⚡ Intensidad ${e.intensity}/10</span>`:''}
+            ${parseFloat(e.painLevel)>0?`<span class="tag tag-red">🔴 Dolor ${e.painLevel}/10${e.pain?' — '+e.pain:''}</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:5px;align-items:flex-start;flex-wrap:wrap;">
+          <button class="btn btn-ai btn-sm" style="font-size:11px;" onclick="aiSessionAnalysis('${e.id}')">🤖</button>
+          <button class="btn btn-edit btn-sm" onclick="editGym('${e.id}')" style="font-size:11px;background:var(--accent-lt);color:var(--accent);border:1px solid rgba(37,99,235,.2);">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="delEntry('gym','${e.id}',renderGym)">🗑️</button>
+        </div>
+      </div>
+      ${e.exercises?.length?`<div style="overflow-x:auto;margin-top:10px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="background:var(--surface2);">
+            <th style="padding:6px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border);">Ejercicio</th>
+            <th style="padding:6px 8px;font-size:10px;font-weight:700;color:var(--text3);text-align:center;border-bottom:1px solid var(--border);">S</th>
+            <th style="padding:6px 8px;font-size:10px;font-weight:700;color:var(--text3);border-bottom:1px solid var(--border);">Reps</th>
+            <th style="padding:6px 8px;font-size:10px;font-weight:700;color:var(--text3);border-bottom:1px solid var(--border);">Pesos por serie</th>
+            <th style="padding:6px 8px;font-size:10px;font-weight:700;color:var(--text3);border-bottom:1px solid var(--border);">Descanso</th>
+          </tr></thead>
+          <tbody>${e.exercises.map(x=>`<tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:7px 10px;font-weight:600;">${x.name}${x.note?`<br><span style="font-size:10px;color:var(--text3);font-weight:400;">${x.note}</span>`:''}</td>
+            <td style="padding:7px 8px;text-align:center;font-weight:700;">${x.sets}</td>
+            <td style="padding:7px 8px;font-family:'JetBrains Mono',monospace;">${x.reps}</td>
+            <td style="padding:7px 8px;"><div style="display:flex;gap:3px;flex-wrap:wrap;">${(x.weights||[]).map((w,i)=>`<span style="background:var(--accent-lt);color:var(--accent);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;">S${i+1}:${w.display||0}${w.unit||''}</span>`).join('')}</div></td>
+            <td style="padding:7px 8px;font-size:11px;color:var(--text3);">${x.rest||90}s</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`:''}
+      <div id="sess-ai-${e.id}"></div>
+      ${e.notes?`<div style="margin-top:6px;font-size:11px;color:var(--text3);">📝 ${e.notes}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function aiSessionAnalysis(id){
+  const el=document.getElementById(`sess-ai-${id}`);if(!el)return;
+  const sess=ld('gym').find(s=>s.id===id);if(!sess)return;
+  if(el.innerHTML.includes('ai-box')){el.innerHTML='';return;}// toggle
+  setAI(el,'🤖 Analizando sesión...','loading');
+  const exStr=sess.exercises?.map(x=>`${x.name}: ${x.sets}x${x.reps} @ ${(x.weights||[]).map(w=>w.display+w.unit).join('/')}`).join('\n')||'Sin ejercicios';
+  const durStr=sess.durH!==undefined?`${sess.durH}h ${sess.durM||0}min`:(sess.dur?sess.dur+'min':'?');
+  const prof=`Atleta 46 años, ${profile.weight||67.5}kg, ciclista y runner.`;
+  const prompt=`${prof}\nSesión gym — ${sess.routineName} del ${sess.date} (${durStr}, intensidad ${sess.intensity||'?'}/10):\n${exStr}\n\nAnálisis: 1) Evaluación de cargas y volumen, 2) Puntos fuertes, 3) Qué mejorar, 4) Progresión recomendada. Máximo 200 palabras. Responde en español.`;
+  const text=await callAI(prompt);
+  setAI(el,text,'ok');
+}
+
+
+function renderRun(){
+  const data=ld('run');
+  const el=document.getElementById('run-list');
+  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">🏃</div>Sin sesiones de running.<br>Importa un GPX o registra manualmente.</div>';return;}
+  el.innerHTML=data.map(e=>{
+    const cid='rc-'+e.id.replace(/[^a-z0-9]/gi,'');
+    const hasChart=e.paceSeries?.length||e.fcSeries?.length||e.cadSeries?.length;
+    const zones=e.zones||{};
+    const totalZones=[zones.z1,zones.z2,zones.z3,zones.z4,zones.z5].map(Number).filter(Boolean);
+    const totalZMin=totalZones.reduce((a,b)=>a+b,0);
+    return`<div class="entry">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div class="entry-date mono">${fmtD(e.date)}${e.route?' · '+e.route:''}</div>
+          <div class="entry-title">${e.dist||'?'} km${e.pace?' · '+e.pace+'/km':''}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;">
+            ${e.time?`<span class="tag tag-neutral">⏱ ${Math.floor(e.time/60)}h${String(Math.round(e.time%60)).padStart(2,'0')}m</span>`:''}
+            ${e.fcavg?`<span class="tag tag-green">❤️ ${e.fcavg}/${e.fcmax||'?'} bpm</span>`:''}
+            ${e.cal?`<span class="tag tag-orange">🔥 ${e.cal} kcal</span>`:''}
+            ${e.cad?`<span class="tag ${parseFloat(e.cad)<170?'tag-orange':'tag-green'}">👟 ${e.cad} ppm</span>`:''}
+            ${e.vo2?`<span class="tag tag-purple">VO2 ${e.vo2}</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn btn-ai btn-sm" onclick="aiRunEntryAnalysis('${e.id}')" style="font-size:11px;">🤖 IA</button>
+          <button class="btn btn-edit btn-sm" onclick="editRun('${e.id}')" style="font-size:11px;background:var(--accent-lt);color:var(--accent);border:1px solid rgba(37,99,235,.2);">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="delEntry('run','${e.id}',renderRun)">🗑️</button>
+        </div>
+      </div>
+
+      <!-- Full metrics grid -->
+      <div class="metric-grid" style="margin-top:10px;">
+        ${e.dist?`<div class="mbadge"><div class="mbadge-val">${e.dist}</div><div class="mbadge-lbl">Distancia km</div></div>`:''}
+        ${e.time?`<div class="mbadge"><div class="mbadge-val">${Math.floor(e.time/60)}:${String(Math.round(e.time%60)).padStart(2,'0')}</div><div class="mbadge-lbl">Tiempo</div></div>`:''}
+        ${e.pace?`<div class="mbadge"><div class="mbadge-val">${e.pace}</div><div class="mbadge-lbl">Ritmo min/km</div></div>`:''}
+        ${e.spd?`<div class="mbadge"><div class="mbadge-val">${e.spd}</div><div class="mbadge-lbl">Vel km/h</div></div>`:''}
+        ${e.fcavg?`<div class="mbadge"><div class="mbadge-val" style="color:var(--red)">${e.fcavg}</div><div class="mbadge-lbl">FC prom bpm</div></div>`:''}
+        ${e.fcmax?`<div class="mbadge"><div class="mbadge-val" style="color:var(--red)">${e.fcmax}</div><div class="mbadge-lbl">FC máx bpm</div></div>`:''}
+        ${e.fcpct?`<div class="mbadge"><div class="mbadge-val">${e.fcpct}%</div><div class="mbadge-lbl">% FC máx</div></div>`:''}
+        ${e.cal?`<div class="mbadge"><div class="mbadge-val">${e.cal}</div><div class="mbadge-lbl">Calorías</div></div>`:''}
+        ${e.cad?`<div class="mbadge"><div class="mbadge-val" style="color:${parseFloat(e.cad)<170?'var(--orange)':'var(--green)'}">${e.cad}</div><div class="mbadge-lbl">Cadencia ppm</div></div>`:''}
+        ${e.stride?`<div class="mbadge"><div class="mbadge-val">${e.stride}</div><div class="mbadge-lbl">Zancada m</div></div>`:''}
+        ${e.osc?`<div class="mbadge"><div class="mbadge-val" style="color:${parseFloat(e.osc)>7?'var(--orange)':'var(--green)'}">${e.osc}</div><div class="mbadge-lbl">Oscilación cm</div></div>`:''}
+        ${e.contact?`<div class="mbadge"><div class="mbadge-val">${e.contact}</div><div class="mbadge-lbl">Contacto ms</div></div>`:''}
+        ${(e.balL&&e.balR)?`<div class="mbadge"><div class="mbadge-val" style="font-size:13px;">${e.balL}/${e.balR}</div><div class="mbadge-lbl">Equilibrio %</div></div>`:''}
+        ${e.aero?`<div class="mbadge"><div class="mbadge-val">${e.aero}</div><div class="mbadge-lbl">Resist. aeróbica</div></div>`:''}
+        ${e.vo2?`<div class="mbadge"><div class="mbadge-val">${e.vo2}</div><div class="mbadge-lbl">VO2max est.</div></div>`:''}
+      </div>
+
+      <!-- HR Zones -->
+      ${totalZMin>0?`<div style="margin-top:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">⏱ Tiempo en zonas cardíacas</div>
+        ${['Z1','Z2','Z3','Z4','Z5'].map((z,i)=>{
+          const mins=parseFloat([zones.z1,zones.z2,zones.z3,zones.z4,zones.z5][i])||0;
+          const pct=totalZMin>0?Math.round(mins/totalZMin*100):0;
+          return mins>0?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <span style="font-size:10px;font-weight:700;color:${ZONE_COLORS[i]};width:22px;">${z}</span>
+            <div style="flex:1;background:var(--surface3);border-radius:3px;height:7px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:${ZONE_COLORS[i]};border-radius:3px;"></div>
+            </div>
+            <span style="font-size:10px;color:var(--text3);width:52px;text-align:right;font-family:'JetBrains Mono',monospace;">${mins}min (${pct}%)</span>
+          </div>`:''}).join('')}
+      </div>`:''}
+
+      <!-- Charts section -->
+      ${hasChart?`<div style="margin-top:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">📊 Gráficas</div>
+          <select onchange="switchRunChart(this,'${e.id}')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);">
+            ${e.paceSeries?.length&&e.fcSeries?.length?'<option value="pace-fc">Ritmo vs FC</option>':''}
+            ${e.paceSeries?.length&&e.cadSeries?.length?'<option value="pace-cad">Ritmo vs Cadencia</option>':''}
+            ${e.fcSeries?.length?'<option value="fc-only">FC por km</option>':''}
+            ${e.cadSeries?.length?'<option value="cad-only">Cadencia por km</option>':''}
+            ${e.paceSeries?.length?'<option value="pace-only">Ritmo por km</option>':''}
+          </select>
+        </div>
+        <div style="position:relative;height:160px;"><canvas id="${cid}"></canvas></div>
+      </div>`:''}
+
+      <div id="run-ai-${e.id}" style="margin-top:8px;"></div>
+      ${e.notes?`<div style="margin-top:5px;font-size:11px;color:var(--text3);">📝 ${e.notes}</div>`:''}
+    </div>`;
+  }).join('');
+
+  // Render initial charts
+  setTimeout(()=>{
+    data.forEach(e=>{
+      const cid='rc-'+e.id.replace(/[^a-z0-9]/gi,'');
+      const ctx=document.getElementById(cid);if(!ctx)return;
+      const sel=ctx.closest('.entry')?.querySelector('select');
+      if(sel)renderRunChart(cid,e,sel.value||sel.options[0]?.value||'pace-fc');
+    });
+  },100);
+}
+
+function switchRunChart(sel,id){
+  const e=ld('run').find(x=>x.id===id);if(!e)return;
+  const cid='rc-'+id.replace(/[^a-z0-9]/gi,'');
+  renderRunChart(cid,e,sel.value);
+}
+
+function renderRunChart(cid,e,mode){
+  const ctx=document.getElementById(cid);if(!ctx)return;
+  if(charts[cid])charts[cid].destroy();
+  const kmLabels=(e.paceSeries?.length||e.fcSeries?.length||e.cadSeries?.length)?
+    Array.from({length:Math.max(e.paceSeries?.length||0,e.fcSeries?.length||0,e.cadSeries?.length||0)},(_,i)=>`km ${i+1}`):[];
+  if(!kmLabels.length)return;
+
+  const paceToSecs=p=>{if(!p)return 0;if(typeof p==='number')return p;const[m,s]=(p+'').split(':');return parseInt(m)*60+parseInt(s||0);};
+  const paceData=(e.paceSeries||[]).map(paceToSecs);
+
+  let datasets=[],yAxes={};
+  if(mode==='pace-fc'||mode==='pace-only'){
+    if(paceData.length){datasets.push({label:'Ritmo (seg/km)',data:paceData,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',fill:true,tension:0.4,yAxisID:'yPace',pointRadius:3});
+    yAxes.yPace={type:'linear',position:'left',grid:{color:'rgba(148,163,184,.1)'},ticks:{callback:v=>{const m=Math.floor(v/60);return m+':'+(v%60).toString().padStart(2,'0')},font:{size:9},color:'#94a3b8'},title:{display:true,text:'Ritmo',font:{size:9}}};}
+  }
+  if(mode==='pace-fc'||mode==='fc-only'){
+    if(e.fcSeries?.length){datasets.push({label:'FC (bpm)',data:e.fcSeries,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:mode==='fc-only',tension:0.4,yAxisID:'yFC',pointRadius:3});
+    yAxes.yFC={type:'linear',position:mode==='pace-fc'?'right':'left',grid:{display:mode!=='pace-fc'},ticks:{font:{size:9},color:'#94a3b8'},title:{display:true,text:'FC bpm',font:{size:9}}};}
+  }
+  if(mode==='pace-cad'||mode==='cad-only'){
+    if(paceData.length&&mode==='pace-cad'){datasets.push({label:'Ritmo (seg/km)',data:paceData,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',fill:true,tension:0.4,yAxisID:'yPace',pointRadius:3});
+    yAxes.yPace={type:'linear',position:'left',grid:{color:'rgba(148,163,184,.1)'},ticks:{callback:v=>{const m=Math.floor(v/60);return m+':'+(v%60).toString().padStart(2,'0')},font:{size:9},color:'#94a3b8'}};}
+    if(e.cadSeries?.length){datasets.push({label:'Cadencia (ppm)',data:e.cadSeries,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.1)',fill:mode==='cad-only',tension:0.4,yAxisID:'yCad',pointRadius:3});
+    yAxes.yCad={type:'linear',position:mode==='pace-cad'?'right':'left',grid:{display:mode!=='pace-cad'},ticks:{font:{size:9},color:'#94a3b8'},title:{display:true,text:'Cadencia',font:{size:9}}};}
+  }
+  if(!datasets.length)return;
+  const tooltipCb={label:function(ctx){if(ctx.dataset.yAxisID==='yPace'){const v=ctx.raw;const m=Math.floor(v/60);const s=(v%60).toString().padStart(2,'0');return ctx.dataset.label+': '+m+':'+s;}return ctx.dataset.label+': '+ctx.raw;}};
+  charts[cid]=new Chart(ctx,{type:'line',data:{labels:kmLabels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:12}},tooltip:{callbacks:tooltipCb}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#94a3b8'}},...yAxes},animation:{duration:400}}});
+}
+
+async function aiRunEntryAnalysis(id){
+  const el=document.getElementById(`run-ai-${id}`);if(!el)return;
+  if(el.innerHTML.includes('ai-box')){el.innerHTML='';return;}
+  const e=ld('run').find(x=>x.id===id);if(!e)return;
+  setAI(el,'🤖 Analizando sesión de running...','loading');
+  const zones=e.zones||{};
+  const zonesStr=Object.entries(zones).filter(([,v])=>v).map(([k,v])=>`${k.toUpperCase()}:${v}min`).join(', ');
+  const userZones=getZones().map((z,i)=>`${z.name}(${z.min}-${z.max}bpm)`).join(', ');
+  const prof=`Atleta: Ivan, 46 años, ${profile.weight||68}kg, ${profile.height||165}cm, FC máx ${profile.fcmax||190}bpm, FC reposo ${profile.fcrest||54}bpm. Objetivo: ${profile.goal||'rendimiento'}. Zonas FC configuradas: ${userZones}.`;
+  const metrics=`Sesión running ${e.date}:
+- Distancia: ${e.dist||'?'} km, Tiempo: ${e.time||'?'} min, Ritmo prom: ${e.pace||'?'} min/km
+- Velocidad prom: ${e.spd||'?'} km/h, Calorías: ${e.cal||'?'} kcal
+- FC prom: ${e.fcavg||'?'} bpm, FC máx: ${e.fcmax||'?'} bpm, % FC máx: ${e.fcpct||'?'}%
+- Cadencia: ${e.cad||'?'} ppm (objetivo >172ppm), Longitud zancada: ${e.stride||'?'} m
+- Oscilación vertical: ${e.osc||'?'} cm (objetivo <7cm), Contacto suelo: ${e.contact||'?'} ms
+- Equilibrio: ${e.balL||'?'}% izq / ${e.balR||'?'}% der
+- VO2max estimado: ${e.vo2||'?'}, Resistencia aeróbica: ${e.aero||'?'}
+- Tiempo en zonas: ${zonesStr||'no registrado'}
+- Ruta: ${e.route||'no especificada'}`;
+  const prompt=`${prof}
+
+${metrics}
+
+Analiza esta sesión de running de forma CONCRETA con datos específicos:
+1) **Evaluación del rendimiento**: ritmo vs capacidad actual, qué tan exigente fue la sesión
+2) **Análisis cardíaco**: distribución de zonas, si el esfuerzo fue adecuado al objetivo
+3) **Biomecánica**: cadencia (objetivo 172+ ppm), oscilación vertical (objetivo <7cm), contacto suelo y equilibrio
+4) **Puntos fuertes**: qué ejecutó bien
+5) **Plan para la próxima sesión**: tipo de entreno recomendado, ritmo objetivo, duración
+6) **Alerta de lesión**: si hay señales de riesgo en cuádriceps u hombro.
+Máx 400 palabras. Responde en español con negrita en secciones.`;
+  const text=await callAI(prompt);
+  setAI(el,text,'ok');
+}
+
+
+function renderBike(){
+  const data=ld('bike');
+  const el=document.getElementById('bike-list');
+  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">🚴</div>Sin rutas de ciclismo.<br>Importa un GPX o registra manualmente.</div>';return;}
+  el.innerHTML=data.map(e=>{
+    const cid='bc-'+e.id.replace(/[^a-z0-9]/gi,'');
+    const hasChart=e.spdSeries?.length||e.fcSeries?.length||e.cadSeries?.length;
+    const zones=e.zones||{};
+    const totalZones=[zones.z1,zones.z2,zones.z3,zones.z4,zones.z5].map(Number).filter(Boolean);
+    const totalZMin=totalZones.reduce((a,b)=>a+b,0);
+    return`<div class="entry">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div class="entry-date mono">${fmtD(e.date)} · <span style="color:var(--accent);">${e.type||''}</span></div>
+          <div class="entry-title">${e.route||'Ruta ciclismo'}${e.dist?' · '+e.dist+' km':''}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;">
+            ${e.time?`<span class="tag tag-neutral">⏱ ${Math.floor(e.time/60)}h${String(Math.round(e.time%60)).padStart(2,'0')}m</span>`:''}
+            ${e.spd?`<span class="tag tag-blue">⚡ ${e.spd} km/h</span>`:''}
+            ${e.fc?`<span class="tag tag-green">❤️ ${e.fc} bpm</span>`:''}
+            ${e.cad?`<span class="tag tag-neutral">🔄 ${e.cad} rpm</span>`:''}
+            ${e.cal?`<span class="tag tag-orange">🔥 ${e.cal} kcal</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn btn-ai btn-sm" onclick="aiBikeEntryAnalysis('${e.id}')" style="font-size:11px;">🤖 IA</button>
+          <button class="btn btn-edit btn-sm" onclick="editBike('${e.id}')" style="font-size:11px;background:var(--accent-lt);color:var(--accent);border:1px solid rgba(37,99,235,.2);">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="delEntry('bike','${e.id}',renderBike)">🗑️</button>
+        </div>
+      </div>
+
+      <!-- Full metrics grid -->
+      <div class="metric-grid" style="margin-top:10px;">
+        ${e.dist?`<div class="mbadge"><div class="mbadge-val">${e.dist}</div><div class="mbadge-lbl">Distancia km</div></div>`:''}
+        ${e.time?`<div class="mbadge"><div class="mbadge-val">${Math.floor(e.time/60)}:${String(Math.round(e.time%60)).padStart(2,'0')}</div><div class="mbadge-lbl">Tiempo</div></div>`:''}
+        ${e.spd?`<div class="mbadge"><div class="mbadge-val" style="color:var(--accent)">${e.spd}</div><div class="mbadge-lbl">Vel prom km/h</div></div>`:''}
+        ${e.spdmax?`<div class="mbadge"><div class="mbadge-val">${e.spdmax}</div><div class="mbadge-lbl">Vel máx km/h</div></div>`:''}
+        ${e.fc?`<div class="mbadge"><div class="mbadge-val" style="color:var(--red)">${e.fc}</div><div class="mbadge-lbl">FC prom bpm</div></div>`:''}
+        ${e.fcmax?`<div class="mbadge"><div class="mbadge-val" style="color:var(--red)">${e.fcmax}</div><div class="mbadge-lbl">FC máx bpm</div></div>`:''}
+        ${e.cad?`<div class="mbadge"><div class="mbadge-val" style="color:${parseFloat(e.cad)<80?'var(--orange)':'var(--green)'}">${e.cad}</div><div class="mbadge-lbl">Cadencia rpm</div></div>`:''}
+        ${e.power?`<div class="mbadge"><div class="mbadge-val" style="color:var(--purple)">${e.power}</div><div class="mbadge-lbl">Potencia W</div></div>`:''}
+        ${e.cal?`<div class="mbadge"><div class="mbadge-val">${e.cal}</div><div class="mbadge-lbl">Calorías</div></div>`:''}
+        ${e.elev?`<div class="mbadge"><div class="mbadge-val">${e.elev}</div><div class="mbadge-lbl">Desnivel m</div></div>`:''}
+        ${e.asc?`<div class="mbadge"><div class="mbadge-val">${e.asc}</div><div class="mbadge-lbl">Ascenso m</div></div>`:''}
+        ${e.altmax?`<div class="mbadge"><div class="mbadge-val">${e.altmax}</div><div class="mbadge-lbl">Alt máx m</div></div>`:''}
+        ${e.aero?`<div class="mbadge"><div class="mbadge-val">${e.aero}</div><div class="mbadge-lbl">Resist aeróbica</div></div>`:''}
+      </div>
+
+      <!-- HR Zones -->
+      ${totalZMin>0?`<div style="margin-top:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">⏱ Tiempo en zonas cardíacas</div>
+        ${['Z1','Z2','Z3','Z4','Z5'].map((z,i)=>{
+          const mins=parseFloat([zones.z1,zones.z2,zones.z3,zones.z4,zones.z5][i])||0;
+          const pct=totalZMin>0?Math.round(mins/totalZMin*100):0;
+          return mins>0?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <span style="font-size:10px;font-weight:700;color:${ZONE_COLORS[i]};width:22px;">${z}</span>
+            <div style="flex:1;background:var(--surface3);border-radius:3px;height:7px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:${ZONE_COLORS[i]};border-radius:3px;"></div>
+            </div>
+            <span style="font-size:10px;color:var(--text3);width:52px;text-align:right;font-family:'JetBrains Mono',monospace;">${mins}min (${pct}%)</span>
+          </div>`:''}).join('')}
+      </div>`:''}
+
+      <!-- Charts -->
+      ${hasChart?`<div style="margin-top:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">📊 Gráficas</div>
+          <select onchange="switchBikeChart(this,'${e.id}')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);">
+            ${e.spdSeries?.length&&e.fcSeries?.length?'<option value="spd-fc">Velocidad vs FC</option>':''}
+            ${e.spdSeries?.length&&e.cadSeries?.length?'<option value="spd-cad">Velocidad vs Cadencia</option>':''}
+            ${e.fcSeries?.length?'<option value="fc-only">FC por km</option>':''}
+            ${e.cadSeries?.length?'<option value="cad-only">Cadencia por km</option>':''}
+            ${e.spdSeries?.length?'<option value="spd-only">Velocidad por km</option>':''}
+          </select>
+        </div>
+        <div style="position:relative;height:160px;"><canvas id="${cid}"></canvas></div>
+      </div>`:''}
+
+      <div id="bike-ai-${e.id}" style="margin-top:8px;"></div>
+      ${e.notes?`<div style="margin-top:5px;font-size:11px;color:var(--text3);">📝 ${e.notes}</div>`:''}
+    </div>`;
+  }).join('');
+
+  setTimeout(()=>{
+    data.forEach(e=>{
+      const cid='bc-'+e.id.replace(/[^a-z0-9]/gi,'');
+      const ctx=document.getElementById(cid);if(!ctx)return;
+      const sel=ctx.closest('.entry')?.querySelector('select');
+      if(sel)renderBikeChart(cid,e,sel.value||sel.options[0]?.value||'spd-fc');
+    });
+  },100);
+}
+
+function switchBikeChart(sel,id){
+  const e=ld('bike').find(x=>x.id===id);if(!e)return;
+  const cid='bc-'+id.replace(/[^a-z0-9]/gi,'');
+  renderBikeChart(cid,e,sel.value);
+}
+
+function renderBikeChart(cid,e,mode){
+  const ctx=document.getElementById(cid);if(!ctx)return;
+  if(charts[cid])charts[cid].destroy();
+  const n=Math.max(e.spdSeries?.length||0,e.fcSeries?.length||0,e.cadSeries?.length||0);
+  if(!n)return;
+  const kmLabels=Array.from({length:n},(_,i)=>`km ${i+1}`);
+  let datasets=[],yAxes={};
+  if(['spd-fc','spd-cad','spd-only'].includes(mode)&&e.spdSeries?.length){
+    datasets.push({label:'Vel (km/h)',data:e.spdSeries,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',fill:mode==='spd-only',tension:0.4,yAxisID:'ySpd',pointRadius:3});
+    yAxes.ySpd={type:'linear',position:'left',grid:{color:'rgba(148,163,184,.1)'},ticks:{font:{size:9},color:'#94a3b8'},title:{display:true,text:'km/h',font:{size:9}}};
+  }
+  if(['spd-fc','fc-only'].includes(mode)&&e.fcSeries?.length){
+    datasets.push({label:'FC (bpm)',data:e.fcSeries,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:mode==='fc-only',tension:0.4,yAxisID:'yFC',pointRadius:3});
+    yAxes.yFC={type:'linear',position:mode==='fc-only'?'left':'right',grid:{display:mode==='fc-only'},ticks:{font:{size:9},color:'#94a3b8'},title:{display:true,text:'bpm',font:{size:9}}};
+  }
+  if(['spd-cad','cad-only'].includes(mode)&&e.cadSeries?.length){
+    datasets.push({label:'Cadencia (rpm)',data:e.cadSeries,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.1)',fill:mode==='cad-only',tension:0.4,yAxisID:'yCad',pointRadius:3});
+    yAxes.yCad={type:'linear',position:mode==='cad-only'?'left':'right',grid:{display:mode==='cad-only'},ticks:{font:{size:9},color:'#94a3b8'},title:{display:true,text:'rpm',font:{size:9}}};
+  }
+  if(!datasets.length)return;
+  charts[cid]=new Chart(ctx,{type:'line',data:{labels:kmLabels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:12}}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#94a3b8'}},...yAxes},animation:{duration:400}}});
+}
+
+async function aiBikeEntryAnalysis(id){
+  const el=document.getElementById(`bike-ai-${id}`);if(!el)return;
+  if(el.innerHTML.includes('ai-box')){el.innerHTML='';return;}
+  const e=ld('bike').find(x=>x.id===id);if(!e)return;
+  setAI(el,'🤖 Analizando ruta de ciclismo...','loading');
+  const zones=e.zones||{};
+  const zonesStr=Object.entries(zones).filter(([,v])=>parseFloat(v)>0).map(([k,v])=>`${k.toUpperCase()}:${v}min`).join(', ');
+  const userZones=getZones().map(z=>`${z.name}(${z.min}-${z.max}bpm)`).join(', ');
+  const prof=`Atleta: Ivan, 46 años, ${profile.weight||68}kg, FC máx ${profile.fcmax||190}bpm. Bici: Cipollini M60. Objetivo: ${profile.goal||'rendimiento'}. Zonas FC: ${userZones}.`;
+  const metrics=`Ruta ${e.route||'ciclismo'} del ${e.date} (${e.type||'fondo'}):
+- Distancia: ${e.dist||'?'} km, Tiempo: ${e.time||'?'} min
+- Velocidad prom: ${e.spd||'?'} km/h, Vel máx: ${e.spdmax||'?'} km/h
+- FC prom: ${e.fc||'?'} bpm, FC máx: ${e.fcmax||'?'} bpm
+- Cadencia prom: ${e.cad||'?'} rpm (objetivo 85-95rpm)
+- Potencia virtual: ${e.power||'?'} W, Calorías: ${e.cal||'?'} kcal
+- Desnivel: ${e.elev||'?'} m, Ascenso: ${e.asc||'?'} m, Altitud máx: ${e.altmax||'?'} m
+- Resistencia aeróbica: ${e.aero||'?'}
+- Tiempo en zonas: ${zonesStr||'no registrado'}`;
+  const prompt=`${prof}
+
+${metrics}
+
+Analiza esta ruta de ciclismo CONCRETAMENTE con datos específicos:
+1) **Rendimiento general**: velocidad vs capacidad del atleta, TSS estimado, intensidad adecuada
+2) **Análisis cardíaco**: distribución en zonas, si el esfuerzo fue apropiado
+3) **Cadencia**: evaluación vs objetivo 85-95rpm, impacto en rodillas y eficiencia
+4) **Potencia y esfuerzo**: si la potencia es coherente con la velocidad y desnivel
+5) **Puntos fuertes de la ruta**
+6) **Plan siguiente sesión**: tipo de entrenamiento recomendado (fondo, cadencia, intervalos)
+7) **Alerta de sobreentrenamiento o lesión** si aplica.
+Máx 400 palabras. Responde en español con negrita.`;
+  const text=await callAI(prompt);
+  setAI(el,text,'ok');
+}
+
+
+function renderWeight(){
+  const data=ld('weight');
+  const sum=document.getElementById('weight-summary');
+  if(data.length&&sum){
+    const lat=data[0],first=data[data.length-1];
+    const diff=(parseFloat(lat.kg)-parseFloat(first.kg)).toFixed(1);
+    const toGoal=(parseFloat(lat.kg)-66).toFixed(1);
+    const pct=Math.min(100,Math.max(0,((67.5-parseFloat(lat.kg))/(67.5-66))*100));
+    sum.innerHTML=`<div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+        <div><div style="font-size:40px;font-weight:800;color:var(--accent);line-height:1;">${lat.kg}<span style="font-size:16px;color:var(--text3);font-weight:400"> kg</span></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${fmtD(lat.date)} · ${lat.when||''}</div>
+        </div>
+        <div class="metric-grid">
+          <div class="mbadge"><div class="mbadge-val" style="color:${parseFloat(toGoal)>0?'var(--orange)':'var(--green)'};">${parseFloat(toGoal)>0?'+':''}${toGoal}</div><div class="mbadge-lbl">kg a meta</div></div>
+          <div class="mbadge"><div class="mbadge-val" style="color:${parseFloat(diff)<0?'var(--green)':'var(--orange)'};">${parseFloat(diff)>0?'+':''}${diff}</div><div class="mbadge-lbl">vs inicio</div></div>
+          ${lat.fat?`<div class="mbadge"><div class="mbadge-val">${lat.fat}%</div><div class="mbadge-lbl">% grasa</div></div>`:''}
+          ${lat.muscle?`<div class="mbadge"><div class="mbadge-val">${lat.muscle}%</div><div class="mbadge-lbl">% músculo</div></div>`:''}
+          ${lat.imc?`<div class="mbadge"><div class="mbadge-val">${lat.imc}</div><div class="mbadge-lbl">IMC</div></div>`:''}
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Progreso hacia 66 kg</div>
+      <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:var(--accent);"></div></div>
+      <div class="prog-labels"><span>67.5 kg</span><span>${pct.toFixed(0)}%</span><span>66 kg ✓</span></div>
+    </div>`;
+  }
+  // Weight chart
+  setTimeout(()=>{
+    if(data.length>=2){
+      const labels=data.slice(0,12).reverse().map(e=>fmtD(e.date));
+      const vals=data.slice(0,12).reverse().map(e=>parseFloat(e.kg)||0);
+      mkChart('chart-weight','line',labels,[{label:'Peso (kg)',data:vals,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:'#2563eb'}],{extra:{elements:{line:{borderWidth:2}}}});
+    }
+  },100);
+  const list=document.getElementById('weight-list');
+  if(!data.length){list.innerHTML='<div class="empty"><div class="empty-icon">⚖️</div>Sin registros de peso.</div>';return;}
+  list.innerHTML=data.map(e=>`
+    <div class="entry">
+      <div class="entry-header">
+        <div><div class="entry-date">${fmtD(e.date)} · ${e.when||''}</div>
+          <div class="entry-title">${e.kg} kg${e.fat?' · '+e.fat+'% grasa':''}</div>
+          ${(e.muscle||e.water||e.bmr)?`<div class="metric-grid" style="margin-top:4px;">
+            ${e.muscle?`<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">${e.muscle}%</div><div class="mbadge-lbl">músculo</div></div>`:''}
+            ${e.water?`<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">${e.water}%</div><div class="mbadge-lbl">agua</div></div>`:''}
+            ${e.imc?`<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">${e.imc}</div><div class="mbadge-lbl">IMC</div></div>`:''}
+            ${e.bmr?`<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">${e.bmr}</div><div class="mbadge-lbl">kcal basal</div></div>`:''}
+          </div>`:''}
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="delEntry('weight','${e.id}',renderWeight)">🗑️</button>
+      </div>
+      ${e.notes?`<div style="font-size:11px;color:var(--text3);">📝 ${e.notes}</div>`:''}
+    </div>`).join('');
+}
+
+function renderRec(){
+  const data=ld('rec');
+  setTimeout(()=>{
+    if(data.length>=2){
+      const labels=data.slice(0,10).reverse().map(e=>fmtD(e.date));
+      const sleepV=data.slice(0,10).reverse().map(e=>parseFloat(e.sleepq)||0);
+      const energyV=data.slice(0,10).reverse().map(e=>parseFloat(e.energy)||0);
+      const moodV=data.slice(0,10).reverse().map(e=>parseFloat(e.mood)||0);
+      mkChart('chart-sleep','line',labels,[{label:'Calidad sueño',data:sleepV,borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,.1)',fill:true,tension:0.3}],{extra:{scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{min:0,max:10,ticks:{font:{size:9}}}}}});
+      mkChart('chart-energy','line',labels,[{label:'Energía',data:energyV,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.1)',fill:true,tension:0.3},{label:'Ánimo',data:moodV,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.1)',fill:false,tension:0.3}],{legend:true,extra:{scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{min:0,max:10,ticks:{font:{size:9}}}}}});
+    }
+  },100);
+  const el=document.getElementById('rec-list');
+  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔄</div>Sin registros de recuperación.</div>';return;}
+  el.innerHTML=data.map(e=>`
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-date">${fmtD(e.date)}</div>
+        <div style="display:flex;gap:5px;">
+          <button onclick="editRec('${e.id}')" style="font-size:11px;background:var(--accent-lt);color:var(--accent);border:1px solid rgba(37,99,235,.2);padding:4px 9px;border-radius:6px;cursor:pointer;font-weight:600;">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="delEntry('rec','${e.id}',renderRec)">🗑️</button>
+        </div>
+      </div>
+      <div class="rec-scores">
+        ${e.sleep?`<div class="rs-item"><div class="rs-val" style="color:${parseFloat(e.sleep)>=7?'var(--green)':'var(--orange)'};">${e.sleep}</div><div class="rs-lbl">hrs sueño</div></div>`:''}
+        ${e.sleepq?`<div class="rs-item"><div class="rs-val" style="color:${scC(e.sleepq)}">${e.sleepq}/10</div><div class="rs-lbl">calidad</div></div>`:''}
+        ${e.energy?`<div class="rs-item"><div class="rs-val" style="color:${scC(e.energy)}">${e.energy}/10</div><div class="rs-lbl">energía</div></div>`:''}
+        ${e.sore?`<div class="rs-item"><div class="rs-val" style="color:${scC(e.sore,true)}">${e.sore}/10</div><div class="rs-lbl">dolor</div></div>`:''}
+        ${e.mood?`<div class="rs-item"><div class="rs-val" style="color:${scC(e.mood)}">${e.mood}/10</div><div class="rs-lbl">ánimo</div></div>`:''}
+        ${e.fcrest?`<div class="rs-item"><div class="rs-val" style="color:var(--text);">${e.fcrest}</div><div class="rs-lbl">FC reposo</div></div>`:''}
+        ${e.hrv?`<div class="rs-item"><div class="rs-val" style="color:var(--text);">${e.hrv}</div><div class="rs-lbl">HRV ms</div></div>`:''}
+      </div>
+      ${e.zone?`<div style="margin-top:6px;"><span class="tag tag-red">🔴 ${e.zone}</span></div>`:''}
+      ${e.notes?`<div style="margin-top:4px;font-size:11px;color:var(--text3);">📝 ${e.notes}</div>`:''}
+    </div>`).join('');
+}
+
+function renderGoals(){
+  const data=ld('goals');const el=document.getElementById('goals-list');
+  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">🎯</div>Sin metas. ¡Crea tu primer objetivo!</div>';return;}
+  const catC={cycling:'tag-blue',running:'tag-green',triathlon:'tag-blue',gym:'tag-neutral',weight:'tag-orange',aspiration:'tag-neutral'};
+  const catI={cycling:'🚴',running:'🏃',triathlon:'🏊',gym:'🏋️',weight:'⚖️',aspiration:'⭐'};
+  el.innerHTML=data.map(g=>{
+    const pct=g.target?Math.min(100,Math.max(0,(g.current/g.target*100))):0;
+    const dl=g.deadline?Math.ceil((new Date(g.deadline)-new Date())/86400000):null;
+    const barC=pct>=100?'var(--green)':pct>60?'var(--accent)':'var(--orange)';
+    return`<div class="goal-card">
+      <div class="goal-head">
+        <div><span class="tag ${catC[g.cat]||'tag-neutral'}" style="margin-bottom:5px;display:inline-block;">${catI[g.cat]||'⭐'} ${g.cat}</span>
+          <div class="goal-name">${g.name}</div>
+          ${g.desc?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">${g.desc}</div>`:''}
+        </div>
+        <div style="display:flex;gap:5px;align-items:flex-start;">
+          ${dl!==null?`<span class="tag ${dl<7?'tag-red':dl<30?'tag-orange':'tag-neutral'}">${dl>0?dl+'d':'Vencida'}</span>`:''}
+          <button class="btn btn-danger btn-sm" onclick="delEntry('goals','${g.id}',renderGoals)">🗑️</button>
+        </div>
+      </div>
+      ${g.cat!=='aspiration'?`<div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${barC};"></div></div>
+      <div class="prog-labels"><span class="mono">${g.current} ${g.unit}</span><span style="font-weight:700;">${pct.toFixed(0)}%</span><span class="mono">${g.target} ${g.unit}</span></div>`:''}
+      <div style="margin-top:10px;display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="updateGoalProgress('${g.id}')">📈 Actualizar</button>
+      </div>
+    </div>`;}).join('');
+}
+
+// ══ NAV & MODALS ══
+const PAGE_NAMES={dash:'Dashboard',gym:'Gym · Entrenamiento',running:'Running',cycling:'Ciclismo',weight:'Peso & Cuerpo',recovery:'Recuperación',goals:'Metas & IA',profile:'Perfil del Atleta',import:'Importar datos'};
+function go(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('p-'+name).classList.add('active');
+  if(btn)btn.classList.add('active');
+  else{const b=document.querySelector(`.sb-item[onclick*="'${name}'"]`);if(b)b.classList.add('active');}
+  document.getElementById('topnav-title').textContent=PAGE_NAMES[name]||name;
+  const r={dash:renderDash,gym:()=>{renderGym();loadRT();},running:renderRun,cycling:renderBike,weight:renderWeight,recovery:renderRec,goals:renderGoals,profile:()=>{loadProfileToForm();renderProfSummary();updateProfileDisplay();}};
+  if(r[name])r[name]();
+}
+function openM(t){
+  document.getElementById('m-'+t).classList.add('open');
+  const d=today();const map={run:'r-date',bike:'b-date',weight:'w-date',rec:'rc-date'};
+  if(map[t])document.getElementById(map[t]).value=d;
+}
+function closeM(t){
+  document.getElementById('m-'+t).classList.remove('open');
+  if(t==='run')resetRunModal();
+  if(t==='bike')resetBikeModal();
+}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+function switchIP(t){
+  document.getElementById('ip-files').style.display=t==='files'?'block':'none';
+  document.getElementById('ip-ai').style.display=t==='ai'?'block':'none';
+  document.getElementById('iptab-f').className='btn btn-sm '+(t==='files'?'btn-primary':'btn-ghost');
+  document.getElementById('iptab-a').className='btn btn-sm '+(t==='ai'?'btn-primary':'btn-ghost');
+}
+
+// ══ UTILS ══
+const fmtD=s=>{if(!s)return'—';const[y,m,d]=s.split('-');const ms=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return`${d} ${ms[+m-1]} ${y}`;};
+const scC=(v,inv=false)=>{const n=parseFloat(v);if(isNaN(n))return'var(--text3)';return inv?(n<=3?'var(--green)':n>=7?'var(--red)':'var(--orange)'):(n>=7?'var(--green)':n<=3?'var(--red)':'var(--orange)');};
+function showToast(msg){const t=document.createElement('div');t.style.cssText='position:fixed;bottom:22px;right:22px;background:#0f172a;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 8px 20px rgba(0,0,0,.25);';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2500);}
+
+// ══ INIT ══
+
+// ══ ONEDRIVE SYNC ══
+const OD_CLIENT_ID = 'ivan-pro-app'; // placeholder — user sets their own
+const OD_SCOPES = ['Files.ReadWrite', 'User.Read'];
+const OD_FILE_PATH = '/me/drive/root:/IvanPro/datos.json:/content';
+let msalInstance = null;
+let odAccount = null;
+let odAutoSyncInterval = null;
+
+function initMSAL(clientId){
+  if(!clientId||!window.msal){return null;}
+  try{
+    return new msal.PublicClientApplication({
+      auth:{clientId,authority:'https://login.microsoftonline.com/common',
+        redirectUri:window.location.href.split('?')[0]},
+      cache:{cacheLocation:'localStorage',storeAuthStateInCookie:false}
+    });
+  }catch(e){console.error('MSAL init failed:',e);return null;}
+}
+
+async function odLogin(){
+  const clientId=profile.odClientId||localStorage.getItem('iv_od_clientid');
+  if(!clientId){
+    const id=prompt('Para usar OneDrive necesitas registrar esta app en Azure AD (gratis).\n\nIngresa tu Application (Client) ID de Azure:\n(Si no tienes uno, visita: portal.azure.com → App registrations → New registration)');
+    if(!id)return;
+    localStorage.setItem('iv_od_clientid',id.trim());
+    showToast('Client ID guardado. Intenta conectar de nuevo.');
+    showODSetupGuide();
+    return;
+  }
+  msalInstance=initMSAL(clientId);
+  if(!msalInstance){
+    showODSimpleExport();
+    return;
+  }
+  try{
+    const result=await msalInstance.loginPopup({scopes:OD_SCOPES});
+    odAccount=result.account;
+    localStorage.setItem('iv_od_account',JSON.stringify({name:odAccount.name,username:odAccount.username}));
+    updateODUI(true);
+    showToast('✅ Conectado a OneDrive como '+odAccount.name);
+  }catch(e){
+    if(e.errorCode==='user_cancelled')return;
+    showODSimpleExport();
+  }
+}
+
+function odLogout(){
+  odAccount=null;
+  localStorage.removeItem('iv_od_account');
+  if(odAutoSyncInterval){clearInterval(odAutoSyncInterval);odAutoSyncInterval=null;}
+  updateODUI(false);
+  showToast('Desconectado de OneDrive');
+}
+
+async function getODToken(){
+  if(!msalInstance||!odAccount)return null;
+  const clientId=localStorage.getItem('iv_od_clientid');
+  msalInstance=msalInstance||initMSAL(clientId);
+  try{
+    const result=await msalInstance.acquireTokenSilent({scopes:OD_SCOPES,account:odAccount});
+    return result.accessToken;
+  }catch(e){
+    const result=await msalInstance.acquireTokenPopup({scopes:OD_SCOPES});
+    return result.accessToken;
+  }
+}
+
+async function odSave(){
+  const el=document.getElementById('od-sync-result');
+  if(!msalInstance||!odAccount){showODSimpleExport();return;}
+  setAI(el,'☁️ Guardando en OneDrive...','loading');
+  try{
+    const token=await getODToken();
+    const allData={
+      gym:ld('gym'),run:ld('run'),bike:ld('bike'),
+      weight:ld('weight'),rec:ld('rec'),goals:ld('goals'),
+      profile:ldObj('profile'),
+      savedAt:new Date().toISOString(),
+      version:'v7'
+    };
+    const res=await fetch('https://graph.microsoft.com/v1.0'+OD_FILE_PATH,{
+      method:'PUT',
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify(allData,null,2)
+    });
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const now=new Date().toLocaleString('es-CO');
+    localStorage.setItem('iv_od_last_sync','Guardado: '+now);
+    document.getElementById('od-last-sync').textContent='Último guardado: '+now;
+    setAI(el,'✅ Datos guardados en OneDrive/IvanPro/datos.json<br><small>'+Object.keys(allData).filter(k=>Array.isArray(allData[k])).map(k=>k+': '+allData[k].length+' registros').join(' · ')+'</small>','ok');
+  }catch(e){
+    setAI(el,'❌ Error guardando: '+e.message+'<br><small>Verifica permisos de la app en Azure AD.</small>','err');
+  }
+}
+
+async function odLoad(){
+  const el=document.getElementById('od-sync-result');
+  if(!msalInstance||!odAccount){showODSimpleImport();return;}
+  setAI(el,'📥 Cargando desde OneDrive...','loading');
+  try{
+    const token=await getODToken();
+    const res=await fetch('https://graph.microsoft.com/v1.0'+OD_FILE_PATH,{
+      headers:{'Authorization':'Bearer '+token}
+    });
+    if(res.status===404){setAI(el,'📭 No hay datos guardados aún en OneDrive. Guarda primero desde este dispositivo.','info');return;}
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    if(!confirm('¿Cargar datos de OneDrive? Esto reemplazará los datos locales actuales.\nGuardado: '+(data.savedAt||'?')))return;
+    if(data.gym)sv('gym',data.gym);
+    if(data.run)sv('run',data.run);
+    if(data.bike)sv('bike',data.bike);
+    if(data.weight)sv('weight',data.weight);
+    if(data.rec)sv('rec',data.rec);
+    if(data.goals)sv('goals',data.goals);
+    if(data.profile){sv('profile',data.profile);profile=data.profile;}
+    renderDash();renderGym();renderRun();renderBike();renderWeight();renderRec();renderGoals();
+    const now=new Date().toLocaleString('es-CO');
+    localStorage.setItem('iv_od_last_sync','Cargado: '+now);
+    setAI(el,'✅ Datos cargados correctamente desde OneDrive<br><small>Guardado originalmente: '+(data.savedAt?new Date(data.savedAt).toLocaleString('es-CO'):'?')+'</small>','ok');
+  }catch(e){
+    setAI(el,'❌ Error cargando: '+e.message,'err');
+  }
+}
+
+function odAutoSync(){
+  const btn=document.getElementById('od-autosync-btn');
+  if(odAutoSyncInterval){
+    clearInterval(odAutoSyncInterval);odAutoSyncInterval=null;
+    if(btn)btn.textContent='🔄 Auto-sync: OFF';
+    showToast('Auto-sync desactivado');
+  }else{
+    odAutoSyncInterval=setInterval(()=>{if(odAccount)odSave();},5*60*1000);// each 5 min
+    if(btn)btn.textContent='🔄 Auto-sync: ON (5min)';
+    showToast('✅ Auto-sync activado — guarda cada 5 minutos');
+    odSave();// save immediately
+  }
+}
+
+function updateODUI(loggedIn){
+  document.getElementById('od-logged-out').style.display=loggedIn?'none':'block';
+  document.getElementById('od-logged-in').style.display=loggedIn?'block':'none';
+  if(loggedIn&&odAccount){
+    document.getElementById('od-username').textContent=odAccount.name+' ('+odAccount.username+')';
+    const ls=localStorage.getItem('iv_od_last_sync');
+    document.getElementById('od-last-sync').textContent=ls||'Sin sincronizaciones aún';
+  }
+}
+
+// Simple export/import as fallback (no Azure app needed)
+function showODSimpleExport(){
+  const allData={gym:ld('gym'),run:ld('run'),bike:ld('bike'),weight:ld('weight'),rec:ld('rec'),goals:ld('goals'),profile:ldObj('profile'),savedAt:new Date().toISOString(),version:'v7'};
+  const blob=new Blob([JSON.stringify(allData,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='IvanPro_backup_'+new Date().toISOString().split('T')[0]+'.json';a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ Backup descargado — guárdalo en OneDrive manualmente');
+  const el=document.getElementById('od-sync-result');
+  if(el)setAI(el,'✅ Archivo <strong>IvanPro_backup.json</strong> descargado.<br>Guárdalo en tu carpeta de OneDrive para tenerlo disponible en otros dispositivos.<br><div style="margin-top:8px;"><button onclick="showODImportFile()" class="btn btn-ghost btn-sm">📥 Cargar backup JSON</button></div>','ok');
+}
+
+function showODImportFile(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=async e=>{
+    const f=e.target.files[0];if(!f)return;
+    const text=await f.text();
+    try{
+      const data=JSON.parse(text);
+      if(!data.version&&!data.gym&&!data.run){alert('Archivo no válido');return;}
+      if(!confirm('¿Cargar datos del archivo? Guardado: '+(data.savedAt||'?')))return;
+      if(data.gym)sv('gym',data.gym);if(data.run)sv('run',data.run);if(data.bike)sv('bike',data.bike);
+      if(data.weight)sv('weight',data.weight);if(data.rec)sv('rec',data.rec);if(data.goals)sv('goals',data.goals);
+      if(data.profile){sv('profile',data.profile);profile=data.profile;}
+      renderDash();renderGym();renderRun();renderBike();renderWeight();renderRec();renderGoals();
+      showToast('✅ Datos cargados desde backup');
+    }catch(e){alert('Error leyendo archivo: '+e.message);}
+  };
+  inp.click();
+}
+
+function showODSetupGuide(){
+  const el=document.getElementById('od-sync-result');
+  if(!el)return;
+  setAI(el,`<strong>📋 Cómo obtener tu Client ID de Azure (gratis):</strong><br>
+    1. Ve a <strong>portal.azure.com</strong> (con tu cuenta Microsoft)<br>
+    2. Busca <strong>App registrations</strong> → <strong>New registration</strong><br>
+    3. Nombre: <em>IVAN PRO</em> · Tipo: <em>Personal Microsoft accounts only</em><br>
+    4. Redirect URI: <em>Single-page application (SPA)</em> → pega la URL de esta app<br>
+    5. Copia el <strong>Application (client) ID</strong> → pégalo en el botón de conectar<br>
+    6. En la app registrada → <strong>API permissions</strong> → Add → Microsoft Graph → <em>Files.ReadWrite</em> + <em>User.Read</em>
+    <br><br>
+    💡 <strong>Alternativa más simple:</strong> Usa el botón de exportar/importar JSON manualmente y guarda el archivo en tu OneDrive.`,'info');
+}
+
+// Init OneDrive on load
+function initOD(){
+  const saved=localStorage.getItem('iv_od_account');
+  const clientId=localStorage.getItem('iv_od_clientid');
+  if(saved&&clientId){
+    try{
+      odAccount=JSON.parse(saved);
+      msalInstance=initMSAL(clientId);
+      updateODUI(true);
+    }catch(e){}
+  }
+}
+
+// Simple export/import buttons always visible
+function exportBackup(){showODSimpleExport();}
+function importBackup(){showODImportFile();}
+
+window.onload=()=>{
+  loadApiKeyStatus();
+  initOD();
+  loadPreferredModel();
+  setTimeout(updateZones,200);
+  profile=ldObj('profile');
+  document.getElementById('topnav-date').textContent=new Date().toLocaleDateString('es-CO',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('g-date').value=today();
+  updateProfileDisplay();
+  renderDash();
+  loadRT();
+  renderRun();
+  renderBike();
+  renderWeight();
+  renderRec();
+  renderGoals();
+  // Drag & drop
+  const dz=document.getElementById('di');
+  if(dz){const wrap=dz.closest('.import-zone');if(wrap){wrap.addEventListener('dragover',e=>{e.preventDefault();wrap.style.borderColor='var(--accent)';});wrap.addEventListener('dragleave',()=>{wrap.style.borderColor='';});wrap.addEventListener('drop',e=>{e.preventDefault();wrap.style.borderColor='';const f=e.dataTransfer.files[0];if(f){const fake={files:[f],value:''};importFile(fake,'bike');}});}}
+};
+</script>
+</body>
+</html>
