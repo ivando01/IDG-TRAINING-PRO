@@ -3,10 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IDG TRAINING PRO · Training Intelligence</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<title>IDG PRO · Training Intelligence</title>
+<style>:root{--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;--font-mono:"SF Mono","Fira Code",Consolas,"Courier New",monospace;}
+/* ══ HAMBURGER + DRAWER ══ */
+.hamburger{display:none;width:38px;height:38px;border-radius:9px;background:var(--accent);border:none;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;flex-shrink:0;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 8px rgba(37,99,235,.3);}
+.hamburger span{display:block;width:16px;height:2px;background:#fff;border-radius:2px;}
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;}
+.drawer-overlay.open{display:block;}
+.drawer{position:fixed;top:0;left:0;height:100vh;width:72%;max-width:280px;background:#fff;z-index:501;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:8px 0 32px rgba(0,0,0,.2);display:flex;flex-direction:column;overflow-y:auto;}
+.drawer.open{transform:translateX(0);}
+.drawer-header{padding:18px 16px 14px;border-bottom:1px solid #e5eaf0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.drawer-logo{font-size:16px;font-weight:800;color:var(--accent);}
+.drawer-tag{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;}
+.drawer-close{width:28px;height:28px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;font-size:15px;color:#64748b;display:flex;align-items:center;justify-content:center;}
+.drawer-nav{padding:6px;flex:1;}
+.drawer-section{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;padding:10px 10px 4px;}
+.drawer-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:500;color:#334155;border:none;background:transparent;width:100%;text-align:left;margin-bottom:2px;-webkit-tap-highlight-color:transparent;}
+.drawer-item:active{background:#f1f5f9;}
+.drawer-item.active{background:#dbeafe;color:#2563eb;font-weight:600;}
+.drawer-icon{font-size:18px;width:22px;text-align:center;flex-shrink:0;}
+@media(max-width:900px){
+  .sidebar{display:none !important;}.main{margin-left:0 !important;}.hamburger{display:flex !important;}
+  .content{padding:14px 12px !important;}.fg2,.fg3{grid-template-columns:1fr !important;}
+  .grid-2,.grid-3,.grid-2-1,.grid-1-2{grid-template-columns:1fr !important;}
+  .kpi-row{grid-template-columns:repeat(2,1fr) !important;gap:10px !important;}
+  .overlay{padding:8px !important;align-items:flex-end !important;}
+  .modal{max-width:100% !important;border-radius:16px 16px 0 0 !important;padding:20px 14px 28px !important;max-height:92vh !important;}
+  input,select,textarea{font-size:16px !important;}
+  .ex-thead{display:none !important;}.ex-row{display:flex !important;flex-direction:column !important;gap:6px !important;padding:10px 12px !important;}
+  .btn-save{width:100% !important;justify-content:center !important;}
+}
+</style>
+
 <style>
 :root{
   --bg:#f0f4f8;--surface:#fff;--surface2:#f8fafc;--surface3:#eef2f7;
@@ -19,7 +47,7 @@
   --shadow-sm:0 1px 3px rgba(0,0,0,.08);--shadow:0 4px 12px rgba(0,0,0,.08);--shadow-lg:0 12px 32px rgba(0,0,0,.12);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;line-height:1.5;display:flex;min-height:100vh;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.5;display:flex;min-height:100vh;}
 
 /* SIDEBAR */
 .sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto;}
@@ -85,7 +113,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans
 /* PROG */
 .prog-wrap{background:var(--surface3);border-radius:100px;height:6px;overflow:hidden;}
 .prog-bar{height:100%;border-radius:100px;transition:width .5s ease;}
-.prog-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+.prog-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--font-mono);}
 
 /* ZONE BARS */
 .zone-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
@@ -93,7 +121,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans
 .zone-name{font-size:11px;color:var(--text2);width:80px;}
 .zone-bar-wrap{flex:1;background:var(--surface3);border-radius:3px;height:8px;overflow:hidden;}
 .zone-bar{height:100%;border-radius:3px;transition:width .5s;}
-.zone-time{font-size:10px;color:var(--text3);width:40px;text-align:right;font-family:'JetBrains Mono',monospace;}
+.zone-time{font-size:10px;color:var(--text3);width:40px;text-align:right;font-family:var(--font-mono);}
 
 /* EXERCISE TABLE */
 .ex-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);}
@@ -109,12 +137,12 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans
 .sc-btn{width:22px;height:22px;border-radius:5px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .sc-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
 .sc-val{font-size:13px;font-weight:700;min-width:18px;text-align:center;}
-.reps-input{width:90px;font-size:12px;padding:4px 8px;font-family:'JetBrains Mono',monospace;}
+.reps-input{width:90px;font-size:12px;padding:4px 8px;font-family:var(--font-mono);}
 .weights-chips{display:flex;gap:4px;flex-wrap:wrap;}
 .wchip{background:var(--surface2);border:1.5px solid var(--border2);border-radius:7px;padding:3px 6px;text-align:center;min-width:58px;}
 .wchip-lbl{font-size:9px;color:var(--text3);font-weight:600;display:block;}
-.wchip-in{width:52px;border:none;background:transparent;text-align:center;font-size:12px;font-weight:700;color:var(--accent);outline:none;font-family:'JetBrains Mono',monospace;}
-.rest-input{width:60px;font-size:12px;padding:4px 8px;font-family:'JetBrains Mono',monospace;}
+.wchip-in{width:52px;border:none;background:transparent;text-align:center;font-size:12px;font-weight:700;color:var(--accent);outline:none;font-family:var(--font-mono);}
+.rest-input{width:60px;font-size:12px;padding:4px 8px;font-family:var(--font-mono);}
 .ai-analyze-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--purple);background:var(--purple-lt);color:var(--purple);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .ai-analyze-btn:hover{background:var(--purple);color:#fff;}
 
@@ -122,7 +150,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans
 .entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;box-shadow:var(--shadow-sm);transition:all .15s;margin-bottom:10px;}
 .entry:hover{box-shadow:var(--shadow);border-color:var(--border2);}
 .entry-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
-.entry-date{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+.entry-date{font-size:10px;color:var(--text3);font-family:var(--font-mono);}
 .entry-title{font-size:15px;font-weight:700;color:var(--text);}
 .tag{font-size:11px;font-weight:600;padding:2px 9px;border-radius:100px;}
 .tag-blue{background:var(--accent-lt);color:var(--accent);}
@@ -155,7 +183,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans
 .profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;font-size:28px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
 
 /* BUTTONS */
-.btn{padding:8px 16px;border-radius:8px;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+.btn{padding:8px 16px;border-radius:8px;border:none;font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
 .btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.25);}
 .btn-primary:hover{background:var(--accent-h);}
 .btn-ghost{background:var(--surface);border:1px solid var(--border2);color:var(--text2);}
@@ -188,7 +216,7 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans
 .fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
 .fl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;}
-input,select,textarea{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;width:100%;transition:border-color .15s;}
+input,select,textarea{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-family:var(--font-sans);font-size:13px;width:100%;transition:border-color .15s;}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);background:var(--surface);}
 textarea{resize:vertical;min-height:68px;}
 
@@ -215,7 +243,7 @@ textarea{resize:vertical;min-height:68px;}
 .rs-val{font-size:20px;font-weight:800;line-height:1;}
 .rs-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px;}
 
-.mono{font-family:'JetBrains Mono',monospace;}
+.mono{font-family:var(--font-mono);}
 .empty{text-align:center;padding:40px;color:var(--text3);border:2px dashed var(--border);border-radius:var(--radius-lg);}
 .empty-icon{font-size:32px;margin-bottom:8px;}
 .divider{height:1px;background:var(--border);margin:14px 0;}
@@ -225,6 +253,92 @@ textarea{resize:vertical;min-height:68px;}
 
 @media(max-width:900px){.sidebar{display:none}.main{margin-left:0}.fg2,.fg3{grid-template-columns:1fr}.grid-2,.grid-3{grid-template-columns:1fr}.ex-header,.ex-row{grid-template-columns:26px 1fr 80px 80px 1fr;}.ex-header > :nth-child(6),.ex-header > :nth-child(7),.ex-row > :nth-child(6),.ex-row > :nth-child(7){display:none}}
 </style>
+<script>
+/* Inline Chart Engine — Safari/iOS/Android safe, ES5 */
+;(function(win){"use strict";
+function sMin(a){if(!a||!a.length)return 0;var m=a[0];for(var i=1;i<a.length;i++)if(a[i]<m)m=a[i];return m;}
+function sMax(a){if(!a||!a.length)return 1;var m=a[0];for(var i=1;i<a.length;i++)if(a[i]>m)m=a[i];return m;}
+function setup(cv){
+  var dpr=win.devicePixelRatio||1;
+  var w=cv.offsetWidth||cv.parentElement&&cv.parentElement.offsetWidth||300;
+  var h=cv.offsetHeight||cv.parentElement&&cv.parentElement.offsetHeight||150;
+  if(w<20)w=300;if(h<20)h=150;
+  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  cv.style.width=w+'px';cv.style.height=h+'px';
+  var ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  return{w:w,h:h,ctx:ctx};
+}
+function IVC(cv,cfg){if(!cv)return;this.canvas=cv;this.config=cfg||{};this._draw();}
+IVC.prototype.destroy=function(){try{var s=setup(this.canvas);s.ctx.clearRect(0,0,s.w,s.h);}catch(e){}};
+IVC.prototype._draw=function(){try{var t=this.config.type;if(t==='bar')this._bar();else if(t==='line')this._line();else if(t==='doughnut')this._donut();}catch(e){console.warn('Chart:',e.message);}};
+IVC.prototype._bar=function(){
+  var s=setup(this.canvas),w=s.w,h=s.h,ctx=s.ctx;
+  var data=this.config.data||{},opts=this.config.options||{};
+  var labels=data.labels||[],ds=data.datasets||[];
+  var pT=22,pB=22,pL=6,pR=6,nL=labels.length||1,nD=ds.length||1;
+  var showLeg=opts.plugins&&opts.plugins.legend&&opts.plugins.legend.display&&ds.length>1;
+  if(showLeg){var lx=8;for(var li=0;li<ds.length;li++){var lc=typeof ds[li].backgroundColor==='string'?ds[li].backgroundColor:(ds[li].borderColor||'#666');ctx.fillStyle=lc;ctx.fillRect(lx,3,10,7);ctx.fillStyle='#94a3b8';ctx.font='9px system-ui,sans-serif';ctx.textAlign='left';var ln=(ds[li].label||'').slice(0,10);ctx.fillText(ln,lx+13,11);lx+=ctx.measureText(ln).width+28;}pT=20;}
+  var cH=h-pT-pB,cW=w-pL-pR,maxV=0;
+  for(var di=0;di<ds.length;di++){var dd=ds[di].data||[];for(var vi=0;vi<dd.length;vi++)if((dd[vi]||0)>maxV)maxV=dd[vi]||0;}
+  if(maxV<=0)maxV=1;
+  ctx.strokeStyle='rgba(148,163,184,0.12)';ctx.lineWidth=1;
+  for(var gi=1;gi<=3;gi++){var gy=pT+cH*(1-gi/4);ctx.beginPath();ctx.moveTo(pL,gy);ctx.lineTo(w-pR,gy);ctx.stroke();}
+  var gW=cW/nL;
+  for(var di2=0;di2<ds.length;di2++){var ds2=ds[di2],dd2=ds2.data||[],bc=ds2.backgroundColor||'#2563eb';
+    for(var li2=0;li2<labels.length;li2++){var val=dd2[li2]||0,bw=gW/nD*0.75,bx=pL+li2*gW+di2*(gW/nD)+(gW/nD)*0.125,bh=val/maxV*cH;if(bh<2&&val>0)bh=2;ctx.fillStyle=Array.isArray(bc)?bc[li2]:bc;ctx.fillRect(bx,pT+cH-bh,bw,bh);}}
+  ctx.fillStyle='#94a3b8';ctx.font='9px system-ui,sans-serif';ctx.textAlign='center';
+  var step=Math.ceil(nL/7);
+  for(var xi=0;xi<labels.length;xi++){if(xi%step!==0&&xi!==labels.length-1)continue;ctx.fillText(String(labels[xi]).slice(0,6),pL+xi*gW+gW/2,h-6);}
+};
+IVC.prototype._line=function(){
+  var s=setup(this.canvas),w=s.w,h=s.h,ctx=s.ctx;
+  var data=this.config.data||{},opts=this.config.options||{};
+  var labels=data.labels||[],ds=data.datasets||[],n=labels.length;
+  if(n<2)return;
+  var pT=10,pB=20,pL=36,pR=36;
+  var showLeg=opts.plugins&&opts.plugins.legend&&opts.plugins.legend.display;
+  if(showLeg&&ds.length>1){var lx2=8;for(var li=0;li<ds.length;li++){var lc=ds[li].borderColor||'#666';ctx.fillStyle=lc;ctx.fillRect(lx2,2,10,7);ctx.fillStyle='#94a3b8';ctx.font='9px system-ui,sans-serif';ctx.textAlign='left';var ln=(ds[li].label||'').slice(0,12);ctx.fillText(ln,lx2+13,9);lx2+=ctx.measureText(ln).width+28;}pT=16;}
+  var cH=h-pT-pB,cW=w-pL-pR;
+  var axMap={};
+  for(var di=0;di<ds.length;di++){var axId=ds[di].yAxisID||'y';if(!axMap[axId])axMap[axId]=[];var dd=ds[di].data||[];for(var vi=0;vi<dd.length;vi++)if(dd[vi]!=null)axMap[axId].push(dd[vi]);}
+  var scMap={};var axKeys=Object.keys(axMap);
+  for(var ai=0;ai<axKeys.length;ai++){var ak=axKeys[ai],av=axMap[ak],mn=sMin(av),mx=sMax(av),pad=(mx-mn)*0.12;if(pad===0)pad=1;scMap[ak]={min:mn-pad,max:mx+pad};}
+  ctx.strokeStyle='rgba(148,163,184,0.1)';ctx.lineWidth=1;
+  for(var gi=0;gi<=4;gi++){var gy=pT+gi/4*cH;ctx.beginPath();ctx.moveTo(pL,gy);ctx.lineTo(w-pR,gy);ctx.stroke();}
+  for(var di2=0;di2<ds.length;di2++){
+    var dsi=ds[di2],axId2=dsi.yAxisID||'y',sc=scMap[axId2]||{min:0,max:1},rng=sc.max-sc.min;if(rng===0)rng=1;
+    var color=dsi.borderColor||'#2563eb',bgColor=dsi.backgroundColor||'rgba(37,99,235,0.1)';
+    var doFill=dsi.fill===true||(dsi.fill!==false&&di2===0),dd2=dsi.data||[],pts=[];
+    for(var pi=0;pi<dd2.length;pi++)pts.push({x:pL+pi/(n-1)*cW,y:pT+(1-(dd2[pi]-sc.min)/rng)*cH});
+    if(doFill&&pts.length>1){ctx.beginPath();ctx.moveTo(pts[0].x,pT+cH);for(var fi=0;fi<pts.length;fi++)ctx.lineTo(pts[fi].x,pts[fi].y);ctx.lineTo(pts[pts.length-1].x,pT+cH);ctx.closePath();ctx.fillStyle=bgColor;ctx.fill();}
+    if(pts.length>1){ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.lineJoin='round';ctx.moveTo(pts[0].x,pts[0].y);for(var si=1;si<pts.length;si++){var pv=pts[si-1],cu=pts[si],cpx=(pv.x+cu.x)/2;ctx.bezierCurveTo(cpx,pv.y,cpx,cu.y,cu.x,cu.y);}ctx.stroke();}
+    var pr=dsi.pointRadius!=null?dsi.pointRadius:3;
+    if(pr>0){ctx.fillStyle=color;for(var pti=0;pti<pts.length;pti++){ctx.beginPath();ctx.arc(pts[pti].x,pts[pti].y,pr,0,Math.PI*2);ctx.fill();}}
+  }
+  var fSc=scMap[axKeys[0]||'y']||{min:0,max:1},fRng=fSc.max-fSc.min;if(fRng===0)fRng=1;
+  var scOpts=opts.scales||{};
+  ctx.fillStyle='#94a3b8';ctx.font='9px system-ui,sans-serif';
+  for(var yi=0;yi<=3;yi++){var pct=yi/3,val=fSc.max-pct*fRng,yy=pT+pct*cH,lbl=Math.round(val);
+    var axCfg=scOpts[axKeys[0]];if(axCfg&&axCfg.ticks&&axCfg.ticks.callback){try{var r=axCfg.ticks.callback(val);if(r!=null)lbl=r;}catch(e){}}
+    ctx.textAlign='right';ctx.fillText(String(lbl).slice(0,7),pL-2,yy+3);}
+  if(axKeys.length>1){var sSc=scMap[axKeys[1]]||{min:0,max:1},sRng=sSc.max-sSc.min;if(sRng===0)sRng=1;
+    for(var yi2=0;yi2<=3;yi2++){ctx.textAlign='left';ctx.fillStyle='#94a3b8';ctx.fillText(String(Math.round(sSc.max-yi2/3*sRng)).slice(0,5),w-pR+2,pT+yi2/3*cH+3);}}
+  ctx.textAlign='center';ctx.fillStyle='#94a3b8';var stepX=Math.ceil(n/7);
+  for(var xi=0;xi<labels.length;xi++){if(xi%stepX!==0&&xi!==labels.length-1)continue;ctx.fillText(String(labels[xi]).slice(0,8),pL+xi/(n-1)*cW,h-4);}
+};
+IVC.prototype._donut=function(){
+  var s=setup(this.canvas),w=s.w,h=s.h,ctx=s.ctx;
+  var data=this.config.data||{},ds=(data.datasets||[])[0]||{},vals=ds.data||[],colors=ds.backgroundColor||[];
+  var total=0;for(var i=0;i<vals.length;i++)total+=(vals[i]||0);if(total<=0)total=1;
+  var cx=w/2,cy=h/2,outerR=Math.min(w,h)/2-4,innerR=outerR*0.62,angle=-Math.PI/2;
+  for(var i2=0;i2<vals.length;i2++){if(!vals[i2])continue;var slice=vals[i2]/total*Math.PI*2;
+    ctx.beginPath();ctx.arc(cx,cy,outerR,angle,angle+slice);ctx.arc(cx,cy,innerR,angle+slice,angle,true);ctx.closePath();ctx.fillStyle=colors[i2]||'#ccc';ctx.fill();angle+=slice;}
+  ctx.beginPath();ctx.arc(cx,cy,innerR-1,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+  ctx.fillStyle='#0f172a';ctx.font='bold 14px system-ui,sans-serif';ctx.textAlign='center';ctx.fillText(String(total),cx,cy+5);
+};
+IVC.register=function(){};IVC.defaults={};win.Chart=IVC;
+})(window);
+</script>
 </head>
 <body>
 
@@ -263,9 +377,10 @@ textarea{resize:vertical;min-height:68px;}
 <!-- ═══ MAIN ═══ -->
 <div class="main">
 <div class="topnav">
-  <div class="topnav-title" id="topnav-title">Dashboard</div>
+  <button class="hamburger" onclick="openDrawer()"><span></span><span></span><span></span></button>
+<div class="topnav-title" id="topnav-title">Dashboard</div>
   <div style="display:flex;align-items:center;gap:10px;">
-    <span id="topnav-date" style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;"></span>
+    <span id="topnav-date" style="font-size:12px;color:var(--text3);font-family:var(--font-mono);"></span>
     <div style="font-size:13px;font-weight:600;color:var(--text2);" id="topnav-name">Ivan</div>
     <div class="avatar">IV</div>
   </div>
@@ -551,10 +666,50 @@ textarea{resize:vertical;min-height:68px;}
     </div>
   </div>
 </div>
+<div style="margin-top:16px;">
+  <div class="card" style="border:1.5px solid #4285f4;background:linear-gradient(135deg,#f0f4ff,#fff);">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+      <div style="width:40px;height:40px;background:linear-gradient(135deg,#4285f4,#34a853);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;flex-shrink:0;">G</div>
+      <div><div style="font-size:15px;font-weight:700;color:#1a73e8;">Google Drive &amp; Fitness</div>
+      <div style="font-size:11px;color:var(--text3);">Sincroniza en Drive · Importa de Google Fit / Apple Health</div></div>
+    </div>
+    <div id="goog-logged-out">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6;">Conecta tu cuenta Google para guardar en <strong>Google Drive/IvanPro/datos.json</strong> e importar actividades de <strong>Google Fit</strong> y Apple Health.</p>
+      <button class="btn btn-primary" onclick="googLogin()" style="background:#1a73e8;width:100%;justify-content:center;margin-bottom:8px;">G &nbsp; Conectar con Google</button>
+      <p style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:10px;">Funciona con cualquier cuenta Gmail</p>
+      <div style="border-top:1px solid var(--border);padding-top:10px;">
+        <p style="font-size:11px;color:var(--text3);margin-bottom:6px;">Sin cuenta Google — backup manual:</p>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="exportBackup()" style="flex:1;justify-content:center;">📤 Exportar JSON</button>
+          <button class="btn btn-ghost btn-sm" onclick="importBackup()" style="flex:1;justify-content:center;">📥 Importar JSON</button>
+        </div>
+      </div>
+    </div>
+    <div id="goog-logged-in" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;background:rgba(66,133,244,.08);border-radius:10px;">
+        <div style="width:34px;height:34px;border-radius:50%;background:#1a73e8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;flex-shrink:0;">G</div>
+        <div style="flex:1;"><div id="goog-username" style="font-size:13px;font-weight:700;color:#1a73e8;"></div>
+        <div id="goog-last-sync" style="font-size:11px;color:var(--text3);"></div></div>
+        <button onclick="googLogout()" style="font-size:11px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;">Salir</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <button class="btn btn-primary btn-sm" onclick="driveBackup()" style="background:#1a73e8;">☁️ Guardar en Drive</button>
+        <button class="btn btn-ghost btn-sm" onclick="driveLoad()">📥 Cargar de Drive</button>
+        <button class="btn btn-sm" onclick="fitImport()" style="background:#34a853;color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-weight:600;font-size:12px;">🏃 Importar Google Fit</button>
+        <button class="btn btn-ghost btn-sm" onclick="driveAutoSync()" id="goog-autosync-btn">🔄 Auto-sync: OFF</button>
+      </div>
+      <div id="goog-sync-result"></div>
+    </div>
+    <div style="margin-top:10px;padding:8px 12px;background:rgba(66,133,244,.06);border-radius:8px;font-size:11px;color:#1a73e8;line-height:1.5;">
+      📁 Drive: <code style="background:rgba(0,0,0,.05);padding:1px 4px;border-radius:3px;">IvanPro/datos.json</code><br>
+      🏃 Fit: importa running, ciclismo y peso desde Google Fit / Apple Health
+    </div>
+  </div>
+</div>
+
 
 <!-- ═══ IMPORT ═══ -->
 <div id="p-import" class="page">
-  <!-- Quick backup row -->
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
     <div style="font-size:12px;color:var(--text3);font-weight:600;">💾 Backup manual:</div>
     <button class="btn btn-ghost btn-sm" onclick="exportBackup()" style="font-size:11px;">⬇️ Exportar JSON</button>
@@ -580,7 +735,7 @@ textarea{resize:vertical;min-height:68px;}
       Usamos <strong>solo modelos gratuitos</strong> con soporte de imágenes: Gemma-3, Qwen2.5-VL, Mistral Small.
     </div>
     <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-      <input type="password" id="api-key-cfg" placeholder="sk-or-v1-..." style="flex:1;min-width:200px;font-size:13px;font-family:'JetBrains Mono',monospace;">
+      <input type="password" id="api-key-cfg" placeholder="sk-or-v1-..." style="flex:1;min-width:200px;font-size:13px;font-family:var(--font-mono);">
       <button class="btn btn-primary" onclick="saveApiKeyCfg()">💾 Guardar</button>
     </div>
     <div id="api-cfg-status" style="font-size:12px;font-weight:600;"></div>
@@ -630,55 +785,7 @@ textarea{resize:vertical;min-height:68px;}
   </div>
 </div>
 <!-- ══ ONEDRIVE SYNC CARD ══ -->
-<div class="card" style="margin-top:12px;border:1.5px solid #0078d4;background:linear-gradient(135deg,#f0f7ff,#fff);">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-    <div style="width:40px;height:40px;background:#0078d4;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">☁️</div>
-    <div>
-      <div style="font-size:15px;font-weight:700;color:#0078d4;">Sincronización OneDrive</div>
-      <div style="font-size:11px;color:var(--text3);">Accede a tus datos desde cualquier dispositivo — PC, celular, iPad</div>
-    </div>
-  </div>
 
-  <div id="od-logged-out">
-    <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6;">
-      Conecta tu cuenta Microsoft para guardar todos tus entrenamientos en <strong>OneDrive/IvanPro/datos.json</strong> — privado, solo tú tienes acceso, gratis con cualquier cuenta Outlook/Hotmail/Microsoft.
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="odLogin()" style="background:#0078d4;">🔑 Conectar con Microsoft</button>
-    </div>
-  </div>
-
-  <div id="od-logged-in" style="display:none;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;background:rgba(0,120,212,.08);border-radius:10px;">
-      <div style="width:34px;height:34px;border-radius:50%;background:#0078d4;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">MS</div>
-      <div style="flex:1;">
-        <div id="od-username" style="font-size:13px;font-weight:700;color:#0078d4;"></div>
-        <div id="od-last-sync" style="font-size:11px;color:var(--text3);margin-top:1px;"></div>
-      </div>
-      <button onclick="odLogout()" style="font-size:11px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;">Salir</button>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-      <button class="btn btn-primary btn-sm" onclick="odSave()" style="background:#0078d4;">☁️ Guardar en OneDrive</button>
-      <button class="btn btn-ghost btn-sm" onclick="odLoad()">📥 Cargar desde OneDrive</button>
-      <button class="btn btn-ghost btn-sm" onclick="odAutoSync()" id="od-autosync-btn">🔄 Auto-sync: OFF</button>
-    </div>
-    <div id="od-sync-result"></div>
-  </div>
-
-  <div style="margin-top:10px;border-top:1px solid rgba(0,120,212,.15);padding-top:10px;">
-    <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px;">💾 Sin cuenta Microsoft — usa backup manual:</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-ghost btn-sm" onclick="exportBackup()" style="font-size:11px;">⬇️ Exportar JSON</button>
-      <button class="btn btn-ghost btn-sm" onclick="importBackup()" style="font-size:11px;">⬆️ Importar JSON</button>
-      <span style="font-size:10px;color:var(--text3);align-self:center;">Guarda el .json en OneDrive, Google Drive o iCloud</span>
-    </div>
-  </div>
-
-  <div style="margin-top:10px;padding:8px 12px;background:rgba(0,120,212,.06);border-radius:8px;font-size:11px;color:#0078d4;line-height:1.6;">
-    📋 Los datos se guardan en <code style="background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;">OneDrive/IvanPro/datos.json</code><br>
-    La sincronización automática guarda cada 5 minutos mientras usas la app.
-  </div>
-</div>
 
 
 </div><!-- content -->
@@ -902,11 +1009,15 @@ textarea{resize:vertical;min-height:68px;}
 </div>
 
 <script>
-// ══ STORAGE ══
+
+// ══ STORAGE — Safari/iOS safe with memory fallback ══
 const K={gym:'iv_gym',run:'iv_run',bike:'iv_bike',weight:'iv_wgt',rec:'iv_rec',goals:'iv_goals',profile:'iv_profile'};
-const ld=k=>{try{return JSON.parse(localStorage.getItem(K[k])||'[]');}catch{return[];}};
-const ldObj=k=>{try{return JSON.parse(localStorage.getItem(K[k])||'{}');}catch{return{};}};
-const sv=(k,d)=>localStorage.setItem(K[k],JSON.stringify(d));
+var _mem={};
+function _lsGet(k){try{return localStorage.getItem(k);}catch(e){return _mem[k]||null;}}
+function _lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){_mem[k]=v;}}
+const ld=function(k){try{var v=_lsGet(K[k]);return v?JSON.parse(v):[];}catch(e){return[];}};
+const ldObj=function(k){try{var v=_lsGet(K[k]);return v?JSON.parse(v):{};}catch(e){return{};}};
+const sv=function(k,d){try{_lsSet(K[k],JSON.stringify(d));}catch(e){_mem[K[k]]=JSON.stringify(d);}};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 const today=()=>new Date().toISOString().split('T')[0];
 let currentUnit='lbs';
@@ -1066,85 +1177,52 @@ function getExData(){
   });
 }
 
-// ══ AI — OpenRouter Free Models with auto-fallback ══
-// Vision models (support images) — ordered by reliability
-const OR_VISION = [
-  'qwen/qwen2.5-vl-72b-instruct:free',
-  'google/gemma-3-27b-it:free',
-  'mistralai/mistral-small-3.2-24b-instruct:free',
-  'meta-llama/llama-4-maverick:free',
-  'google/gemma-4-27b-it:free',
-  'openrouter/auto'
-];
-// Text-only models (faster, more reliable)
-const OR_TEXT = [
-  'mistralai/mistral-small-3.2-24b-instruct:free',
-  'meta-llama/llama-4-maverick:free',
-  'google/gemma-3-27b-it:free',
-  'qwen/qwen3-235b-a22b:free',
-  'deepseek/deepseek-r1-0528:free',
-  'openrouter/auto'
-];
-
+// ══ AI — Google Gemini ══
 function getApiKey(){
-  return profile.apikey||(document.getElementById('prof-apikey')?.value)||
-         (document.getElementById('api-key-cfg')?.value)||'';
+  var GEMINI_KEY='AIzaSyBE93zW-m8ww0zTtOzJ--QdepNTcuUFI68';
+  if(GEMINI_KEY!=='YOUR_GEMINI_KEY_HERE')return GEMINI_KEY;
+  return profile.apikey||'';
 }
 
 async function callAI(prompt,imgB64,imgType){
-  const key=getApiKey();
-  if(!key){return'❌ API key no configurada. Ve a <strong>Importar & IA</strong> e ingresa tu clave de openrouter.ai';}
-
-  const preferred=profile.preferredModel||'';
-  const baseModels=imgB64?OR_VISION:OR_TEXT;
-  const models=preferred&&!baseModels.includes(preferred)?[preferred,...baseModels]:baseModels;
-
-  const messages=[{role:'user',content:imgB64?[
-    {type:'image_url',image_url:{url:'data:'+(imgType||'image/jpeg')+';base64,'+imgB64}},
-    {type:'text',text:prompt}
-  ]:[{type:'text',text:prompt}]}];
-
-  const SKIP=['No endpoints','no models','credits','quota','Provider returned error',
-    'overloaded','rate limit','context length','model_not_found','not found',
-    'unavailable','no available','provider error','503','502','529'];
-
-  const errors=[];
-
-  for(const model of models){
+  // ★ INSERT YOUR GEMINI API KEY ON THE NEXT LINE ★
+  const GEMINI_KEY='AIzaSyBE93zW-m8ww0zTtOzJ--QdepNTcuUFI68';
+  const key=GEMINI_KEY!=='YOUR_GEMINI_KEY_HERE'?GEMINI_KEY:(profile.apikey||'');
+  if(!key)return'❌ API key de Gemini no configurada. Edita el archivo HTML y reemplaza YOUR_GEMINI_KEY_HERE en la función callAI, o ingresa la key en Perfil.';
+  const MODELS=['gemini-2.5-flash-preview-05-20','gemini-2.0-flash','gemini-1.5-flash'];
+  const BASE='https://generativelanguage.googleapis.com/v1beta/models/';
+  for(const model of MODELS){
     try{
-      const controller=new AbortController();
-      const tid=setTimeout(()=>controller.abort(),25000);
+      const parts=[];
+      if(imgB64)parts.push({inlineData:{mimeType:imgType||'image/jpeg',data:imgB64}});
+      parts.push({text:prompt});
+      const ctrl=new AbortController();
+      const tid=setTimeout(()=>ctrl.abort(),30000);
       let res;
       try{
-        res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
-          method:'POST',
-          signal:controller.signal,
-          headers:{
-            'Content-Type':'application/json',
-            'Authorization':'Bearer '+key,
-            'HTTP-Referer':'https://ivanpro.app',
-            'X-Title':'IVAN PRO Training Intelligence'
-          },
-          body:JSON.stringify({model,messages,max_tokens:imgB64?800:900,temperature:0.6})
+        res=await fetch(BASE+model+':generateContent?key='+key,{
+          method:'POST',signal:ctrl.signal,
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{maxOutputTokens:1000,temperature:0.6}})
         });
-      }finally{clearTimeout(tid);}
-
+        clearTimeout(tid);
+      }catch(fe){clearTimeout(tid);throw fe;}
       if(!res.ok){
-        let errMsg='HTTP '+res.status;
-        try{const err=await res.json();errMsg=err.error?.message||err.error?.code||errMsg;}catch{}
-        errors.push(model.split('/').pop()+': '+errMsg.slice(0,60));
+        let em='HTTP '+res.status;
+        try{const e=await res.json();em=(e.error&&e.error.message)||em;}catch(e){}
+        if(['RESOURCE_EXHAUSTED','quota','429','503','overloaded'].some(s=>em.toLowerCase().includes(s.toLowerCase()))){continue;}
+        if(res.status===400)return'❌ API key inválida — verifica en aistudio.google.com';
         continue;
       }
       const data=await res.json();
-      const txt=(data.choices?.[0]?.message?.content||'').trim();
-      if(txt.length>10)return txt;
-      errors.push(model.split('/').pop()+': respuesta vacía');
+      let txt='';try{txt=data.candidates[0].content.parts[0].text||'';}catch(e){}
+      if(txt.trim().length>10)return txt.trim();
     }catch(e){
-      if(e.name==='AbortError'){errors.push(model.split('/').pop()+': timeout 25s');}
-      else{errors.push(model.split('/').pop()+': '+e.message.slice(0,40));}
+      if(e.name==='AbortError'){console.warn('Gemini timeout',model);continue;}
+      if(MODELS.indexOf(model)===MODELS.length-1)return'❌ Error Gemini: '+e.message;
     }
   }
-  return'❌ Sin respuesta de modelos disponibles.<br><small>'+errors.slice(0,4).join(' · ')+'</small><br><small>💡 Ve a <strong>Importar & IA → Probar modelos</strong> para diagnosticar.</small>';
+  return'❌ Gemini no disponible. Verifica tu API key en aistudio.google.com';
 }
 
 function toB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
@@ -1183,7 +1261,7 @@ function setAI(el,msg,type){
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="width:16px;height:16px;border:2px solid var(--orange);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;"></div>
         <span>${msg}</span>
-        <span class="ai-timer-val" style="font-family:'JetBrains Mono',monospace;margin-left:auto;font-size:11px;color:var(--text3);">0s</span>
+        <span class="ai-timer-val" style="font-family:var(--font-mono);margin-left:auto;font-size:11px;color:var(--text3);">0s</span>
       </div>
       <div style="font-size:11px;color:var(--text3);margin-top:4px;">${modelHint} · Timeout por modelo: 25s</div>
       <div style="font-size:10px;color:var(--text3);margin-top:2px;">Si tarda más de 30s, ve a Importar & IA → Probar modelos disponibles</div>
@@ -1207,7 +1285,7 @@ function setAI(el,msg,type){
     const formatted=msg.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
     const showClose=cls==='ok';
     const closeBtn=showClose?`<div style="margin-top:12px;display:flex;justify-content:flex-end;">
-      <button onclick="this.closest('.ai-box').style.display='none'" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Plus Jakarta Sans',sans-serif;">
+      <button onclick="this.closest('.ai-box').style.display='none'" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-sans);">
         ✓ Enterado
       </button>
     </div>`:'';
@@ -1375,7 +1453,7 @@ function parseFIT(file,type,el){
       const b=new Uint8Array(e.target.result);
       if(b.length<14||String.fromCharCode(b[8],b[9],b[10],b[11])!=='.FIT'){setAI(el,'❌ FIT inválido. Exporta como GPX desde Garmin Connect.','err');return;}
       const view=new DataView(e.target.result);
-      const FE=631065600;let ts=0;try{ts=view.getUint32(12,true);}catch{}
+      const FE=631065600;let ts=0;try{ts=view.getUint32(12,true);}catch(e){}
       const dateStr=ts>31536000?new Date((FE+ts)*1000).toISOString().split('T')[0]:today();
       const name=file.name.replace(/\.fit$/i,'');
       const entry={id:uid(),date:dateStr,type:type==='bike'?'Importado FIT':'',route:name,notes:`FIT: ${file.name} (${(file.size/1024).toFixed(0)}KB)`,ts:Date.now()};
@@ -1662,9 +1740,9 @@ function updateZones(){
     return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
       <div style="width:10px;height:10px;border-radius:2px;background:${ZONE_COLORS[i]};flex-shrink:0;"></div>
       <span style="font-size:11px;font-weight:600;color:var(--text2);width:110px;flex-shrink:0;">${name}</span>
-      <input type="number" id="zone-min-${i}" value="${defMin}" style="width:65px;font-size:12px;padding:4px 6px;font-family:'JetBrains Mono',monospace;" placeholder="min">
+      <input type="number" id="zone-min-${i}" value="${defMin}" style="width:65px;font-size:12px;padding:4px 6px;font-family:var(--font-mono);" placeholder="min">
       <span style="font-size:11px;color:var(--text3);">–</span>
-      <input type="number" id="zone-max-${i}" value="${defMax}" style="width:65px;font-size:12px;padding:4px 6px;font-family:'JetBrains Mono',monospace;" placeholder="max">
+      <input type="number" id="zone-max-${i}" value="${defMax}" style="width:65px;font-size:12px;padding:4px 6px;font-family:var(--font-mono);" placeholder="max">
       <span style="font-size:11px;color:var(--text3);">bpm</span>
     </div>`;
   }).join('');
@@ -1767,7 +1845,7 @@ async function testModels(){
         results+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--green-lt);border-radius:6px;font-size:12px;">
           <span style="color:var(--green);">✅</span>
           <span style="flex:1;font-weight:600;">${m.label}</span>
-          <span style="color:var(--text3);font-family:'JetBrains Mono',monospace;">${elapsed}s ${cost}</span>
+          <span style="color:var(--text3);font-family:var(--font-mono);">${elapsed}s ${cost}</span>
         </div>`;
       } else {
         const err=await res.json();const msg=(err.error?.message||'').slice(0,50);
@@ -1939,7 +2017,7 @@ function renderDash(){
   const days=14,labels=[],gymV=[],runV=[],bikeV=[];
   for(let i=days-1;i>=0;i--){
     const d=new Date(now-i*86400000);const ds=d.toISOString().split('T')[0];
-    labels.push(d.toLocaleDateString('es-CO',{month:'short',day:'numeric'}));
+    labels.push(d.toLocaleDateString(undefined,{month:'short',day:'numeric'}));
     gymV.push(gym.filter(e=>e.date===ds).length*25);
     runV.push(run.filter(e=>e.date===ds).reduce((s,e)=>s+(parseFloat(e.dist)||0),0)*8);
     bikeV.push(bike.filter(e=>e.date===ds).reduce((s,e)=>s+(parseFloat(e.dist)||0),0)*3);
@@ -1978,7 +2056,7 @@ function renderDash(){
     <div class="sb-stat"><span class="sb-stat-ico">👟</span><div><div class="sb-stat-val">Racha: ${gym.length>0?'Activo':'—'}</div><div class="sb-stat-lbl">Constancia</div></div></div>
     <div class="sb-stat"><span class="sb-stat-ico">❤️</span><div><div class="sb-stat-val">${recL?`E:${recL.energy}/10 S:${recL.sleep}h`:'Sin datos'}</div><div class="sb-stat-lbl">Recuperación</div></div></div>
     <div class="sb-stat"><span class="sb-stat-ico">🔥</span><div><div class="sb-stat-val">${sc>=70?'Productivo':sc>=50?'Activo':'Descansando'}</div><div class="sb-stat-lbl">Estado de forma</div></div></div>
-    <div class="sb-stat"><span class="sb-stat-ico">🔄</span><div><div class="sb-stat-val">${new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</div><div class="sb-stat-lbl">Actualizado</div></div></div>
+    <div class="sb-stat"><span class="sb-stat-ico">🔄</span><div><div class="sb-stat-val">${new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}</div><div class="sb-stat-lbl">Actualizado</div></div></div>
   `;
 }
 
@@ -2022,8 +2100,8 @@ function renderGym(){
           <tbody>${e.exercises.map(x=>`<tr style="border-bottom:1px solid var(--border);">
             <td style="padding:7px 10px;font-weight:600;">${x.name}${x.note?`<br><span style="font-size:10px;color:var(--text3);font-weight:400;">${x.note}</span>`:''}</td>
             <td style="padding:7px 8px;text-align:center;font-weight:700;">${x.sets}</td>
-            <td style="padding:7px 8px;font-family:'JetBrains Mono',monospace;">${x.reps}</td>
-            <td style="padding:7px 8px;"><div style="display:flex;gap:3px;flex-wrap:wrap;">${(x.weights||[]).map((w,i)=>`<span style="background:var(--accent-lt);color:var(--accent);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;">S${i+1}:${w.display||0}${w.unit||''}</span>`).join('')}</div></td>
+            <td style="padding:7px 8px;font-family:var(--font-mono);">${x.reps}</td>
+            <td style="padding:7px 8px;"><div style="display:flex;gap:3px;flex-wrap:wrap;">${(x.weights||[]).map((w,i)=>`<span style="background:var(--accent-lt);color:var(--accent);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;font-family:var(--font-mono);">S${i+1}:${w.display||0}${w.unit||''}</span>`).join('')}</div></td>
             <td style="padding:7px 8px;font-size:11px;color:var(--text3);">${x.rest||90}s</td>
           </tr>`).join('')}</tbody>
         </table>
@@ -2108,7 +2186,7 @@ function renderRun(){
             <div style="flex:1;background:var(--surface3);border-radius:3px;height:7px;overflow:hidden;">
               <div style="width:${pct}%;height:100%;background:${ZONE_COLORS[i]};border-radius:3px;"></div>
             </div>
-            <span style="font-size:10px;color:var(--text3);width:52px;text-align:right;font-family:'JetBrains Mono',monospace;">${mins}min (${pct}%)</span>
+            <span style="font-size:10px;color:var(--text3);width:52px;text-align:right;font-family:var(--font-mono);">${mins}min (${pct}%)</span>
           </div>`:''}).join('')}
       </div>`:''}
 
@@ -2273,7 +2351,7 @@ function renderBike(){
             <div style="flex:1;background:var(--surface3);border-radius:3px;height:7px;overflow:hidden;">
               <div style="width:${pct}%;height:100%;background:${ZONE_COLORS[i]};border-radius:3px;"></div>
             </div>
-            <span style="font-size:10px;color:var(--text3);width:52px;text-align:right;font-family:'JetBrains Mono',monospace;">${mins}min (${pct}%)</span>
+            <span style="font-size:10px;color:var(--text3);width:52px;text-align:right;font-family:var(--font-mono);">${mins}min (${pct}%)</span>
           </div>`:''}).join('')}
       </div>`:''}
 
@@ -2494,9 +2572,10 @@ function renderGoals(){
 // ══ NAV & MODALS ══
 const PAGE_NAMES={dash:'Dashboard',gym:'Gym · Entrenamiento',running:'Running',cycling:'Ciclismo',weight:'Peso & Cuerpo',recovery:'Recuperación',goals:'Metas & IA',profile:'Perfil del Atleta',import:'Importar datos'};
 function go(name,btn){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');p.style.display='none';});
   document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
-  document.getElementById('p-'+name).classList.add('active');
+  document.querySelectorAll('.drawer-item').forEach(b=>b.classList.toggle('active',b.getAttribute('data-page')===name));
+  var activePage=document.getElementById('p-'+name);activePage.classList.add('active');activePage.style.display='block';
   if(btn)btn.classList.add('active');
   else{const b=document.querySelector(`.sb-item[onclick*="'${name}'"]`);if(b)b.classList.add('active');}
   document.getElementById('topnav-title').textContent=PAGE_NAMES[name]||name;
@@ -2525,227 +2604,200 @@ function switchIP(t){
 // ══ UTILS ══
 const fmtD=s=>{if(!s)return'—';const[y,m,d]=s.split('-');const ms=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return`${d} ${ms[+m-1]} ${y}`;};
 const scC=(v,inv=false)=>{const n=parseFloat(v);if(isNaN(n))return'var(--text3)';return inv?(n<=3?'var(--green)':n>=7?'var(--red)':'var(--orange)'):(n>=7?'var(--green)':n<=3?'var(--red)':'var(--orange)');};
-function showToast(msg){const t=document.createElement('div');t.style.cssText='position:fixed;bottom:22px;right:22px;background:#0f172a;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 8px 20px rgba(0,0,0,.25);';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2500);}
+function showToast(msg){try{var t=document.createElement('div');t.style.cssText='position:fixed;bottom:22px;right:22px;background:#0f172a;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 8px 20px rgba(0,0,0,.25);';t.textContent=String(msg||'');document.body.appendChild(t);setTimeout(function(){try{t.remove();}catch(e){}},2500);}catch(e){}}
 
 // ══ INIT ══
 
-// ══ ONEDRIVE SYNC ══
-const OD_CLIENT_ID = 'ivan-pro-app'; // placeholder — user sets their own
-const OD_SCOPES = ['Files.ReadWrite', 'User.Read'];
-const OD_FILE_PATH = '/me/drive/root:/IvanPro/datos.json:/content';
-let msalInstance = null;
-let odAccount = null;
-let odAutoSyncInterval = null;
 
-function initMSAL(clientId){
-  if(!clientId||!window.msal){return null;}
-  try{
-    return new msal.PublicClientApplication({
-      auth:{clientId,authority:'https://login.microsoftonline.com/common',
-        redirectUri:window.location.href.split('?')[0]},
-      cache:{cacheLocation:'localStorage',storeAuthStateInCookie:false}
-    });
-  }catch(e){console.error('MSAL init failed:',e);return null;}
+// ══ GOOGLE DRIVE + FITNESS ══
+const GOOG_CLIENT_ID='1046758819137-fbroke1i28tt6q8hnd06ik7sufdv3057.apps.googleusercontent.com';
+const GOOG_SCOPES='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/fitness.activity.read https://www.googleapis.com/auth/fitness.body.read https://www.googleapis.com/auth/userinfo.profile';
+const DRIVE_API='https://www.googleapis.com/drive/v3';
+const DRIVE_UPLOAD='https://www.googleapis.com/upload/drive/v3';
+const FIT_API='https://www.googleapis.com/fitness/v1/users/me';
+let googToken='',googUser='',googAutoTimer=null,driveFolderId='';
+
+function getAllData(){
+  return{gym:ld('gym'),run:ld('run'),bike:ld('bike'),weight:ld('weight'),
+    rec:ld('rec'),goals:ld('goals'),profile:ldObj('profile'),
+    savedAt:new Date().toISOString(),version:'v9'};
 }
-
-async function odLogin(){
-  const clientId=profile.odClientId||localStorage.getItem('iv_od_clientid');
-  if(!clientId){
-    const id=prompt('Para usar OneDrive necesitas registrar esta app en Azure AD (gratis).\n\nIngresa tu Application (Client) ID de Azure:\n(Si no tienes uno, visita: portal.azure.com → App registrations → New registration)');
-    if(!id)return;
-    localStorage.setItem('iv_od_clientid',id.trim());
-    showToast('Client ID guardado. Intenta conectar de nuevo.');
-    showODSetupGuide();
-    return;
-  }
-  msalInstance=initMSAL(clientId);
-  if(!msalInstance){
-    showODSimpleExport();
-    return;
-  }
-  try{
-    const result=await msalInstance.loginPopup({scopes:OD_SCOPES});
-    odAccount=result.account;
-    localStorage.setItem('iv_od_account',JSON.stringify({name:odAccount.name,username:odAccount.username}));
-    updateODUI(true);
-    showToast('✅ Conectado a OneDrive como '+odAccount.name);
-  }catch(e){
-    if(e.errorCode==='user_cancelled')return;
-    showODSimpleExport();
-  }
+function googGetToken(){
+  try{const t=localStorage.getItem('iv_gt'),exp=+localStorage.getItem('iv_ge')||0;
+    if(t&&Date.now()<exp){googToken=t;return t;}}catch(e){}return'';
 }
-
-function odLogout(){
-  odAccount=null;
-  localStorage.removeItem('iv_od_account');
-  if(odAutoSyncInterval){clearInterval(odAutoSyncInterval);odAutoSyncInterval=null;}
-  updateODUI(false);
-  showToast('Desconectado de OneDrive');
-}
-
-async function getODToken(){
-  if(!msalInstance||!odAccount)return null;
-  const clientId=localStorage.getItem('iv_od_clientid');
-  msalInstance=msalInstance||initMSAL(clientId);
-  try{
-    const result=await msalInstance.acquireTokenSilent({scopes:OD_SCOPES,account:odAccount});
-    return result.accessToken;
-  }catch(e){
-    const result=await msalInstance.acquireTokenPopup({scopes:OD_SCOPES});
-    return result.accessToken;
-  }
-}
-
-async function odSave(){
-  const el=document.getElementById('od-sync-result');
-  if(!msalInstance||!odAccount){showODSimpleExport();return;}
-  setAI(el,'☁️ Guardando en OneDrive...','loading');
-  try{
-    const token=await getODToken();
-    const allData={
-      gym:ld('gym'),run:ld('run'),bike:ld('bike'),
-      weight:ld('weight'),rec:ld('rec'),goals:ld('goals'),
-      profile:ldObj('profile'),
-      savedAt:new Date().toISOString(),
-      version:'v7'
-    };
-    const res=await fetch('https://graph.microsoft.com/v1.0'+OD_FILE_PATH,{
-      method:'PUT',
-      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-      body:JSON.stringify(allData,null,2)
-    });
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const now=new Date().toLocaleString('es-CO');
-    localStorage.setItem('iv_od_last_sync','Guardado: '+now);
-    document.getElementById('od-last-sync').textContent='Último guardado: '+now;
-    setAI(el,'✅ Datos guardados en OneDrive/IvanPro/datos.json<br><small>'+Object.keys(allData).filter(k=>Array.isArray(allData[k])).map(k=>k+': '+allData[k].length+' registros').join(' · ')+'</small>','ok');
-  }catch(e){
-    setAI(el,'❌ Error guardando: '+e.message+'<br><small>Verifica permisos de la app en Azure AD.</small>','err');
-  }
-}
-
-async function odLoad(){
-  const el=document.getElementById('od-sync-result');
-  if(!msalInstance||!odAccount){showODSimpleImport();return;}
-  setAI(el,'📥 Cargando desde OneDrive...','loading');
-  try{
-    const token=await getODToken();
-    const res=await fetch('https://graph.microsoft.com/v1.0'+OD_FILE_PATH,{
-      headers:{'Authorization':'Bearer '+token}
-    });
-    if(res.status===404){setAI(el,'📭 No hay datos guardados aún en OneDrive. Guarda primero desde este dispositivo.','info');return;}
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    if(!confirm('¿Cargar datos de OneDrive? Esto reemplazará los datos locales actuales.\nGuardado: '+(data.savedAt||'?')))return;
-    if(data.gym)sv('gym',data.gym);
-    if(data.run)sv('run',data.run);
-    if(data.bike)sv('bike',data.bike);
-    if(data.weight)sv('weight',data.weight);
-    if(data.rec)sv('rec',data.rec);
-    if(data.goals)sv('goals',data.goals);
-    if(data.profile){sv('profile',data.profile);profile=data.profile;}
-    renderDash();renderGym();renderRun();renderBike();renderWeight();renderRec();renderGoals();
-    const now=new Date().toLocaleString('es-CO');
-    localStorage.setItem('iv_od_last_sync','Cargado: '+now);
-    setAI(el,'✅ Datos cargados correctamente desde OneDrive<br><small>Guardado originalmente: '+(data.savedAt?new Date(data.savedAt).toLocaleString('es-CO'):'?')+'</small>','ok');
-  }catch(e){
-    setAI(el,'❌ Error cargando: '+e.message,'err');
-  }
-}
-
-function odAutoSync(){
-  const btn=document.getElementById('od-autosync-btn');
-  if(odAutoSyncInterval){
-    clearInterval(odAutoSyncInterval);odAutoSyncInterval=null;
-    if(btn)btn.textContent='🔄 Auto-sync: OFF';
-    showToast('Auto-sync desactivado');
-  }else{
-    odAutoSyncInterval=setInterval(()=>{if(odAccount)odSave();},5*60*1000);// each 5 min
-    if(btn)btn.textContent='🔄 Auto-sync: ON (5min)';
-    showToast('✅ Auto-sync activado — guarda cada 5 minutos');
-    odSave();// save immediately
-  }
-}
-
-function updateODUI(loggedIn){
-  document.getElementById('od-logged-out').style.display=loggedIn?'none':'block';
-  document.getElementById('od-logged-in').style.display=loggedIn?'block':'none';
-  if(loggedIn&&odAccount){
-    document.getElementById('od-username').textContent=odAccount.name+' ('+odAccount.username+')';
-    const ls=localStorage.getItem('iv_od_last_sync');
-    document.getElementById('od-last-sync').textContent=ls||'Sin sincronizaciones aún';
-  }
-}
-
-// Simple export/import as fallback (no Azure app needed)
-function showODSimpleExport(){
-  const allData={gym:ld('gym'),run:ld('run'),bike:ld('bike'),weight:ld('weight'),rec:ld('rec'),goals:ld('goals'),profile:ldObj('profile'),savedAt:new Date().toISOString(),version:'v7'};
-  const blob=new Blob([JSON.stringify(allData,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='IvanPro_backup_'+new Date().toISOString().split('T')[0]+'.json';a.click();
-  URL.revokeObjectURL(url);
-  showToast('✅ Backup descargado — guárdalo en OneDrive manualmente');
-  const el=document.getElementById('od-sync-result');
-  if(el)setAI(el,'✅ Archivo <strong>IvanPro_backup.json</strong> descargado.<br>Guárdalo en tu carpeta de OneDrive para tenerlo disponible en otros dispositivos.<br><div style="margin-top:8px;"><button onclick="showODImportFile()" class="btn btn-ghost btn-sm">📥 Cargar backup JSON</button></div>','ok');
-}
-
-function showODImportFile(){
-  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
-  inp.onchange=async e=>{
-    const f=e.target.files[0];if(!f)return;
-    const text=await f.text();
-    try{
-      const data=JSON.parse(text);
-      if(!data.version&&!data.gym&&!data.run){alert('Archivo no válido');return;}
-      if(!confirm('¿Cargar datos del archivo? Guardado: '+(data.savedAt||'?')))return;
-      if(data.gym)sv('gym',data.gym);if(data.run)sv('run',data.run);if(data.bike)sv('bike',data.bike);
-      if(data.weight)sv('weight',data.weight);if(data.rec)sv('rec',data.rec);if(data.goals)sv('goals',data.goals);
-      if(data.profile){sv('profile',data.profile);profile=data.profile;}
-      renderDash();renderGym();renderRun();renderBike();renderWeight();renderRec();renderGoals();
-      showToast('✅ Datos cargados desde backup');
-    }catch(e){alert('Error leyendo archivo: '+e.message);}
-  };
-  inp.click();
-}
-
-function showODSetupGuide(){
-  const el=document.getElementById('od-sync-result');
-  if(!el)return;
-  setAI(el,`<strong>📋 Cómo obtener tu Client ID de Azure (gratis):</strong><br>
-    1. Ve a <strong>portal.azure.com</strong> (con tu cuenta Microsoft)<br>
-    2. Busca <strong>App registrations</strong> → <strong>New registration</strong><br>
-    3. Nombre: <em>IVAN PRO</em> · Tipo: <em>Personal Microsoft accounts only</em><br>
-    4. Redirect URI: <em>Single-page application (SPA)</em> → pega la URL de esta app<br>
-    5. Copia el <strong>Application (client) ID</strong> → pégalo en el botón de conectar<br>
-    6. En la app registrada → <strong>API permissions</strong> → Add → Microsoft Graph → <em>Files.ReadWrite</em> + <em>User.Read</em>
-    <br><br>
-    💡 <strong>Alternativa más simple:</strong> Usa el botón de exportar/importar JSON manualmente y guarda el archivo en tu OneDrive.`,'info');
-}
-
-// Init OneDrive on load
 function initOD(){
-  const saved=localStorage.getItem('iv_od_account');
-  const clientId=localStorage.getItem('iv_od_clientid');
-  if(saved&&clientId){
-    try{
-      odAccount=JSON.parse(saved);
-      msalInstance=initMSAL(clientId);
-      updateODUI(true);
-    }catch(e){}
-  }
+  const t=googGetToken();
+  if(t){googToken=t;try{googUser=localStorage.getItem('iv_gu')||'';}catch(e){}googUpdateUI(true);}
+  else googUpdateUI(false);
 }
-
-// Simple export/import buttons always visible
-function exportBackup(){showODSimpleExport();}
-function importBackup(){showODImportFile();}
-
+function googLogin(){
+  const redir=encodeURIComponent(location.href.split('?')[0].split('#')[0]);
+  const url='https://accounts.google.com/o/oauth2/v2/auth?client_id='+GOOG_CLIENT_ID+'&redirect_uri='+redir+'&response_type=token&scope='+encodeURIComponent(GOOG_SCOPES)+'&prompt=consent';
+  const pop=window.open(url,'googauth','width=520,height=640,left=200,top=100');
+  if(!pop){showToast('Permite popups para conectar Google');return;}
+  let n=0;
+  const poll=setInterval(()=>{n++;
+    try{if(pop.closed){clearInterval(poll);return;}
+      const h=pop.location.hash||'';
+      if(h.indexOf('access_token')!==-1){
+        clearInterval(poll);pop.close();
+        const p=new URLSearchParams(h.slice(1));
+        const tok=p.get('access_token'),exp=+p.get('expires_in')||3600;
+        if(tok){googToken=tok;
+          try{localStorage.setItem('iv_gt',tok);localStorage.setItem('iv_ge',String(Date.now()+exp*1000-60000));}catch(e){}
+          googFetchUser();}}}catch(e){}
+    if(n>120)clearInterval(poll);},500);
+}
+async function googFetchUser(){
+  try{const r=await fetch('https://www.googleapis.com/oauth2/v2/userinfo',{headers:{Authorization:'Bearer '+googToken}});
+    if(r.ok){const d=await r.json();googUser=d.name||d.email||'Usuario';
+      try{localStorage.setItem('iv_gu',googUser);}catch(e){}
+      googUpdateUI(true);showToast('Conectado: '+googUser);}}catch(e){}
+}
+function googLogout(){
+  googToken='';googUser='';if(googAutoTimer){clearInterval(googAutoTimer);googAutoTimer=null;}
+  try{localStorage.removeItem('iv_gt');localStorage.removeItem('iv_ge');localStorage.removeItem('iv_gu');}catch(e){}
+  driveFolderId='';googUpdateUI(false);showToast('Desconectado de Google');
+}
+function googUpdateUI(on){
+  const out=document.getElementById('goog-logged-out');
+  const inn=document.getElementById('goog-logged-in');
+  if(out)out.style.display=on?'none':'block';
+  if(inn)inn.style.display=on?'block':'none';
+  const un=document.getElementById('goog-username');if(un&&on)un.textContent=googUser;
+  const ls=document.getElementById('goog-last-sync');
+  if(ls){try{ls.textContent=localStorage.getItem('iv_gls')||'Sin sincronizaciones';}catch(e){}}
+}
+async function getOrCreateFolder(){
+  if(driveFolderId)return driveFolderId;
+  const tok=googToken||googGetToken();
+  const q=encodeURIComponent("name='IvanPro' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  const r=await fetch(DRIVE_API+'/files?q='+q+'&fields=files(id)',{headers:{Authorization:'Bearer '+tok}});
+  const d=await r.json();
+  if(d.files&&d.files.length){driveFolderId=d.files[0].id;return driveFolderId;}
+  const cr=await fetch(DRIVE_API+'/files',{method:'POST',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({name:'IvanPro',mimeType:'application/vnd.google-apps.folder'})});
+  const cd=await cr.json();driveFolderId=cd.id;return driveFolderId;
+}
+async function driveBackup(){
+  const el=document.getElementById('goog-sync-result');
+  const tok=googToken||googGetToken();if(!tok){setAI(el,'Conecta primero con Google','info');return;}
+  setAI(el,'Guardando en Google Drive...','loading');
+  try{
+    const fid=await getOrCreateFolder();
+    const body=JSON.stringify(getAllData(),null,2);
+    const q=encodeURIComponent("name='datos.json' and '"+fid+"' in parents and trashed=false");
+    const sr=await fetch(DRIVE_API+'/files?q='+q+'&fields=files(id)',{headers:{Authorization:'Bearer '+tok}});
+    const sd=await sr.json();const fileId=sd.files&&sd.files.length?sd.files[0].id:null;
+    const meta=fileId?{}:{name:'datos.json',parents:[fid]};
+    const form=new FormData();
+    form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+    form.append('file',new Blob([body],{type:'application/json'}));
+    const ur=await fetch((fileId?DRIVE_UPLOAD+'/files/'+fileId+'?uploadType=multipart':DRIVE_UPLOAD+'/files?uploadType=multipart'),
+      {method:fileId?'PATCH':'POST',headers:{Authorization:'Bearer '+tok},body:form});
+    if(!ur.ok){const e=await ur.json();throw new Error((e.error&&e.error.message)||'HTTP '+ur.status);}
+    const now=new Date().toLocaleString();
+    try{localStorage.setItem('iv_gls',now);}catch(e){}
+    const el2=document.getElementById('goog-last-sync');if(el2)el2.textContent='Guardado: '+now;
+    const d=getAllData();
+    setAI(el,'✅ Guardado en Google Drive/IvanPro/datos.json<br><small>'+d.gym.length+' gym · '+d.run.length+' runs · '+d.bike.length+' rutas · '+now+'</small>','ok');
+  }catch(e){setAI(el,'❌ Error Drive: '+e.message,'err');}
+}
+async function driveLoad(){
+  const el=document.getElementById('goog-sync-result');
+  const tok=googToken||googGetToken();if(!tok){setAI(el,'Conecta primero con Google','info');return;}
+  setAI(el,'Cargando desde Google Drive...','loading');
+  try{
+    const fid=await getOrCreateFolder();
+    const q=encodeURIComponent("name='datos.json' and '"+fid+"' in parents and trashed=false");
+    const sr=await fetch(DRIVE_API+'/files?q='+q+'&fields=files(id)',{headers:{Authorization:'Bearer '+tok}});
+    const sd=await sr.json();if(!sd.files||!sd.files.length){setAI(el,'Sin datos en Drive. Guarda primero.','info');return;}
+    const fr=await fetch(DRIVE_API+'/files/'+sd.files[0].id+'?alt=media',{headers:{Authorization:'Bearer '+tok}});
+    if(!fr.ok)throw new Error('HTTP '+fr.status);
+    const d=await fr.json();
+    const saved=d.savedAt?new Date(d.savedAt).toLocaleString():'?';
+    const cnt=[(d.gym&&d.gym.length||0)+' gym',(d.run&&d.run.length||0)+' runs',(d.bike&&d.bike.length||0)+' rutas'].join(', ');
+    if(!confirm('Cargar desde Google Drive?\nGuardado: '+saved+'\n'+cnt+'\nReplaza datos locales.'))return;
+    if(d.gym)sv('gym',d.gym);if(d.run)sv('run',d.run);if(d.bike)sv('bike',d.bike);
+    if(d.weight)sv('weight',d.weight);if(d.rec)sv('rec',d.rec);if(d.goals)sv('goals',d.goals);
+    if(d.profile){sv('profile',d.profile);profile=d.profile;}
+    renderDash();renderGym();renderRun();renderBike();renderWeight();renderRec();renderGoals();
+    setAI(el,'✅ Datos cargados de Google Drive<br><small>'+saved+'</small>','ok');
+  }catch(e){setAI(el,'❌ Error: '+e.message,'err');}
+}
+function driveAutoSync(){
+  const btn=document.getElementById('goog-autosync-btn');
+  if(googAutoTimer){clearInterval(googAutoTimer);googAutoTimer=null;if(btn)btn.textContent='🔄 Auto-sync: OFF';showToast('Auto-sync OFF');}
+  else{googAutoTimer=setInterval(()=>{if(googToken)driveBackup();},5*60*1000);if(btn)btn.textContent='🔄 Auto-sync: ON';showToast('Auto-sync activado (5 min)');driveBackup();}
+}
+async function fitImport(){
+  const el=document.getElementById('goog-sync-result');
+  const tok=googToken||googGetToken();if(!tok){setAI(el,'Conecta primero con Google','info');return;}
+  setAI(el,'Importando de Google Fit...','loading');
+  try{
+    const endMs=Date.now(),startMs=endMs-(30*24*60*60*1000);
+    const sr=await fetch(FIT_API+'/sessions?startTime='+new Date(startMs).toISOString()+'&endTime='+new Date(endMs).toISOString(),{headers:{Authorization:'Bearer '+tok}});
+    if(!sr.ok)throw new Error('Fitness API HTTP '+sr.status);
+    const sd=await sr.json();const sessions=sd.session||[];
+    const RUN=[8,9,56,87],BIKE=[7,11];
+    let ir=0,ib=0,iw=0;
+    const exR=ld('run').map(e=>e.date),exB=ld('bike').map(e=>e.date);
+    for(const s of sessions){
+      const date=new Date(+s.startTimeMillis).toISOString().split('T')[0];
+      const dur=Math.round((+s.endTimeMillis-+s.startTimeMillis)/60000);
+      if(RUN.includes(s.activityType)&&!exR.includes(date)){sv('run',[{id:uid(),date,time:dur,route:'Google Fit: '+s.name,notes:'Importado Fit tipo '+s.activityType,ts:Date.now()},...ld('run')]);ir++;}
+      else if(BIKE.includes(s.activityType)&&!exB.includes(date)){sv('bike',[{id:uid(),date,time:dur,type:'Importado Fit',route:'Google Fit: '+s.name,notes:'Importado Fit tipo '+s.activityType,ts:Date.now()},...ld('bike')]);ib++;}
+    }
+    const wr=await fetch(FIT_API+'/dataSources?dataTypeName=com.google.weight',{headers:{Authorization:'Bearer '+tok}});
+    if(wr.ok){const wd=await wr.json();const sources=(wd.dataSource||[]).slice(0,3);
+      const exW=ld('weight').map(e=>e.date);
+      for(const src of sources){
+        const dr=await fetch(FIT_API+'/dataSources/'+encodeURIComponent(src.dataStreamId)+'/datasets/'+startMs+'000000-'+endMs+'000000',{headers:{Authorization:'Bearer '+tok}});
+        if(!dr.ok)continue;const dd=await dr.json();
+        for(const pt of (dd.point||[]).slice(0,20)){
+          const date=new Date(Math.round(+pt.startTimeNanos/1000000)).toISOString().split('T')[0];
+          const kg=pt.value&&pt.value[0]?+(pt.value[0].fpVal||0).toFixed(1):0;
+          if(kg>30&&kg<250&&!exW.includes(date)){sv('weight',[{id:uid(),date,kg,when:'Google Fit',notes:'Importado',ts:Date.now()},...ld('weight')]);iw++;}
+        }
+      }
+    }
+    renderRun();renderBike();renderWeight();renderDash();
+    setAI(el,'✅ Importado de Google Fit:'+(ir?'<br>🏃 '+ir+' runs':'')+(ib?'<br>🚴 '+ib+' rutas':'')+(iw?'<br>⚖️ '+iw+' pesos':'')+(ir+ib+iw===0?'<br>Sin sesiones nuevas en 30 días':''),'ok');
+  }catch(e){setAI(el,'❌ Error Fitness: '+e.message,'err');}
+}
+function exportBackup(){
+  const d=getAllData();const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;
+  a.download='IvanPro_'+new Date().toISOString().split('T')[0]+'.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
+  showToast('✅ Backup exportado');
+}
+function importBackup(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=function(ev){const f=ev.target.files[0];if(!f)return;
+    const r=new FileReader();r.onload=function(e){
+      try{const d=JSON.parse(e.target.result);
+        if(!d.gym&&!d.run&&!d.bike){showToast('Archivo no válido');return;}
+        const cnt=[(d.gym&&d.gym.length||0)+' gym',(d.run&&d.run.length||0)+' runs',(d.bike&&d.bike.length||0)+' rutas'].join(', ');
+        const saved=d.savedAt?new Date(d.savedAt).toLocaleString():'?';
+        if(!confirm('Cargar backup?\nGuardado: '+saved+'\n'+cnt+'\nReplaza datos actuales.'))return;
+        if(d.gym)sv('gym',d.gym);if(d.run)sv('run',d.run);if(d.bike)sv('bike',d.bike);
+        if(d.weight)sv('weight',d.weight);if(d.rec)sv('rec',d.rec);if(d.goals)sv('goals',d.goals);
+        if(d.profile){sv('profile',d.profile);profile=d.profile;}
+        renderDash();renderGym();renderRun();renderBike();renderWeight();renderRec();renderGoals();
+        showToast('✅ Datos cargados');
+      }catch(er){showToast('❌ Error: '+er.message);}
+    };r.readAsText(f);};inp.click();
+}
 window.onload=()=>{
+  // Hide all pages explicitly at startup
+  document.querySelectorAll('.page').forEach(function(p){p.style.display='none';});
   loadApiKeyStatus();
   initOD();
   loadPreferredModel();
   setTimeout(updateZones,200);
   profile=ldObj('profile');
-  document.getElementById('topnav-date').textContent=new Date().toLocaleDateString('es-CO',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('topnav-date').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',year:'numeric',month:'short',day:'numeric'});
   document.getElementById('g-date').value=today();
   updateProfileDisplay();
   renderDash();
@@ -2759,6 +2811,31 @@ window.onload=()=>{
   const dz=document.getElementById('di');
   if(dz){const wrap=dz.closest('.import-zone');if(wrap){wrap.addEventListener('dragover',e=>{e.preventDefault();wrap.style.borderColor='var(--accent)';});wrap.addEventListener('dragleave',()=>{wrap.style.borderColor='';});wrap.addEventListener('drop',e=>{e.preventDefault();wrap.style.borderColor='';const f=e.dataTransfer.files[0];if(f){const fake={files:[f],value:''};importFile(fake,'bike');}});}}
 };
+function openDrawer(){document.getElementById('main-drawer').classList.add('open');document.getElementById('drawer-overlay').classList.add('open');document.body.style.overflow='hidden';}
+function closeDrawer(){document.getElementById('main-drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');document.body.style.overflow='';}
+function drawerNav(p,b){closeDrawer();go(p,null);document.querySelectorAll('.drawer-item').forEach(x=>x.classList.toggle('active',x.getAttribute('data-page')===p));}
+
 </script>
+
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="main-drawer">
+  <div class="drawer-header"><div><div class="drawer-logo">IVAN PRO</div><div class="drawer-tag">Training Intelligence</div></div><button class="drawer-close" onclick="closeDrawer()">✕</button></div>
+  <div class="drawer-nav">
+    <div class="drawer-section">Principal</div>
+    <button class="drawer-item active" data-page="dash" onclick="drawerNav('dash',this)"><span class="drawer-icon">📊</span>Dashboard</button>
+    <button class="drawer-item" data-page="gym" onclick="drawerNav('gym',this)"><span class="drawer-icon">🏋️</span>Gym</button>
+    <button class="drawer-item" data-page="running" onclick="drawerNav('running',this)"><span class="drawer-icon">🏃</span>Running</button>
+    <button class="drawer-item" data-page="cycling" onclick="drawerNav('cycling',this)"><span class="drawer-icon">🚴</span>Ciclismo</button>
+    <div class="drawer-section">Salud</div>
+    <button class="drawer-item" data-page="weight" onclick="drawerNav('weight',this)"><span class="drawer-icon">⚖️</span>Peso &amp; Cuerpo</button>
+    <button class="drawer-item" data-page="recovery" onclick="drawerNav('recovery',this)"><span class="drawer-icon">🔄</span>Recuperación</button>
+    <button class="drawer-item" data-page="goals" onclick="drawerNav('goals',this)"><span class="drawer-icon">🎯</span>Metas &amp; IA</button>
+    <div class="drawer-section">Config</div>
+    <button class="drawer-item" data-page="profile" onclick="drawerNav('profile',this)"><span class="drawer-icon">👤</span>Perfil</button>
+    <button class="drawer-item" data-page="import" onclick="drawerNav('import',this)"><span class="drawer-icon">📥</span>Importar &amp; IA</button>
+  </div>
+</div>
+
+
 </body>
 </html>
