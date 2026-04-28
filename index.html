@@ -1179,14 +1179,14 @@ function getExData(){
 
 // ══ AI — Google Gemini ══
 function getApiKey(){
-  var GEMINI_KEY='AIzaSyBE93zW-m8ww0zTtOzJ--QdepNTcuUFI68';
+  var GEMINI_KEY='YOUR_GEMINI_KEY_HERE';
   if(GEMINI_KEY!=='YOUR_GEMINI_KEY_HERE')return GEMINI_KEY;
   return profile.apikey||'';
 }
 
 async function callAI(prompt,imgB64,imgType){
   // ★ INSERT YOUR GEMINI API KEY ON THE NEXT LINE ★
-  const GEMINI_KEY='AIzaSyBE93zW-m8ww0zTtOzJ--QdepNTcuUFI68';
+  const GEMINI_KEY='YOUR_GEMINI_KEY_HERE';
   const key=GEMINI_KEY!=='YOUR_GEMINI_KEY_HERE'?GEMINI_KEY:(profile.apikey||'');
   if(!key)return'❌ API key de Gemini no configurada. Edita el archivo HTML y reemplaza YOUR_GEMINI_KEY_HERE en la función callAI, o ingresa la key en Perfil.';
   const MODELS=['gemini-2.5-flash-preview-05-20','gemini-2.0-flash','gemini-1.5-flash'];
