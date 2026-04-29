@@ -59,11 +59,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 .sb-tag{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
 .sb-score-wrap{margin:12px;background:#111827;border-radius:14px;padding:14px;color:#fff;}
 .sb-score-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
-.score-circle{font-family:var(--font-data);font-size:36px;font-weight:700;color:#fff;line-height:1;}}
-.score-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.7);}}
-.score-status{font-size:13px;font-weight:600;color:#fff;margin-top:2px;}}
-.score-bar{height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin-top:10px;}}
-.score-bar-fill{height:4px;background:var(--accent);border-radius:2px;transition:width .5s ease;}}
+.score-circle{font-family:var(--font-data);font-size:36px;font-weight:700;color:#fff;line-height:1;}
+.score-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.7);}
+.score-status{font-size:13px;font-weight:600;color:#fff;margin-top:2px;}
+.score-bar{height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin-top:10px;}
+.score-bar-fill{height:4px;background:var(--accent);border-radius:2px;transition:width .5s ease;}
 .sb-nav{padding:8px;}
 .sb-section{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:10px 10px 4px;}
 .sb-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s;margin-bottom:1px;}
@@ -552,53 +552,94 @@ function getExData(){
 }
 
 // ══ AI — Google Gemini ══
-function getApiKey(){
-  var GEMINI_KEY='YOUR_GEMINI_KEY_HERE';
-  if(GEMINI_KEY!=='YOUR_GEMINI_KEY_HERE')return GEMINI_KEY;
-  return profile.apikey||'';
-}
-
-async function callAI(prompt,imgB64,imgType){
-  // ★ INSERT YOUR GEMINI API KEY ON THE NEXT LINE ★
-  const GEMINI_KEY='YOUR_GEMINI_KEY_HERE';
-  const key=GEMINI_KEY!=='YOUR_GEMINI_KEY_HERE'?GEMINI_KEY:(profile.apikey||'');
-  if(!key)return'❌ API key de Gemini no configurada. Edita el archivo HTML y reemplaza YOUR_GEMINI_KEY_HERE en la función callAI, o ingresa la key en Perfil.';
-  const MODELS=['gemini-2.5-flash-preview-05-20','gemini-2.0-flash','gemini-1.5-flash'];
-  const BASE='https://generativelanguage.googleapis.com/v1beta/models/';
-  for(const model of MODELS){
-    try{
-      const parts=[];
-      if(imgB64)parts.push({inlineData:{mimeType:imgType||'image/jpeg',data:imgB64}});
-      parts.push({text:prompt});
-      const ctrl=new AbortController();
-      const tid=setTimeout(()=>ctrl.abort(),30000);
-      let res;
-      try{
-        res=await fetch(BASE+model+':generateContent?key='+key,{
-          method:'POST',signal:ctrl.signal,
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{maxOutputTokens:1000,temperature:0.6}})
-        });
-        clearTimeout(tid);
-      }catch(fe){clearTimeout(tid);throw fe;}
-      if(!res.ok){
-        let em='HTTP '+res.status;
-        try{const e=await res.json();em=(e.error&&e.error.message)||em;}catch(e){}
-        if(['RESOURCE_EXHAUSTED','quota','429','503','overloaded'].some(s=>em.toLowerCase().includes(s.toLowerCase()))){continue;}
-        if(res.status===400)return'❌ API key inválida — verifica en aistudio.google.com';
-        continue;
-      }
-      const data=await res.json();
-      let txt='';try{txt=data.candidates[0].content.parts[0].text||'';}catch(e){}
-      if(txt.trim().length>10)return txt.trim();
-    }catch(e){
-      if(e.name==='AbortError'){console.warn('Gemini timeout',model);continue;}
-      if(MODELS.indexOf(model)===MODELS.length-1)return'❌ Error Gemini: '+e.message;
-    }
+function getApiKey() {
+  var GEMINI_KEY = 'YOUR_GEMINI_KEY_HERE';
+  if (GEMINI_KEY !== 'YOUR_GEMINI_KEY_HERE') return GEMINI_KEY;
+  
+  // Intentar obtener del perfil
+  if (profile && profile.apikey && profile.apikey.trim().length > 0) {
+    return profile.apikey;
   }
-  return'❌ Gemini no disponible. Verifica tu API key en aistudio.google.com';
+  
+  // Intentar de localStorage directamente
+  try {
+    const savedProfile = localStorage.getItem('iv_profile');
+    if (savedProfile) {
+      const parsed = JSON.parse(savedProfile);
+      if (parsed.apikey && parsed.apikey.trim().length > 0) {
+        return parsed.apikey;
+      }
+    }
+  } catch(e) {}
+  
+  return '';
 }
+// ══ ESTRATEGIA DEFINITIVA: OPENROUTER FREE ══
 
+async function callAI(prompt, imgB64, imgType) {
+    // 1. Intentamos obtener la llave desde tu perfil guardado en el PC
+    let key = getApiKey(); 
+    
+    if (!key || key.includes('YOUR_GEMINI_KEY')) {
+        return '❌ API key de OpenRouter no configurada. Ve a Perfil e ingresa tu clave sk-or-v1...';
+    }
+
+    const url = 'https://openrouter.ai/api/v1/chat/completions';
+    
+    // Configuración del contenido (Maneja texto solo o texto + imagen)
+    let messageContent = [];
+    messageContent.push({ type: 'text', text: prompt });
+    
+    if (imgB64) {
+        messageContent.push({ 
+            type: 'image_url', 
+            image_url: { url: `data:${imgType || 'image/jpeg'};base64,${imgB64}` } 
+        });
+    }
+
+    const requestBody = {
+        model: 'openrouter/free', // EL TRUCO: Selector automático de modelos gratuitos
+        messages: [
+            { role: 'user', content: messageContent }
+        ],
+        max_tokens: 1000
+    };
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s de espera
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${key}`,
+                'HTTP-Referer': 'https://ivando01.github.io/IDG-TRAINING-PRO/',
+                'X-Title': 'IDG TRAINING PRO'
+            },
+            body: JSON.stringify(requestBody),
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || `Error HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const text = data.choices?.[0]?.message?.content;
+        
+        if (!text) throw new Error('La IA no devolvió texto.');
+
+        return text.trim();
+
+    } catch (error) {
+        console.error('OpenRouter Error:', error);
+        return `❌ Error con IA: ${error.message}. Verifica tu clave o saldo en OpenRouter.`;
+    }
+}
 function toB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
 
 async function analyzeImg(input,type,elId){
@@ -993,7 +1034,7 @@ function saveProfile(){
   sv('profile',profile);
   updateProfileDisplay();
   renderProfileSummary();
-  renderProfileSummary();
+  const zones = saveZones();
   showToast('✅ Perfil guardado');
 }
 
@@ -1186,109 +1227,63 @@ function saveZones(){
 
 
 // ══ API KEY TESTER ══
-async function checkGeminiKey(){
-  const el=document.getElementById('api-test-result');
-  const key=getApiKey();
-  if(!key){setAI(el,'❌ Ingresa primero tu API key','err');return;}
-  setAI(el,'🔍 Verificando key en Gemini...','loading');
-  try{
-    // Check credits/account info
-    const res=await fetch('https://aistudio.google.com/api/v1/auth/key',{
-      headers:{'Authorization':`Bearer ${key}`,'Content-Type':'application/json'}
-    });
-    if(!res.ok){setAI(el,`❌ Key inválida (HTTP ${res.status}). Verifica que empiece con AIzaSy`,'err');return;}
-    const data=await res.json();
-    const d=data.data||data;
-    const limit=d.limit!==null&&d.limit!==undefined?'$'+parseFloat(d.limit).toFixed(2):'Sin límite (prepago)';
-    const used=d.usage!==undefined?'$'+parseFloat(d.usage).toFixed(4):'?';
-    const remaining=d.limit!==null&&d.limit!==undefined&&d.usage!==undefined?
-      '$'+Math.max(0,parseFloat(d.limit)-parseFloat(d.usage)).toFixed(4):'Ver en aistudio.google.com/credits';
-    const isKey=d.is_free_tier;
-    setAI(el,`✅ <strong>Key válida y activa</strong><br>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px;">
-        <div style="background:var(--surface3);padding:6px 10px;border-radius:8px;"><span style="color:var(--text3);">Límite:</span> <strong>${limit}</strong></div>
-        <div style="background:var(--surface3);padding:6px 10px;border-radius:8px;"><span style="color:var(--text3);">Usado:</span> <strong>${used}</strong></div>
-        <div style="background:var(--green-lt);padding:6px 10px;border-radius:8px;color:var(--green);"><span>Disponible:</span> <strong>${remaining}</strong></div>
-        <div style="background:var(--surface3);padding:6px 10px;border-radius:8px;"><span style="color:var(--text3);">Tipo:</span> <strong>${isKey?'Free tier':'Con créditos'}</strong></div>
-      </div>`,'ok');
-  }catch(e){setAI(el,'❌ Error verificando: '+e.message,'err');}
-}
-
-async function checkGeminiKey(){
-  const el=document.getElementById('api-test-result');
-  const key=getApiKey();
-  if(!key){setAI(el,'❌ Ingresa primero tu API key','err');return;}
-  const model=document.getElementById('preferred-model')?.value||'gemini/auto';
-  setAI(el,`⚡ Probando <code>${model}</code>...`,'loading');
-  const start=Date.now();
-  try{
-    const res=await fetch('https://aistudio.google.com/api/v1/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`,'HTTP-Referer':'https://ivanpro.app','X-Title':'IDG TRAINING PRO Test'},
-      body:JSON.stringify({model,messages:[{role:'user',content:'Di solo: OK'}],max_tokens:10})
-    });
-    const elapsed=((Date.now()-start)/1000).toFixed(1);
-    if(!res.ok){
-      const err=await res.json();
-      setAI(el,`❌ Modelo no disponible: ${err.error?.message||'Error desconocido'}<br><small>Prueba otro modelo del selector.</small>`,'err');
-      return;
-    }
-    const data=await res.json();
-    const txt=data.choices?.[0]?.message?.content||'?';
-    const cost=data.usage?`Tokens: ${data.usage.prompt_tokens||0}+${data.usage.completion_tokens||0}`:'';
-    setAI(el,`✅ <strong>${model}</strong> responde en <strong>${elapsed}s</strong> ✅<br><small style="color:var(--text3);">${cost} · Respuesta: "${txt.trim()}"</small>`,'ok');
-  }catch(e){setAI(el,'❌ Error: '+e.message,'err');}
-}
-
-async function checkGeminiKey(){
-  const el=document.getElementById('api-test-result');
-  const key=getApiKey();
-  if(!key){setAI(el,'❌ Ingresa primero tu API key','err');return;}
-  el.innerHTML='<div class="ai-box info"><strong>⚡ Probando modelos...</strong> Esto tarda ~20 segundos</div>';
-
-  const toTest=[
-    {id:'google/gemini-flash-2.5',label:'Gemini Flash 2.5 ⭐'},
-    {id:'google/gemini-flash-1.5',label:'Gemini Flash 1.5'},
-    {id:'mistralai/mistral-small-3.2-24b-instruct:free',label:'Mistral Small (gratis)'},
-    {id:'meta-llama/llama-4-maverick:free',label:'Llama 4 Maverick (gratis)'},
-    {id:'google/gemma-3-27b-it:free',label:'Gemma 3 27B (gratis)'},
-    {id:'qwen/qwen2.5-vl-72b-instruct:free',label:'Qwen 2.5 VL 72B (gratis, imágenes)'},
-  ];
-
-  let results='<div class="ai-box ok"><strong>📊 Resultado de modelos disponibles:</strong><div style="margin-top:8px;display:flex;flex-direction:column;gap:5px;">';
-  for(const m of toTest){
-    const start=Date.now();
-    try{
-      const res=await fetch('https://aistudio.google.com/api/v1/chat/completions',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`,'HTTP-Referer':'https://ivanpro.app','X-Title':'IDG TRAINING PRO Test'},
-        body:JSON.stringify({model:m.id,messages:[{role:'user',content:'Di: OK'}],max_tokens:5})
-      });
-      const elapsed=((Date.now()-start)/1000).toFixed(1);
-      if(res.ok){
-        const d=await res.json();const txt=d.choices?.[0]?.message?.content||'';
-        const cost=d.usage?.total_tokens?`${d.usage.total_tokens} tokens`:'';
-        results+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--green-lt);border-radius:6px;font-size:12px;">
-          <span style="color:var(--green);">✅</span>
-          <span style="flex:1;font-weight:600;">${m.label}</span>
-          <span style="color:var(--text3);font-family:var(--font-mono);">${elapsed}s ${cost}</span>
-        </div>`;
-      } else {
-        const err=await res.json();const msg=(err.error?.message||'').slice(0,50);
-        results+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--red-lt);border-radius:6px;font-size:12px;">
-          <span style="color:var(--red);">❌</span>
-          <span style="flex:1;">${m.label}</span>
-          <span style="color:var(--text3);font-size:10px;">${msg}</span>
-        </div>`;
-      }
-    }catch(e){
-      results+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface3);border-radius:6px;font-size:12px;">
-        <span>⚠️</span><span style="flex:1;">${m.label}</span><span style="font-size:10px;color:var(--text3);">Error red</span>
-      </div>`;
-    }
-    el.innerHTML=results+'</div><div style="font-size:11px;color:var(--text3);margin-top:6px;">Probando siguiente...</div></div>';
+async function checkGeminiKey() {
+  const el = document.getElementById('api-test-result');
+  const key = getApiKey();
+  
+  if (!key) {
+    setAI(el, '❌ Ingresa primero tu API key en Perfil → API Key Gemini', 'err');
+    return;
   }
-  el.innerHTML=results+'</div><div style="font-size:11px;color:var(--text3);margin-top:8px;">💡 Selecciona el modelo ✅ más rápido en el selector de arriba y guarda.</div></div>';
+  
+  setAI(el, '🔍 Probando modelos disponibles...', 'loading');
+  
+  // Probar los modelos que suelen funcionar
+  const testModels = [
+    'gemini-2.0-flash-exp',
+    'gemini-1.5-flash-exp',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro'
+  ];
+  
+  let workingModel = null;
+  
+  for (const model of testModels) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: "Responde exactamente con la palabra: OK" }]
+          }],
+          generationConfig: { maxOutputTokens: 5 }
+        })
+      });
+      
+      if (response.ok) {
+        workingModel = model;
+        break;
+      }
+      
+      const error = await response.json();
+      if (error.error?.message?.includes('API key')) {
+        setAI(el, '❌ API key inválida. Obtén una nueva en https://makersuite.google.com/app/apikey', 'err');
+        return;
+      }
+      
+    } catch(e) {
+      console.log(`${model} no disponible`);
+    }
+  }
+  
+  if (workingModel) {
+    setAI(el, `✅ **API key válida!**\n\nModelo activo: \`${workingModel}\`\n\nYa puedes usar todas las funciones de IA.`, 'ok');
+  } else {
+    setAI(el, `❌ **No se encontraron modelos disponibles**\n\nPosibles causas:\n1. La API key es inválida\n2. La API no está habilitada en tu región\n3. No tienes créditos en Google Cloud\n\n**Solución:**\n1. Ve a https://makersuite.google.com/app/apikey\n2. Crea una NUEVA API key\n3. Cópiala exactamente (empieza con AIza)\n4. Pégala en Perfil → API Key Gemini\n5. Guarda y prueba de nuevo`, 'err');
+  }
 }
 
 function savePreferredModel(){
@@ -2689,6 +2684,10 @@ window.onload=()=>{
   loadPreferredModel();
   setTimeout(updateZones,200);
   profile=ldObj('profile');
+    if (!profile || Object.keys(profile).length === 0) {
+    profile = { apikey: '', weight: 67.5, height: 175, fcmax: 190, fcrest: 54 };
+    sv('profile', profile);
+  }
   document.getElementById('topnav-date').textContent=new Date().toLocaleDateString(undefined,{weekday:'short',year:'numeric',month:'short',day:'numeric'});
   document.getElementById('g-date').value=today();
   updateProfileDisplay();
