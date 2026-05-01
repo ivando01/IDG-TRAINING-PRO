@@ -33,6 +33,23 @@
   .ex-thead{display:none !important;}.ex-row{display:flex !important;flex-direction:column !important;gap:6px !important;padding:10px 12px !important;}
   .btn-save{width:100% !important;justify-content:center !important;}
 }
+
+/* ── Session accordion & maps ── */
+.session-card{border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow);margin-bottom:10px;overflow:hidden;}
+.session-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;cursor:pointer;transition:background .15s;user-select:none;}
+.session-hdr:hover{background:var(--surface3);}
+.session-body{display:none;padding:0 15px 14px;border-top:1px solid var(--border-light);}
+.session-body.open{display:block;}
+.stat-row{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 6px;}
+.stat-box{text-align:center;min-width:52px;}
+.stat-box .sv{font-family:var(--font-data);font-size:19px;font-weight:700;color:var(--text1);line-height:1;}
+.stat-box .sl{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-top:2px;}
+.gpx-map{width:100%;height:230px;border-radius:10px;border:1px solid var(--border);margin-top:10px;cursor:pointer;position:relative;overflow:hidden;background:var(--surface3);}
+.gym-session{border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);margin-bottom:8px;overflow:hidden;}
+.gym-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;cursor:pointer;transition:background .15s;}
+.gym-hdr:hover{background:var(--surface3);}
+.gym-body{display:none;padding:0 14px 13px;}
+.gym-body.open{display:block;}
 </style>
 
 <style>
@@ -287,6 +304,18 @@ textarea{resize:vertical;min-height:68px;}
 .ap-hist-meta{font-size:10px;color:var(--text3);margin-bottom:4px;}
 .ap-hist-summary{font-size:12px;color:var(--text-sec);line-height:1.5;}
 
+
+/* Profile 3-col responsive */
+@media (max-width: 900px){
+  #p-profile > div:first-child {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+@media (max-width: 600px){
+  #p-profile > div:first-child {
+    grid-template-columns: 1fr !important;
+  }
+}
 </style>
 <script>
 /* Inline Chart Engine — Safari/iOS/Android safe, ES5 */
@@ -377,9 +406,768 @@ IVC.register=function(){};IVC.defaults={};win.Chart=IVC;
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Flex:opsz,wght@8..144,400;8..144,700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </head>
 <body>
+
+
+
+<!-- ═══ SIDEBAR ═══ -->
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo" style="font-family:var(--font-logo);font-weight:700;">IDG TRAINING PRO</div>
+    <div class="sb-tag">Performance Analytics</div>
+  </div>
+  <div class="sb-score-wrap">
+    <div class="sb-score-top">
+      <div class="score-circle" id="score-circle" style="font-family:var(--font-data);">78</div>
+      <div><div class="score-label">Score semanal</div><div class="score-status" id="score-status">Bueno</div></div>
+    </div>
+    <div class="score-bar"><div class="score-bar-fill" id="score-fill" style="width:78%"></div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">Principal</div>
+    <button class="sb-item active" onclick="go('dash',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</button>
+    <button class="sb-item" onclick="go('gym',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16M18 4v16M3 9h3M18 9h3M3 15h3M18 15h3M6 12h12"/></svg>Gym</button>
+    <button class="sb-item" onclick="go('running',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="4.5" r="1.5"/><path d="m9 10 3-3 2.5 3L17 8"/><path d="M9 16.5 7 21"/><path d="m11.5 12.5-2 4.5 4.5 2"/></svg>Running</button>
+    <button class="sb-item" onclick="go('cycling',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M9 9h6l-1.5 4H9l-4 4M15 4h2l-2 5"/><circle cx="15" cy="4" r="1"/></svg>Ciclismo</button>
+    <div class="sb-section">Análisis</div>
+    <button class="sb-item" onclick="go('weight',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg>Peso & Cuerpo</button>
+    <button class="sb-item" onclick="go('recovery',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Recuperación</button>
+    <button class="sb-item" onclick="go('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>Metas & IA</button>
+    <div class="sb-section">Config</div>
+    <button class="sb-item" onclick="go('profile',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
+    <button class="sb-item" onclick="go('import',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0-4-4m4 4 4-4"/><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>Importar</button>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-quote">La disciplina hoy es el resultado de mañana.<br><strong style="color:var(--accent);font-style:normal;">IDG TRAINING PRO</strong></div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+<div class="topnav">
+  <button class="hamburger" onclick="openDrawer()"><span></span><span></span><span></span></button>
+<div class="topnav-title" id="topnav-title">Dashboard</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span id="topnav-date" style="font-size:12px;color:var(--text3);font-family:var(--font-mono);"></span>
+    <div style="font-size:13px;font-weight:600;color:var(--text2);" id="topnav-name">Ivan</div>
+    <div class="avatar">IV</div>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ═══ DASHBOARD ═══ -->
+<div id="p-dash" class="page active">
+  <div class="kpi-row" id="dash-kpis"></div>
+  <div class="grid-2" style="margin-bottom:14px;">
+    <div>
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title">Carga de entrenamiento</div>
+        <div class="card-sub">Últimos 7 días</div>
+        <div class="chart-wrap"><canvas id="chart-load"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Distribución por deporte</div>
+        <div class="card-sub" id="dash-dist-sub"></div>
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="width:130px;height:130px;position:relative;flex-shrink:0;"><canvas id="chart-donut" style="width:130px!important;height:130px!important;"></canvas></div>
+          <div id="dash-legend" style="display:flex;flex-direction:column;gap:6px;flex:1;"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="card-title" style="margin:0;">Importar actividad</div>
+          <div style="display:flex;gap:4px;">
+            <button onclick="switchIP('files')" id="iptab-f" class="btn btn-sm btn-primary" style="font-size:11px;">📁 Archivos</button>
+            <button onclick="switchIP('ai')" id="iptab-a" class="btn btn-sm btn-ghost" style="font-size:11px;">🤖 IA</button>
+          </div>
+        </div>
+        <div id="ip-files">
+          <div class="fmt-grid">
+            <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'bike')"><div class="fmt-icon">🗺️</div><div class="fmt-name">GPX</div><div class="fmt-desc">Rutas GPS</div></label></div>
+            <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".fit" style="display:none" onchange="importFile(this,'bike')"><div class="fmt-icon">⌚</div><div class="fmt-name">FIT</div><div class="fmt-desc">Garmin/Wahoo</div></label></div>
+            <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'run')"><div class="fmt-icon">🏃</div><div class="fmt-name">Running</div><div class="fmt-desc">GPX/FIT run</div></label></div>
+          </div>
+          <div class="import-zone" onclick="document.getElementById('di').click()">
+            <input type="file" id="di" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'bike')">
+            <div style="font-size:22px;margin-bottom:4px;">☁️</div>
+            <div style="font-size:12px;color:var(--text3);">Arrastra o haz clic · .gpx · .fit</div>
+          </div>
+          <div id="dash-ir"></div>
+        </div>
+        <div id="ip-ai" style="display:none;">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">Sube una captura de Huawei Health, Garmin, Strava o tu smartwatch para análisis automático con IA.</div>
+          <label class="btn btn-ai" style="width:100%;justify-content:center;cursor:pointer;">
+            📸 Subir imagen para análisis IA
+            <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'generic','dash-air')">
+          </label>
+          <div id="dash-air"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="card-title" style="margin:0;">Metas activas</div>
+          <button class="btn btn-sm btn-ghost" style="font-size:11px;" onclick="go('goals',null)">Ver todas →</button>
+        </div>
+        <div id="dash-goals-mini"></div>
+      </div>
+    </div>
+  </div>
+  <div class="status-bar" id="dash-status"></div>
+</div>
+
+<!-- ═══ GYM ═══ -->
+<div id="p-gym" class="page">
+  <!-- Gym: collapse workout form until routine is selected -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+    <select id="g-routine" onchange="onRoutineSelect()" style="font-size:13px;font-weight:600;width:auto;min-width:220px;">
+      <option value="">— Selecciona una rutina para comenzar —</option>
+      <option value="">— Selecciona rutina —</option><option value="1">Día 1 — Cuádriceps + Pantorrilla</option>
+      <option value="2">Día 2 — Isquios + Glúteo</option>
+      <option value="3">Día 3 — Espalda + Antebrazo</option>
+      <option value="4">Día 4 — Pecho + Hombro</option>
+      <option value="5">Día 5 — Bíceps + Tríceps</option>
+      <option value="wod">WOD Ranger</option>
+      <option value="custom">+ Personalizado</option>
+    </select>
+    <div class="unit-toggle">
+      <button class="ut-btn active" id="ut-lbs" onclick="setUnit('lbs')">lbs</button>
+      <button class="ut-btn" id="ut-kg" onclick="setUnit('kg')">kg</button>
+    </div>
+    <div style="flex:1;"></div>
+    <button class="btn btn-ai" onclick="aiGymAdvice()">🤖 Consejo IA</button>
+    <button class="btn btn-save" onclick="saveGym()">💾 Guardar sesión</button>
+  </div>
+
+  <!-- Gym fields -->
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+    <input type="date" id="g-date" style="width:auto;">
+    <select id="g-dur-h" style="width:66px;font-size:13px;"><option value="0">0h</option><option value="1">1h</option><option value="2">2h</option><option value="3">3h</option><option value="4">4h</option><option value="5">5h</option></select><select id="g-dur-m" style="width:74px;font-size:13px;"><option value="0">00min</option><option value="5">05min</option><option value="10">10min</option><option value="15">15min</option><option value="20">20min</option><option value="25">25min</option><option value="30">30min</option><option value="35">35min</option><option value="40">40min</option><option value="45">45min</option><option value="50">50min</option><option value="55">55min</option></select>
+    <input type="number" id="g-int" placeholder="Intensidad 1-10" min="1" max="10" style="width:140px;">
+    <input type="text" id="g-pain" placeholder="Zona de dolor" style="width:140px;">
+    <input type="number" id="g-plevel" placeholder="Nivel dolor 0-10" style="width:140px;">
+  </div>
+  <textarea id="g-notes" placeholder="Notas generales..." style="margin-bottom:10px;height:56px;"></textarea>
+
+  <!-- Workout form: shown only after routine selected -->
+  <div id="gym-form-wrap" style="display:none;">
+  <!-- Exercise table -->
+  <div class="ex-wrap">
+    <div class="ex-header">
+      <div class="ex-col">#</div>
+      <div class="ex-col">Ejercicio</div>
+      <div class="ex-col">Series</div>
+      <div class="ex-col">Repeticiones</div>
+      <div class="ex-col">Series (peso por serie)</div>
+      <div class="ex-col">Descanso</div>
+      <div class="ex-col">IA</div>
+    </div>
+    <div id="ex-body"></div>
+  </div>
+  <div style="margin-top:8px;border:2px dashed var(--border2);border-radius:10px;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:var(--text3);" onclick="addEx()">+ Agregar ejercicio</div>
+
+  <div id="gym-ai-advice" style="margin-top:10px;"></div>
+
+  <!-- Gym history -->
+  </div><!-- end gym-form-wrap -->
+
+  <div class="card" style="margin-top:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <div class="card-title">📋 Historial de sesiones</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <select id="gym-filter" onchange="renderGym()" style="font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);">
+          <option value="">Todas las rutinas</option>
+          <option value="1">Día 1 — Cuádriceps</option>
+          <option value="2">Día 2 — Isquios + Glúteo</option>
+          <option value="3">Día 3 — Espalda</option>
+          <option value="4">Día 4 — Pecho + Hombro</option>
+          <option value="5">Día 5 — Bíceps + Tríceps</option>
+          <option value="wod">WOD Ranger</option>
+          <option value="custom">Personalizado</option>
+        </select>
+        <button class="btn btn-ai btn-sm" onclick="aiGymHistoryAnalysis()" style="font-size:11px;">🤖 Analizar rutinas IA</button>
+      </div>
+    </div>
+    <div id="gym-history-ai" style="margin-bottom:10px;"></div>
+    <div id="gym-list"></div>
+  </div>
+</div>
+
+<!-- ═══ RUNNING ═══ -->
+<div id="p-running" class="page">
+  <div class="inline-import">
+    <div class="ii-title">📥 Importar / Analizar running</div>
+    <div class="ii-btns">
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer;">🗺️ GPX/FIT<input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'run')"></label>
+      <label class="btn btn-ai btn-sm" style="cursor:pointer;">🤖 Analizar imagen<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'run','run-ir')"></label>
+      <button class="btn btn-ghost btn-sm" onclick="go('goals',null)">🎯 Ver metas running</button>
+    </div>
+    <div id="run-ir"></div>
+  </div>
+  <div style="margin-bottom:10px;"><button class="btn btn-primary" onclick="openM('run')">+ Nueva sesión manual</button></div>
+  <div id="run-list"></div>
+</div>
+
+<!-- ═══ CYCLING ═══ -->
+<div id="p-cycling" class="page">
+  <div class="inline-import">
+    <div class="ii-title">📥 Importar / Analizar ciclismo</div>
+    <div class="ii-btns">
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer;">🗺️ GPX/FIT<input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'bike')"></label>
+      <label class="btn btn-ai btn-sm" style="cursor:pointer;">🤖 Analizar imagen<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'bike','bike-ir')"></label>
+    </div>
+    <div id="bike-ir"></div>
+  </div>
+  <div style="margin-bottom:10px;"><button class="btn btn-primary" onclick="openM('bike')">+ Nueva ruta manual</button></div>
+  <div id="bike-list"></div>
+</div>
+
+<!-- ═══ WEIGHT ═══ -->
+<div id="p-weight" class="page">
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    <label class="btn btn-ai" style="cursor:pointer;">📸 Foto balanza → IA<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'weight','weight-air')"></label>
+    <button class="btn btn-primary" onclick="openM('weight')">+ Registrar manual</button>
+  </div>
+  <div id="weight-air" style="margin-bottom:10px;"></div>
+  <div id="weight-summary" style="margin-bottom:12px;"></div>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="card-title" style="margin-bottom:10px;">Evolución de peso</div>
+    <div class="chart-wrap"><canvas id="chart-weight"></canvas></div>
+  </div>
+  <div id="weight-list"></div>
+</div>
+
+<!-- ═══ RECOVERY ═══ -->
+<div id="p-recovery" class="page">
+  <div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="openM('rec')">+ Registrar recuperación</button>
+    <button class="btn btn-ai" onclick="aiRecAdvice()">🤖 Consejo IA basado en último entreno</button>
+  </div>
+  <div id="rec-advice" style="margin-bottom:12px;"></div>
+  <div class="grid-2" style="margin-bottom:12px;">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px;">Calidad de sueño</div>
+      <div class="chart-wrap-sm"><canvas id="chart-sleep"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px;">Energía & Ánimo</div>
+      <div class="chart-wrap-sm"><canvas id="chart-energy"></canvas></div>
+    </div>
+  </div>
+  <div id="rec-list"></div>
+</div>
+
+<!-- ═══ GOALS ═══ -->
+<div id="p-goals" class="page">
+
+  <!-- ── Metas activas ── -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+    <div>
+      <div style="font-size:17px;font-weight:700;color:var(--text1);">Metas &amp; IA</div>
+      <div style="font-size:12px;color:var(--text3);">Seguimiento de objetivos y análisis inteligente</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="openM('goal')">+ Nueva meta</button>
+      <button class="btn btn-ai" onclick="aiGoalPlan()">🤖 Plan IA</button>
+    </div>
+  </div>
+  <div id="goals-ai" style="margin-bottom:12px;"></div>
+  <div id="goals-list" style="margin-bottom:20px;"></div>
+
+  <!-- ══════════════════════════════════════
+       ANÁLISIS DE PERÍODO
+  ══════════════════════════════════════ -->
+  <div style="border-top:2px solid var(--border);padding-top:20px;margin-top:4px;">
+    <div style="font-size:16px;font-weight:700;color:var(--text1);margin-bottom:4px;">📊 Análisis de Período</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px;">Análisis narrativo de tu entrenamiento generado por IA</div>
+
+    <!-- Filtros -->
+    <div class="card" style="margin-bottom:14px;padding:16px 18px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Filtros del análisis</div>
+
+      <!-- Deporte -->
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Deporte</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="ap-sport-btns">
+          <button class="ap-sport-btn active" data-sport="all" onclick="apSetSport(this,'all')">🏅 Todos</button>
+          <button class="ap-sport-btn" data-sport="run" onclick="apSetSport(this,'run')">🏃 Running</button>
+          <button class="ap-sport-btn" data-sport="bike" onclick="apSetSport(this,'bike')">🚴 Ciclismo</button>
+          <button class="ap-sport-btn" data-sport="gym" onclick="apSetSport(this,'gym')">🏋️ Gym</button>
+        </div>
+      </div>
+
+      <!-- Período -->
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Período</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="ap-period-btns">
+          <button class="ap-period-btn active" data-period="week-to-date" onclick="apSetPeriod(this,'week-to-date')">Esta semana <span style="opacity:.6;font-size:10px;">(lun→hoy)</span></button>
+          <button class="ap-period-btn" data-period="week-full" onclick="apSetPeriod(this,'week-full')">Semana completa</button>
+          <button class="ap-period-btn" data-period="month-to-date" onclick="apSetPeriod(this,'month-to-date')">Este mes <span style="opacity:.6;font-size:10px;">(1→hoy)</span></button>
+          <button class="ap-period-btn" data-period="month-full" onclick="apSetPeriod(this,'month-full')">Mes completo</button>
+        </div>
+      </div>
+
+      <!-- Tipo de análisis -->
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Tipo de análisis</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="ap-type-btns">
+          <button class="ap-type-btn active" data-type="rendimiento" onclick="apSetType(this,'rendimiento')">📈 Rendimiento</button>
+          <button class="ap-type-btn" data-type="recuperacion" onclick="apSetType(this,'recuperacion')">💚 Recuperación</button>
+          <button class="ap-type-btn" data-type="recomendacion" onclick="apSetType(this,'recomendacion')">🎯 Recomendación</button>
+        </div>
+      </div>
+
+      <!-- Contexto adicional -->
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Contexto adicional <span style="font-weight:400;opacity:.6;">(opcional)</span></div>
+        <textarea id="ap-context" placeholder="Ej: tuve molestia en el hombro, estoy en fase de volumen, empecé dieta..." style="min-height:60px;font-size:12px;resize:vertical;"></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;">
+          <button class="btn btn-ai" onclick="runPeriodAnalysis()" style="width:100%;justify-content:center;font-size:14px;padding:11px;">
+        🤖 Generar análisis con Gemini
+      </button>
+          <button class="btn btn-ghost" onclick="exportAnalysisPDF()" id="ap-pdf-btn" style="padding:0 16px;font-size:13px;font-weight:600;white-space:nowrap;" title="Exportar a PDF">📄 PDF</button>
+        </div>
+    </div>
+
+    <!-- Alertas proactivas -->
+    <div id="ap-alerts" style="margin-bottom:14px;"></div>
+
+    <!-- Resultado del análisis -->
+    <div id="ap-result" style="margin-bottom:14px;"></div>
+
+    <!-- Puntuaciones -->
+    <div id="ap-scores" style="margin-bottom:14px;"></div>
+
+    <!-- Historial de análisis -->
+    <div id="ap-history-section" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text1);">📋 Historial de análisis</div>
+        <button class="btn btn-ghost btn-sm" onclick="apClearHistory()">Limpiar</button>
+      </div>
+      <div id="ap-history-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ PROFILE ═══ -->
+<div id="p-profile" class="page">
+
+  <!-- ── Row 1: 3 columns ── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+
+    <!-- Col 1: Identidad + Fisiología -->
+    <div>
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:12px;">👤 Identidad</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div class="profile-avatar" id="prof-avatar">IV</div>
+          <div>
+            <div id="prof-name-display" style="font-size:16px;font-weight:700;"></div>
+            <div id="prof-age-display" style="font-size:12px;color:var(--text3);"></div>
+          </div>
+        </div>
+        <div class="fg"><label class="fl">Nombre</label><input id="prof-name" placeholder="Tu nombre" oninput="updateProfileDisplay()"></div>
+        <div class="fg"><label class="fl">Fecha de nacimiento</label><input id="prof-dob" type="date"></div>
+        <div class="fg2">
+          <div class="fg"><label class="fl">Peso actual (kg)</label><input id="prof-weight" type="number" step="0.1" placeholder="67.5"></div>
+          <div class="fg"><label class="fl">Altura (cm)</label><input id="prof-height" type="number" placeholder="175"></div>
+        </div>
+        <div class="fg2">
+          <div class="fg"><label class="fl">Peso objetivo (kg)</label><input id="prof-weight-goal" type="number" step="0.1" placeholder="65.0"></div>
+          <div class="fg"><label class="fl">Fecha meta</label><input id="prof-weight-date" type="date"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:10px;">❤️ Fisiología</div>
+        <div class="fg2">
+          <div class="fg"><label class="fl">FC máx (bpm)</label><input id="prof-fcmax" type="number" placeholder="190" oninput="updateZones()"></div>
+          <div class="fg"><label class="fl">FC reposo</label><input id="prof-fcrest" type="number" placeholder="54" oninput="updateZones()"></div>
+        </div>
+        <div style="background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:10px;">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⚡ Zonas FC</div>
+          <div id="zones-form" style="display:flex;flex-direction:column;gap:5px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Col 2: Salud + Nivel -->
+    <div>
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:10px;">🏥 Salud</div>
+        <div class="fg"><label class="fl">Enfermedades diagnosticadas</label><textarea id="prof-diseases" placeholder="Ej: Hipertensión leve..." style="min-height:56px;font-size:12px;"></textarea></div>
+        <div class="fg"><label class="fl">Medicamentos actuales</label><textarea id="prof-meds" placeholder="Ej: Losartan 50mg diario..." style="min-height:56px;font-size:12px;"></textarea></div>
+        <div class="fg"><label class="fl">Historial de lesiones</label><textarea id="prof-injuries" placeholder="Ej: Hombro derecho 2023 (manguito rotador)..." style="min-height:72px;font-size:12px;"></textarea></div>
+        <div style="background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15);border-radius:6px;padding:8px 10px;font-size:10px;color:var(--danger);">⚠️ Solo local · La IA usa estos datos para análisis personalizados</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:10px;">🏅 Nivel por deporte</div>
+        <div class="fg">
+          <label class="fl">Running</label>
+          <select id="prof-lvl-run"><option value="">— Nivel —</option><option value="principiante">Principiante</option><option value="intermedio">Intermedio</option><option value="avanzado">Avanzado</option><option value="elite">Elite</option></select>
+        </div>
+        <div class="fg">
+          <label class="fl">Ciclismo</label>
+          <select id="prof-lvl-bike"><option value="">— Nivel —</option><option value="principiante">Principiante</option><option value="intermedio">Intermedio</option><option value="avanzado">Avanzado</option><option value="elite">Elite</option></select>
+        </div>
+        <div class="fg">
+          <label class="fl">Gym</label>
+          <select id="prof-lvl-gym"><option value="">— Nivel —</option><option value="principiante">Principiante</option><option value="intermedio">Intermedio</option><option value="avanzado">Avanzado</option><option value="elite">Elite</option></select>
+        </div>
+        <div class="fg">
+          <label class="fl">Objetivo principal</label>
+          <select id="prof-goal">
+            <option value="rendimiento">Mejorar rendimiento</option>
+            <option value="masa">Ganar masa muscular</option>
+            <option value="perdida">Bajar peso</option>
+            <option value="resistencia">Aumentar resistencia</option>
+            <option value="ironman">Preparar Triatlón</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Col 3: API Key + Google + Resumen -->
+    <div>
+      <!-- Google Integration -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:10px;">🔗 Conectar servicios</div>
+        <div id="google-drive-card-container"></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+          <button class="btn btn-primary" id="btn-google-signin" onclick="googleSignIn()" style="width:100%;justify-content:center;gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#EA4335" d="M5.26 9.77A7.18 7.18 0 0112 4.8c1.73 0 3.29.63 4.5 1.65L19.77 3.2A11.95 11.95 0 0012 0C7.38 0 3.4 2.7 1.38 6.65l3.88 3.12z"/><path fill="#34A853" d="M16.04 18.01A7.15 7.15 0 0112 19.2c-3.04 0-5.63-1.9-6.74-4.6l-3.88 3.12C3.4 21.3 7.38 24 12 24c3.19 0 6.12-1.17 8.34-3.08l-4.3-2.91z"/><path fill="#4A90D9" d="M20.34 20.92A11.95 11.95 0 0024 12c0-.73-.07-1.44-.19-2.13H12v4.5h6.74a5.74 5.74 0 01-2.44 3.55l4.04 2.73.07.07-.07-.07v.27z"/><path fill="#FBBC05" d="M5.26 14.23A7.18 7.18 0 014.8 12c0-.77.12-1.52.34-2.23L1.26 6.65A11.95 11.95 0 000 12c0 1.93.46 3.75 1.26 5.35l3.88-3.12h.12z"/></svg>
+            Conectar con Google
+          </button>
+          <div id="google-status" style="font-size:11px;color:var(--text3);text-align:center;display:none;"></div>
+          <button class="btn btn-ghost btn-sm" id="btn-drive-sync" onclick="syncToDrive()" style="width:100%;justify-content:center;" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            Sincronizar con Drive
+          </button>
+          <button class="btn btn-ghost btn-sm" id="btn-fit-sync" onclick="syncGoogleFit()" style="width:100%;justify-content:center;" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            Sync Google Fit
+          </button>
+        </div>
+      </div>
+
+      <!-- API Key -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:8px;">🔑 API Gemini</div>
+        <div class="fg">
+          <input type="password" id="prof-apikey" placeholder="AIzaSy...">
+          <div style="font-size:10px;color:var(--text3);margin-top:3px;">Gratis en <strong>aistudio.google.com</strong></div>
+        </div>
+      </div>
+
+      <!-- Resumen rápido -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:8px;">📊 Resumen</div>
+        <div id="prof-summary"></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:10px;" onclick="saveProfile()">💾 Guardar perfil</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 2: IA análisis full-width ── -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div class="card-title">🤖 Análisis IA de mi perfil deportivo</div>
+      <button class="btn btn-ai" onclick="aiProfileAnalysis()">Analizar perfil</button>
+    </div>
+    <div id="prof-ai" style="min-height:60px;"></div>
+  </div>
+
+</div>
+
+<div id="p-import" class="page">
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+    <div style="font-size:12px;color:var(--text3);font-weight:600;">💾 Backup manual:</div>
+    <button class="btn btn-ghost btn-sm" onclick="exportBackup()" style="font-size:11px;">⬇️ Exportar JSON</button>
+    <button class="btn btn-ghost btn-sm" onclick="importBackup()" style="font-size:11px;">⬆️ Importar JSON</button>
+    <div style="font-size:10px;color:var(--text3);">Guarda el JSON en OneDrive, Google Drive o iCloud para sincronizar entre dispositivos</div>
+  </div>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="card-title" style="margin-bottom:12px;">📥 Importar archivos de actividad</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <label class="btn btn-ghost" style="cursor:pointer;">🗺️ GPX<input type="file" accept=".gpx" style="display:none" onchange="importFile(this,'bike')"></label>
+      <label class="btn btn-ghost" style="cursor:pointer;">⌚ FIT (Garmin)<input type="file" accept=".fit" style="display:none" onchange="importFile(this,'bike')"></label>
+      <label class="btn btn-ai" style="cursor:pointer;">🤖 Analizar imagen IA<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'generic','imp-air')"></label>
+    </div>
+    <div id="imp-air"></div>
+  </div>
+  
+  <div class="card">
+    <div class="card-title" style="margin-bottom:10px;">📌 Guía de exportación</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+      <div>⌚ <strong>Garmin/Wahoo:</strong> Garmin Connect → Actividad → ··· → Exportar GPX o FIT</div>
+      <div>🟠 <strong>Strava:</strong> Actividad → ··· → Exportar GPX → subir aquí</div>
+      <div>📱 <strong>Huawei Health:</strong> Captura la pantalla de la sesión → botón "Analizar imagen IA"</div>
+      <div>🍎 <strong>Apple Salud:</strong> Captura de pantalla → "Analizar imagen IA"</div>
+      <div style="margin-top:8px;padding:8px 12px;background:var(--orange-lt);border-radius:8px;font-size:12px;color:var(--orange);">
+        💡 La IA usa <strong>modelos gratuitos de Gemini</strong> con fallback automático. Si un modelo falla, prueba el siguiente. Configura tu API key en Perfil o aquí arriba.
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ══ ONEDRIVE SYNC CARD ══ -->
+
+
+
+</div><!-- content -->
+</div><!-- main -->
+
+<!-- ═══ MODALS ═══ -->
+<div class="overlay" id="m-run">
+<div class="modal">
+  <button class="modal-close" onclick="closeM('run')">✕</button>
+  <div class="modal-title" id="run-modal-title">🏃 Registrar sesión de running</div>
+  <input type="hidden" id="run-eid">
+  <div class="fg2">
+    <div class="fg"><label class="fl">Fecha</label><input type="date" id="r-date"></div>
+    <div class="fg"><label class="fl">Distancia (km)</label><input type="number" id="r-dist" step="0.01" placeholder="5.72"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Tiempo (min)</label><input type="number" id="r-time" step="0.1" placeholder="32"></div>
+    <div class="fg"><label class="fl">Ritmo (min/km)</label><input type="text" id="r-pace" placeholder="5:35"></div>
+    <div class="fg"><label class="fl">Calorías (kcal)</label><input type="number" id="r-cal" placeholder="380"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">FC prom (bpm)</label><input type="number" id="r-fcavg" placeholder="156"></div>
+    <div class="fg"><label class="fl">FC máx (bpm)</label><input type="number" id="r-fcmax" placeholder="178"></div>
+    <div class="fg"><label class="fl">VO2max est.</label><input type="number" id="r-vo2" step="0.1" placeholder="52"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Cadencia (ppm)</label><input type="number" id="r-cad" placeholder="168"></div>
+    <div class="fg"><label class="fl">Oscilación (cm)</label><input type="number" id="r-osc" step="0.1" placeholder="7.6"></div>
+    <div class="fg"><label class="fl">Contacto suelo (ms)</label><input type="number" id="r-contact" placeholder="268"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Equilibrio Izq (%)</label><input type="number" id="r-balL" step="0.1" placeholder="51.1"></div>
+    <div class="fg"><label class="fl">Equilibrio Der (%)</label><input type="number" id="r-balR" step="0.1" placeholder="48.9"></div>
+    <div class="fg"><label class="fl">Altitud (m)</label><input type="number" id="r-alt" placeholder="947"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Velocidad prom (km/h)</label><input type="number" id="r-spd" step="0.1" placeholder="10.3"></div>
+    <div class="fg"><label class="fl">Long. zancada (m)</label><input type="number" id="r-stride" step="0.01" placeholder="1.08"></div>
+    <div class="fg"><label class="fl">% FC máx</label><input type="number" id="r-fcpct" step="0.1" placeholder="87.6"></div>
+  </div>
+  <div class="fg2">
+    <div class="fg"><label class="fl">Resistencia aeróbica</label><input type="number" id="r-aero" step="0.1" placeholder="3.2"></div>
+    <div class="fg"><label class="fl">Ruta / Lugar</label><input type="text" id="r-route" placeholder="La Gran Feria — Bucaramanga"></div>
+  </div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⏱ Tiempo en zonas cardíacas (minutos)</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z1 (min)</label><input type="number" id="r-z1" placeholder="0" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z2 (min)</label><input type="number" id="r-z2" placeholder="5" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z3 (min)</label><input type="number" id="r-z3" placeholder="15" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z4 (min)</label><input type="number" id="r-z4" placeholder="8" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z5 (min)</label><input type="number" id="r-z5" placeholder="2" style="font-size:12px;padding:6px;"></div>
+    </div>
+  </div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📊 Datos para graficar (opcional — separados por coma)</div>
+    <div class="fg"><label class="fl">Ritmo por km (ej: 5:30,5:28,5:35...)</label><input type="text" id="r-pace-series" placeholder="5:30,5:28,5:35,5:40,5:25"></div>
+    <div class="fg"><label class="fl">FC por km (ej: 150,155,158...)</label><input type="text" id="r-fc-series" placeholder="150,155,158,162,157"></div>
+    <div class="fg"><label class="fl">Cadencia por km (ej: 168,170,172...)</label><input type="text" id="r-cad-series" placeholder="168,170,172,169,175"></div>
+  </div>
+  <div class="fg"><label class="fl">Notas</label><textarea id="r-notes" placeholder="Sensaciones, clima, molestias..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeM('run')">Cancelar</button>
+    <button class="btn btn-ai" onclick="aiRunAnalysis()">🤖 Analizar con IA</button>
+    <button class="btn btn-primary" onclick="saveRun()">Guardar</button>
+  </div>
+  <div id="run-modal-ai" style="margin-top:10px;"></div>
+</div>
+</div>
+
+<div class="overlay" id="m-bike">
+<div class="modal">
+  <button class="modal-close" onclick="closeM('bike')">✕</button>
+  <div class="modal-title" id="bike-modal-title">🚴 Registrar ruta de ciclismo</div>
+  <input type="hidden" id="bike-eid">
+  <div class="fg2">
+    <div class="fg"><label class="fl">Fecha</label><input type="date" id="b-date"></div>
+    <div class="fg"><label class="fl">Tipo</label><select id="b-type"><option>Ruta de fondo</option><option>Montaña</option><option>Cadencia / Plana</option><option>Rodillo / Indoor</option><option>Entrenamiento</option></select></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Distancia (km)</label><input type="number" id="b-dist" step="0.1" placeholder="40.64"></div>
+    <div class="fg"><label class="fl">Tiempo (min)</label><input type="number" id="b-time" placeholder="105"></div>
+    <div class="fg"><label class="fl">Calorías (kcal)</label><input type="number" id="b-cal" placeholder="825"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Vel. prom (km/h)</label><input type="number" id="b-spd" step="0.1" placeholder="23.19"></div>
+    <div class="fg"><label class="fl">Vel. máx (km/h)</label><input type="number" id="b-spdmax" step="0.1" placeholder="56.52"></div>
+    <div class="fg"><label class="fl">Cadencia prom (rpm)</label><input type="number" id="b-cad" placeholder="69"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">FC prom (bpm)</label><input type="number" id="b-fc" placeholder="139"></div>
+    <div class="fg"><label class="fl">FC máx (bpm)</label><input type="number" id="b-fcmax" placeholder="166"></div>
+    <div class="fg"><label class="fl">Potencia virtual (W)</label><input type="number" id="b-power" placeholder="137"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Desnivel total (m)</label><input type="number" id="b-elev" placeholder="560"></div>
+    <div class="fg"><label class="fl">Ascenso (m)</label><input type="number" id="b-asc" placeholder="556"></div>
+    <div class="fg"><label class="fl">Altitud máx (m)</label><input type="number" id="b-altmax" placeholder="979"></div>
+  </div>
+  <div class="fg2">
+    <div class="fg"><label class="fl">Resistencia aeróbica</label><input type="number" id="b-aero" step="0.1" placeholder="3.2"></div>
+    <div class="fg"><label class="fl">Nombre de la ruta</label><input type="text" id="b-route" placeholder="Floridablanca → Girón"></div>
+  </div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⏱ Tiempo en zonas cardíacas (minutos)</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z1 (min)</label><input type="number" id="b-z1" placeholder="0" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z2 (min)</label><input type="number" id="b-z2" placeholder="24" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z3 (min)</label><input type="number" id="b-z3" placeholder="37" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z4 (min)</label><input type="number" id="b-z4" placeholder="5" style="font-size:12px;padding:6px;"></div>
+      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z5 (min)</label><input type="number" id="b-z5" placeholder="1" style="font-size:12px;padding:6px;"></div>
+    </div>
+  </div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📊 Datos para graficar (opcional — por km, separados por coma)</div>
+    <div class="fg"><label class="fl">Velocidad por km (ej: 22,24,25...)</label><input type="text" id="b-spd-series" placeholder="22,24,25,23,20"></div>
+    <div class="fg"><label class="fl">FC por km (ej: 130,138,142...)</label><input type="text" id="b-fc-series" placeholder="130,138,142,145,139"></div>
+    <div class="fg"><label class="fl">Cadencia por km (ej: 68,72,75...)</label><input type="text" id="b-cad-series" placeholder="68,72,75,70,65"></div>
+  </div>
+  <div class="fg"><label class="fl">Notas</label><textarea id="b-notes" placeholder="Terreno, sensaciones, posición..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeM('bike')">Cancelar</button>
+    <button class="btn btn-ai" onclick="aiBikeAnalysis()">🤖 Analizar con IA</button>
+    <button class="btn btn-primary" onclick="saveBike()">Guardar</button>
+  </div>
+  <div id="bike-modal-ai" style="margin-top:10px;"></div>
+</div>
+</div>
+
+<div class="overlay" id="m-weight">
+<div class="modal">
+  <button class="modal-close" onclick="closeM('weight')">✕</button>
+  <div class="modal-title">⚖️ Registrar peso / composición</div>
+  <input type="hidden" id="w-eid">
+  <div class="fg2">
+    <div class="fg"><label class="fl">Fecha</label><input type="date" id="w-date"></div>
+    <div class="fg"><label class="fl">Peso (kg)</label><input type="number" id="w-kg" step="0.1" placeholder="67.5" oninput="syncProfileWeight()"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">% Grasa</label><input type="number" id="w-fat" step="0.1" placeholder="18.5"></div>
+    <div class="fg"><label class="fl">% Músculo</label><input type="number" id="w-muscle" step="0.1" placeholder="38.2"></div>
+    <div class="fg"><label class="fl">% Agua</label><input type="number" id="w-water" step="0.1" placeholder="55.0"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">IMC</label><input type="number" id="w-imc" step="0.1" placeholder="23.4"></div>
+    <div class="fg"><label class="fl">Masa ósea (kg)</label><input type="number" id="w-bone" step="0.1" placeholder="3.2"></div>
+    <div class="fg"><label class="fl">Met. basal (kcal)</label><input type="number" id="w-bmr" placeholder="1820"></div>
+  </div>
+  <div class="fg2">
+    <div class="fg"><label class="fl">Momento</label><select id="w-when"><option>Ayunas AM</option><option>Medio día</option><option>Noche</option></select></div>
+    <div class="fg"><label class="fl">Estado de hidratación</label><select id="w-hydra"><option>Normal</option><option>Deshidratado</option><option>Bien hidratado</option></select></div>
+  </div>
+  <div class="fg"><label class="fl">Notas</label><textarea id="w-notes" placeholder="Cómo amaneciste, alimentación especial..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeM('weight')">Cancelar</button>
+    <button class="btn btn-primary" onclick="saveWeight()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<div class="overlay" id="m-rec">
+<div class="modal">
+  <button class="modal-close" onclick="closeM('rec')">✕</button>
+  <div class="modal-title">🔄 Registrar recuperación</div>
+  <input type="hidden" id="rc-eid">
+  <div class="fg2">
+    <div class="fg"><label class="fl">Fecha</label><input type="date" id="rc-date"></div>
+    <div class="fg"><label class="fl">Horas de sueño</label><input type="number" id="rc-sleep" step="0.5" placeholder="7.5"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Calidad sueño 1–10</label><input type="number" id="rc-sleepq" min="1" max="10" placeholder="8"></div>
+    <div class="fg"><label class="fl">Energía 1–10</label><input type="number" id="rc-energy" min="1" max="10" placeholder="7"></div>
+    <div class="fg"><label class="fl">Ánimo 1–10</label><input type="number" id="rc-mood" min="1" max="10" placeholder="8"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Dolor muscular 0–10</label><input type="number" id="rc-sore" min="0" max="10" placeholder="3"></div>
+    <div class="fg"><label class="fl">FC reposo (bpm)</label><input type="number" id="rc-fcrest" placeholder="58"></div>
+    <div class="fg"><label class="fl">HRV (ms)</label><input type="number" id="rc-hrv" placeholder="42"></div>
+  </div>
+  <div class="fg"><label class="fl">Zona de molestia</label><input type="text" id="rc-zone" placeholder="Ej: cuádriceps derecho, hombro"></div>
+  <div class="fg"><label class="fl">Notas</label><textarea id="rc-notes" placeholder="Cómo te sientes, qué hiciste para recuperar..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeM('rec')">Cancelar</button>
+    <button class="btn btn-primary" onclick="saveRec()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<div class="overlay" id="m-goal">
+<div class="modal">
+  <button class="modal-close" onclick="closeM('goal')">✕</button>
+  <div class="modal-title">🎯 Nueva meta</div>
+  <input type="hidden" id="gl-eid">
+  <div class="fg"><label class="fl">Nombre de la meta</label><input type="text" id="gl-name" placeholder="Ej: Completar Ironman 70.3 · Ruta 200 km · Maratón < 4h"></div>
+  <div class="fg2">
+    <div class="fg"><label class="fl">Categoría</label>
+      <select id="gl-cat">
+        <option value="cycling">🚴 Ciclismo</option>
+        <option value="running">🏃 Running</option>
+        <option value="triathlon">🏊 Triatlón / Ironman</option>
+        <option value="gym">🏋️ Gym — Fuerza</option>
+        <option value="weight">⚖️ Peso corporal</option>
+        <option value="aspiration">⭐ Aspiración / Evento</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Fecha límite / Evento</label><input type="date" id="gl-deadline"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Valor actual</label><input type="number" id="gl-current" step="0.1" placeholder="0"></div>
+    <div class="fg"><label class="fl">Valor objetivo</label><input type="number" id="gl-target" step="0.1" placeholder="200"></div>
+    <div class="fg"><label class="fl">Unidad</label><input type="text" id="gl-unit" placeholder="km, kg, h:mm..."></div>
+  </div>
+  <div class="fg"><label class="fl">Descripción / contexto</label><textarea id="gl-desc" placeholder="Describe tu meta, motivación y punto de partida..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeM('goal')">Cancelar</button>
+    <button class="btn btn-ai" onclick="aiGoalGuide()">🤖 Generar guía IA</button>
+    <button class="btn btn-primary" onclick="saveGoal()">Crear meta</button>
+  </div>
+  <div id="goal-modal-ai" style="margin-top:10px;"></div>
+</div>
+</div>
+
+
+
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="main-drawer">
+  <div class="drawer-header"><div><div class="drawer-logo" style="font-family:var(--font-logo);font-weight:700;">IDG TRAINING PRO</div><div class="drawer-tag">Performance Analytics</div></div><button class="drawer-close" onclick="closeDrawer()">✕</button></div>
+  <div class="drawer-nav">
+    <div class="drawer-section">Principal</div>
+    <button class="drawer-item active" data-page="dash" onclick="drawerNav('dash',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</button>
+    <button class="drawer-item" data-page="gym" onclick="drawerNav('gym',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16M18 4v16M3 9h3M18 9h3M3 15h3M18 15h3M6 12h12"/></svg>Gym</button>
+    <button class="drawer-item" data-page="running" onclick="drawerNav('running',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="4.5" r="1.5"/><path d="m9 10 3-3 2.5 3L17 8"/><path d="M9 16.5 7 21"/><path d="m11.5 12.5-2 4.5 4.5 2"/></svg>Running</button>
+    <button class="drawer-item" data-page="cycling" onclick="drawerNav('cycling',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M9 9h6l-1.5 4H9l-4 4M15 4h2l-2 5"/><circle cx="15" cy="4" r="1"/></svg>Ciclismo</button>
+    <div class="drawer-section">Salud</div>
+    <button class="drawer-item" data-page="weight" onclick="drawerNav('weight',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg>Peso &amp; Cuerpo</button>
+    <button class="drawer-item" data-page="recovery" onclick="drawerNav('recovery',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Recuperación</button>
+    <button class="drawer-item" data-page="goals" onclick="drawerNav('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>Metas &amp; IA</button>
+    <div class="drawer-section">Config</div>
+    <button class="drawer-item" data-page="profile" onclick="drawerNav('profile',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
+    <button class="drawer-item" data-page="import" onclick="drawerNav('import',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0-4-4m4 4 4-4"/><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>Importar &amp; IA</button>
+  </div>
+</div>
+
+
+
 <script>
+
 
 // ══ STORAGE — Safari/iOS safe with memory fallback ══
 const K={gym:'iv_gym',run:'iv_run',bike:'iv_bike',weight:'iv_wgt',rec:'iv_rec',goals:'iv_goals',profile:'iv_profile'};
@@ -496,7 +1284,7 @@ function loadRT(){
       <div><input class="reps-input" type="text" id="reps-${i}" value="${e.r}"></div>
       <div><div class="weights-chips" id="wrow-${i}">${chips}</div></div>
       <div><input class="rest-input" type="number" id="rest-${i}" value="${e.rest||90}"> <span style="font-size:10px;color:var(--text3);">seg</span></div>
-      <div style="display:flex;gap:4px;"><button onclick="editInlineEx(${i})" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;">✏️</button><button onclick="deleteInlineEx(${i})" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.05);cursor:pointer;">🗑</button></div>
+      <div style="display:flex;gap:4px;"><button onclick="editInlineEx(${i})" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--text2)" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3l9-9z"/></svg></button><button onclick="deleteInlineEx(${i})" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.05);cursor:pointer;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#EF4444" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg></button></div>
     </div>
     <div id="ex-ai-${i}" style="padding:0 14px 6px;display:none;"></div>`;
   }).join('');
@@ -880,46 +1668,102 @@ function parseFIT(file,type,el){
   r.readAsArrayBuffer(file);
 }
 
-function parseGPX(file,type,el){
-  setAI(el,'⏳ Procesando GPX...','loading');
-  const r=new FileReader();
-  r.onload=e=>{
+function parseGPX(file, type, el){
+  setAI(el, '⏳ Procesando GPX...', 'loading');
+  var r = new FileReader();
+  r.onload = function(ev){
     try{
-      const xml=new DOMParser().parseFromString(e.target.result,'text/xml');
-      if(xml.querySelector('parsererror')){setAI(el,'❌ GPX inválido.','err');return;}
-      const pts=xml.querySelectorAll('trkpt');
-      if(!pts.length){setAI(el,'❌ Sin puntos de ruta (trkpt).','err');return;}
-      let dist=0,prevLat,prevLon;const times=[],elevs=[];
-      pts.forEach(pt=>{
-        const lat=parseFloat(pt.getAttribute('lat')),lon=parseFloat(pt.getAttribute('lon'));
-        if(isNaN(lat)||isNaN(lon))return;
-        const t=pt.querySelector('time')?.textContent,ele=parseFloat(pt.querySelector('ele')?.textContent);
-        if(t)times.push(new Date(t));if(!isNaN(ele)&&ele>0)elevs.push(ele);
+      var xml = new DOMParser().parseFromString(ev.target.result, 'text/xml');
+      if(xml.querySelector('parsererror')){ setAI(el,'❌ GPX inválido.','err'); return; }
+      var pts = Array.from(xml.querySelectorAll('trkpt'));
+      if(!pts.length){ setAI(el,'❌ Sin puntos GPS.','err'); return; }
+
+      var dist=0, prevLat, prevLon;
+      var times=[], elevs=[], lats=[], lons=[], hrs=[], cads=[], temps=[];
+
+      function ext(pt, tag){
+        var el = pt.querySelector(tag);
+        if(!el){ var all=Array.from(pt.querySelectorAll('*')); for(var i=0;i<all.length;i++) if(all[i].localName===tag) return parseFloat(all[i].textContent); }
+        return el ? parseFloat(el.textContent) : NaN;
+      }
+
+      pts.forEach(function(pt){
+        var lat = parseFloat(pt.getAttribute('lat'));
+        var lon = parseFloat(pt.getAttribute('lon'));
+        if(isNaN(lat)||isNaN(lon)) return;
+        lats.push(lat); lons.push(lon);
+        var t = pt.querySelector('time');
+        if(t) times.push(new Date(t.textContent));
+        var ele = parseFloat((pt.querySelector('ele')||{}).textContent||'NaN');
+        elevs.push(isNaN(ele) ? null : ele);
+        var hr=ext(pt,'hr'), cad=ext(pt,'cad'), temp=ext(pt,'atemp');
+        hrs.push(isNaN(hr)?null:hr);
+        cads.push(isNaN(cad)?null:cad);
+        temps.push(isNaN(temp)?null:temp);
         if(prevLat!==undefined){
-          const R=6371,dLa=(lat-prevLat)*Math.PI/180,dLo=(lon-prevLon)*Math.PI/180;
-          const a=Math.sin(dLa/2)**2+Math.cos(prevLat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLo/2)**2;
-          const d=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));if(d<1)dist+=d;
+          var R=6371, dLa=(lat-prevLat)*Math.PI/180, dLo=(lon-prevLon)*Math.PI/180;
+          var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(prevLat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLo/2)*Math.sin(dLo/2);
+          var d=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+          if(d<0.5) dist+=d;
         }
-        prevLat=lat;prevLon=lon;
+        prevLat=lat; prevLon=lon;
       });
-      const dur=times.length>=2?Math.round((times[times.length-1]-times[0])/60000):0;
-      const gain=elevs.length>=2?Math.round(elevs.reduce((acc,v,i,arr)=>{if(i>0&&v>arr[i-1])acc+=v-arr[i-1];return acc;},0)):0;
-      const dateStr=times.length?times[0].toISOString().split('T')[0]:today();
-      const name=xml.querySelector('name')?.textContent||file.name.replace(/\.gpx$/i,'');
-      const avgSpd=dur>0&&dist>0?(dist/(dur/60)).toFixed(1):'';
-      const pace=type==='run'&&dur>0&&dist>0?(Math.floor(dur/dist)+':'+(Math.round((dur/dist%1)*60)).toString().padStart(2,'0')):'';
-      const altMin=elevs.length?Math.round(Math.min(...elevs)):0;
-      const altMax=elevs.length?Math.round(Math.max(...elevs)):0;
+
+      var dur = times.length>=2 ? Math.round((times[times.length-1]-times[0])/60000) : 0;
+      var validE = elevs.filter(function(v){return v!==null;});
+      var gain = validE.length>=2 ? Math.round(validE.reduce(function(acc,v,i,arr){return i>0&&v>arr[i-1]?acc+(v-arr[i-1]):acc;},0)) : 0;
+      var dateStr = times.length ? times[0].toISOString().split('T')[0] : today();
+      var nameEl = xml.querySelector('name');
+      var name = (nameEl?nameEl.textContent:'')||file.name.replace(/\.gpx$/i,'');
+      var avgSpd = dur>0&&dist>0 ? (dist/(dur/60)).toFixed(1) : '';
+      var pace = type==='run'&&dur>0&&dist>0 ? (Math.floor(dur/dist)+':'+(Math.round((dur/dist%1)*60)).toString().padStart(2,'0')) : '';
+      var altMin = validE.length ? Math.round(Math.min.apply(null,validE)) : 0;
+      var altMax = validE.length ? Math.round(Math.max.apply(null,validE)) : 0;
+
+      // sample for storage (max 300 pts)
+      var sr = Math.max(1, Math.floor(pts.length/300));
+      var gLat=[], gLon=[], gEle=[], gHr=[], gCad=[], gTemp=[];
+      for(var i=0;i<lats.length;i+=sr){
+        gLat.push(lats[i]); gLon.push(lons[i]);
+        gEle.push(validE[i]||null); gHr.push(hrs[i]);
+        gCad.push(cads[i]); gTemp.push(temps[i]);
+      }
+
+      var validHr = hrs.filter(function(v){return v&&v>30;});
+      var hrAvg = validHr.length ? Math.round(validHr.reduce(function(a,b){return a+b;},0)/validHr.length) : null;
+      var hrMax = validHr.length ? Math.max.apply(null,validHr) : null;
+      var validCad = cads.filter(function(v){return v&&v>0;});
+      var cadAvg = validCad.length ? Math.round(validCad.reduce(function(a,b){return a+b;},0)/validCad.length) : null;
+      var validTemp = temps.filter(function(v){return v!==null;});
+      var tempAvg = validTemp.length ? (validTemp.reduce(function(a,b){return a+b;},0)/validTemp.length).toFixed(1) : null;
+
+      var gpxData = {lat:gLat, lon:gLon, ele:gEle, hr:gHr, cad:gCad, temp:gTemp};
+
       if(type==='bike'){
-        const entry={id:uid(),date:dateStr,type:'Importado GPX',dist:dist.toFixed(2),time:dur,spd:avgSpd,spdmax:'',elev:gain,asc:gain,altmax:altMax,route:name,notes:`GPX: ${file.name} · ${pts.length} puntos · Alt. ${altMin}–${altMax}m`,_gpxPoints:elevs.slice(0,200),ts:Date.now()};
-        sv('bike',[entry,...ld('bike')]);renderBike();
-      }else{
-        const entry={id:uid(),date:dateStr,dist:dist.toFixed(2),time:dur,pace,route:name,alt:altMax,notes:`GPX: ${file.name} · ${pts.length} puntos`,_gpxPoints:elevs.slice(0,200),ts:Date.now()};
-        sv('run',[entry,...ld('run')]);renderRun();
+        var entry={id:uid(),date:dateStr,type:'GPX',dist:dist.toFixed(2),time:dur,
+          spd:avgSpd,elev:gain,altmax:altMax,route:name,
+          fcavg:hrAvg,fcmax:hrMax,cadavg:cadAvg,temp:tempAvg,
+          notes:'GPX: '+file.name+' · '+pts.length+' pts · Alt '+altMin+'–'+altMax+'m',
+          gpx:gpxData, ts:Date.now()};
+        sv('bike',[entry].concat(ld('bike'))); renderBike();
+      } else {
+        var entry={id:uid(),date:dateStr,dist:dist.toFixed(2),time:dur,pace:pace,
+          fcavg:hrAvg,fcmax:hrMax,cadavg:cadAvg,alt:altMax,route:name,
+          notes:'GPX: '+file.name+' · '+pts.length+' pts · Alt '+altMin+'–'+altMax+'m',
+          gpx:gpxData, ts:Date.now()};
+        sv('run',[entry].concat(ld('run'))); renderRun();
       }
       renderDash();
-      setAI(el,`✅ <strong>${name}</strong> importado correctamente<br>📍 ${dist.toFixed(1)} km &nbsp;·&nbsp; ⏱ ${Math.floor(dur/60)}h${String(dur%60).padStart(2,'0')}min${avgSpd?'&nbsp;·&nbsp; ⚡ '+avgSpd+' km/h':''}${gain?'&nbsp;·&nbsp; ⛰️ '+gain+' m desnivel':''}${pace?'&nbsp;·&nbsp; 👟 '+pace+'/km':''}<br><small style="color:#666;">${pts.length} puntos GPS · Alt. ${altMin}–${altMax} m</small>`,'ok');
-    }catch(e){setAI(el,'❌ Error GPX: '+e.message,'err');}
+      var msg='✅ <b>'+name+'</b> · '+dist.toFixed(2)+' km';
+      if(dur) msg+=' · '+Math.floor(dur/60)+'h'+String(dur%60).padStart(2,'0')+'min';
+      if(avgSpd) msg+=' · '+avgSpd+' km/h';
+      if(pace) msg+=' · '+pace+'/km';
+      if(gain) msg+=' · ⛰️ '+gain+'m';
+      if(hrAvg) msg+=' · ❤️ '+hrAvg+'/'+hrMax+' bpm';
+      if(cadAvg) msg+=' · 🔄 '+cadAvg+' rpm';
+      if(tempAvg) msg+=' · 🌡️ '+tempAvg+'°C';
+      setAI(el, msg, 'ok');
+    } catch(e){ setAI(el,'❌ Error GPX: '+e.message,'err'); }
   };
   r.readAsText(file);
 }
@@ -1481,54 +2325,60 @@ function renderDash(){
 }
 
 function renderGym(){
-  const all=ld('gym');
-  const filter=document.getElementById('gym-filter')?.value||'';
-  const data=filter?all.filter(s=>s.routine===filter):all;
-  const el=document.getElementById('gym-list');
-  if(!data.length){
-    el.innerHTML=`<div class="empty"><div class="empty-icon">🏋️</div>${filter?'Sin sesiones para esta rutina.':'Sin sesiones aún. ¡Guarda tu primer entrenamiento!'}</div>`;
-    return;
-  }
-  el.innerHTML=data.map(e=>{
-    const durStr=e.durH!==undefined?`${e.durH}h ${e.durM||0}min`:(e.dur?`${Math.floor(e.dur/60)}h ${e.dur%60}min`:'');
-    return`<div class="entry">
-      <div class="entry-header">
-        <div>
-          <div class="entry-date mono">${fmtD(e.date)}</div>
-          <div class="entry-title">${e.routineName||'Gym'}</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;">
-            ${durStr?`<span class="tag tag-neutral">⏱ ${durStr}</span>`:''}
-            ${e.intensity?`<span class="tag tag-blue">⚡ Intensidad ${e.intensity}/10</span>`:''}
-            ${parseFloat(e.painLevel)>0?`<span class="tag tag-red">🔴 Dolor ${e.painLevel}/10${e.pain?' — '+e.pain:''}</span>`:''}
-          </div>
-        </div>
-        <div style="display:flex;gap:5px;align-items:flex-start;flex-wrap:wrap;">
-          <button class="btn btn-ai btn-sm" style="font-size:11px;" onclick="aiSessionAnalysis('${e.id}')">🤖</button>
-          <button class="btn btn-edit btn-sm" onclick="editGym('${e.id}')" style="font-size:11px;background:var(--accent-lt);color:var(--accent);border:1px solid rgba(37,99,235,.2);">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="delEntry('gym','${e.id}',renderGym)">🗑️</button>
-        </div>
-      </div>
-      ${e.exercises?.length?`<div style="overflow-x:auto;margin-top:10px;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead><tr style="background:var(--surface2);">
-            <th style="padding:6px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border);">Ejercicio</th>
-            <th style="padding:6px 8px;font-size:10px;font-weight:700;color:var(--text3);text-align:center;border-bottom:1px solid var(--border);">S</th>
-            <th style="padding:6px 8px;font-size:10px;font-weight:700;color:var(--text3);border-bottom:1px solid var(--border);">Reps</th>
-            <th style="padding:6px 8px;font-size:10px;font-weight:700;color:var(--text3);border-bottom:1px solid var(--border);">Pesos por serie</th>
-            <th style="padding:6px 8px;font-size:10px;font-weight:700;color:var(--text3);border-bottom:1px solid var(--border);">Descanso</th>
-          </tr></thead>
-          <tbody>${e.exercises.map(x=>`<tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:7px 10px;font-weight:600;">${x.name}${x.note?`<br><span style="font-size:10px;color:var(--text3);font-weight:400;">${x.note}</span>`:''}</td>
-            <td style="padding:7px 8px;text-align:center;font-weight:700;">${x.sets}</td>
-            <td style="padding:7px 8px;font-family:var(--font-mono);">${x.reps}</td>
-            <td style="padding:7px 8px;"><div style="display:flex;gap:3px;flex-wrap:wrap;">${(x.weights||[]).map((w,i)=>`<span style="background:var(--accent-lt);color:var(--accent);padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;font-family:var(--font-mono);">S${i+1}:${w.display||0}${w.unit||''}</span>`).join('')}</div></td>
-            <td style="padding:7px 8px;font-size:11px;color:var(--text3);">${x.rest||90}s</td>
-          </tr>`).join('')}</tbody>
-        </table>
-      </div>`:''}
-      <div id="sess-ai-${e.id}"></div>
-      ${e.notes?`<div style="margin-top:6px;font-size:11px;color:var(--text3);">📝 ${e.notes}</div>`:''}
-    </div>`;
+  var all=ld('gym');
+  var filter=document.getElementById('gym-filter')?.value||'';
+  var data=filter?all.filter(function(s){return s.routine===filter;}):all;
+  var el=document.getElementById('gym-list');
+  if(!data.length){ el.innerHTML='<div class="empty"><div class="empty-icon">🏋️</div>'+(filter?'Sin sesiones para esta rutina.':'Sin sesiones aún.')+' </div>'; return; }
+  el.innerHTML = data.map(function(e){
+    var sid = e.id.replace(/[^a-z0-9]/gi,'_');
+    var durStr = e.durH!==undefined ? (e.durH+'h '+(e.durM||0)+'min') : (e.dur ? (Math.floor(e.dur/60)+'h '+(e.dur%60)+'min') : '');
+    var exCount = (e.exercises||[]).length;
+    var h = '<div class="gym-session" data-sid="'+e.id+'">';
+    h += '<div class="gym-hdr" onclick="toggleGym(this)">';
+    h += '<div style="flex:1;">';
+    h += '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;">'+fmtD(e.date)+'</div>';
+    h += '<div style="font-size:15px;font-weight:700;color:var(--text1);margin-top:2px;">'+(e.routineName||'Gym')+'</div>';
+    h += '<div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;">';
+    if(durStr)    h+='<span style="font-size:12px;color:var(--text-sec);">⏱ <b>'+durStr+'</b></span>';
+    if(e.intensity) h+='<span style="font-size:12px;color:var(--text-sec);">⚡ <b>'+e.intensity+'/10</b></span>';
+    if(exCount)   h+='<span style="font-size:12px;color:var(--text-sec);">🏋️ <b>'+exCount+'</b> ej.</span>';
+    h += '</div></div>';
+    h += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">';
+    h += '<button onclick="event.stopPropagation();actSession(this,\'editGym\')" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--text2)" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3l9-9z"/></svg></button>';
+    h += '<button onclick="event.stopPropagation();actSession(this,\'deleteGym\')" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.05);cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#EF4444" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg></button>';
+    h += '<span class="tog-icon" style="font-size:10px;color:var(--text3);margin-left:2px;">▼</span>';
+    h += '</div></div>';
+    h += '<div class="gym-body" id="gb-'+sid+'">';
+    if(e.exercises && e.exercises.length){
+      h += '<div style="margin-top:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">';
+      h += '<div style="display:grid;grid-template-columns:1fr 44px 56px 1fr;padding:6px 12px;background:var(--surface3);font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;"><div>Ejercicio</div><div style="text-align:center;">Ser.</div><div style="text-align:center;">Reps.</div><div>Pesos</div></div>';
+      e.exercises.forEach(function(ex){
+        // weights can be array of objects {display,lbs,kg} or plain numbers
+        var ws = (ex.weights||[]).map(function(w){
+          if(w && typeof w === 'object') return w.display || w.lbs || 0;
+          return parseFloat(w)||0;
+        }).filter(function(v){return v>0;});
+        var wStr = ws.length ? ws.join(' / ') : '—';
+        var sets = ex.sets||ex.series||ex.s||'';
+        var reps = ex.reps||ex.r||'';
+        h += '<div style="display:grid;grid-template-columns:1fr 44px 56px 1fr;padding:7px 12px;border-top:1px solid var(--border);font-size:12px;align-items:start;">';
+        h += '<div><div style="font-weight:600;color:var(--text1);">'+(ex.name||ex.n||'')+'</div>'+(ex.note?'<div style="font-size:10px;color:var(--text3);margin-top:1px;">'+ex.note+'</div>':'')+'</div>';
+        h += '<div style="font-weight:700;color:var(--text1);text-align:center;">'+sets+'</div>';
+        h += '<div style="color:var(--text1);text-align:center;">'+reps+'</div>';
+        h += '<div style="font-size:11px;color:var(--accent);font-weight:600;">'+wStr+'</div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+    if(e.notes) h+='<div style="font-size:11px;color:var(--text3);margin-top:8px;padding:7px 10px;background:var(--surface3);border-radius:6px;">'+e.notes+'</div>';
+    if(e.pain)  h+='<div style="font-size:11px;color:var(--warning);margin-top:6px;">⚠️ '+e.pain+(e.painLevel?' ('+e.painLevel+'/10)':'')+'</div>';
+    h += '<div style="display:flex;gap:6px;margin-top:10px;">';
+    h += '<button class="btn btn-ai btn-sm" onclick="actSession(this,\'aiGymSession\')">🤖 Analizar</button>';
+    h += '</div>';
+    h += '<div id="ai-'+sid+'" style="margin-top:6px;"></div>';
+    h += '</div></div>';
+    return h;
   }).join('');
 }
 
@@ -1547,98 +2397,53 @@ async function aiSessionAnalysis(id){
 
 
 function renderRun(){
-  const data=ld('run');
-  const el=document.getElementById('run-list');
-  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">🏃</div>Sin sesiones de running.<br>Importa un GPX o registra manualmente.</div>';return;}
-  el.innerHTML=data.map(e=>{
-    const cid='rc-'+e.id.replace(/[^a-z0-9]/gi,'');
-    const hasChart=e.paceSeries?.length||e.fcSeries?.length||e.cadSeries?.length;
-    const zones=e.zones||{};
-    const totalZones=[zones.z1,zones.z2,zones.z3,zones.z4,zones.z5].map(Number).filter(Boolean);
-    const totalZMin=totalZones.reduce((a,b)=>a+b,0);
-    return`<div class="entry">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
-        <div>
-          <div class="entry-date mono">${fmtD(e.date)}${e.route?' · '+e.route:''}</div>
-          <div class="entry-title">${e.dist||'?'} km${e.pace?' · '+e.pace+'/km':''}</div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;">
-            ${e.time?`<span class="tag tag-neutral">⏱ ${Math.floor(e.time/60)}h${String(Math.round(e.time%60)).padStart(2,'0')}m</span>`:''}
-            ${e.fcavg?`<span class="tag tag-green">❤️ ${e.fcavg}/${e.fcmax||'?'} bpm</span>`:''}
-            ${e.cal?`<span class="tag tag-orange">🔥 ${e.cal} kcal</span>`:''}
-            ${e.cad?`<span class="tag ${parseFloat(e.cad)<170?'tag-orange':'tag-green'}">👟 ${e.cad} ppm</span>`:''}
-            ${e.vo2?`<span class="tag tag-purple">VO2 ${e.vo2}</span>`:''}
-          </div>
-        </div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;">
-          <button class="btn btn-ai btn-sm" onclick="aiRunEntryAnalysis('${e.id}')" style="font-size:11px;">🤖 IA</button>
-          <button class="btn btn-edit btn-sm" onclick="editRun('${e.id}')" style="font-size:11px;background:var(--accent-lt);color:var(--accent);border:1px solid rgba(37,99,235,.2);">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="delEntry('run','${e.id}',renderRun)">🗑️</button>
-        </div>
-      </div>
-
-      <!-- Full metrics grid -->
-      <div class="metric-grid" style="margin-top:10px;">
-        ${e.dist?`<div class="mbadge"><div class="mbadge-val">${e.dist}</div><div class="mbadge-lbl">Distancia km</div></div>`:''}
-        ${e.time?`<div class="mbadge"><div class="mbadge-val">${Math.floor(e.time/60)}:${String(Math.round(e.time%60)).padStart(2,'0')}</div><div class="mbadge-lbl">Tiempo</div></div>`:''}
-        ${e.pace?`<div class="mbadge"><div class="mbadge-val">${e.pace}</div><div class="mbadge-lbl">Ritmo min/km</div></div>`:''}
-        ${e.spd?`<div class="mbadge"><div class="mbadge-val">${e.spd}</div><div class="mbadge-lbl">Vel km/h</div></div>`:''}
-        ${e.fcavg?`<div class="mbadge"><div class="mbadge-val" style="color:var(--red)">${e.fcavg}</div><div class="mbadge-lbl">FC prom bpm</div></div>`:''}
-        ${e.fcmax?`<div class="mbadge"><div class="mbadge-val" style="color:var(--red)">${e.fcmax}</div><div class="mbadge-lbl">FC máx bpm</div></div>`:''}
-        ${e.fcpct?`<div class="mbadge"><div class="mbadge-val">${e.fcpct}%</div><div class="mbadge-lbl">% FC máx</div></div>`:''}
-        ${e.cal?`<div class="mbadge"><div class="mbadge-val">${e.cal}</div><div class="mbadge-lbl">Calorías</div></div>`:''}
-        ${e.cad?`<div class="mbadge"><div class="mbadge-val" style="color:${parseFloat(e.cad)<170?'var(--orange)':'var(--green)'}">${e.cad}</div><div class="mbadge-lbl">Cadencia ppm</div></div>`:''}
-        ${e.stride?`<div class="mbadge"><div class="mbadge-val">${e.stride}</div><div class="mbadge-lbl">Zancada m</div></div>`:''}
-        ${e.osc?`<div class="mbadge"><div class="mbadge-val" style="color:${parseFloat(e.osc)>7?'var(--orange)':'var(--green)'}">${e.osc}</div><div class="mbadge-lbl">Oscilación cm</div></div>`:''}
-        ${e.contact?`<div class="mbadge"><div class="mbadge-val">${e.contact}</div><div class="mbadge-lbl">Contacto ms</div></div>`:''}
-        ${(e.balL&&e.balR)?`<div class="mbadge"><div class="mbadge-val" style="font-size:13px;">${e.balL}/${e.balR}</div><div class="mbadge-lbl">Equilibrio %</div></div>`:''}
-        ${e.aero?`<div class="mbadge"><div class="mbadge-val">${e.aero}</div><div class="mbadge-lbl">Resist. aeróbica</div></div>`:''}
-        ${e.vo2?`<div class="mbadge"><div class="mbadge-val">${e.vo2}</div><div class="mbadge-lbl">VO2max est.</div></div>`:''}
-      </div>
-
-      <!-- HR Zones -->
-      ${totalZMin>0?`<div style="margin-top:10px;">
-        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">⏱ Tiempo en zonas cardíacas</div>
-        ${['Z1','Z2','Z3','Z4','Z5'].map((z,i)=>{
-          const mins=parseFloat([zones.z1,zones.z2,zones.z3,zones.z4,zones.z5][i])||0;
-          const pct=totalZMin>0?Math.round(mins/totalZMin*100):0;
-          return mins>0?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-            <span style="font-size:10px;font-weight:700;color:${ZONE_COLORS[i]};width:22px;">${z}</span>
-            <div style="flex:1;background:var(--surface3);border-radius:3px;height:7px;overflow:hidden;">
-              <div style="width:${pct}%;height:100%;background:${ZONE_COLORS[i]};border-radius:3px;"></div>
-            </div>
-            <span style="font-size:10px;color:var(--text3);width:52px;text-align:right;font-family:var(--font-mono);">${mins}min (${pct}%)</span>
-          </div>`:''}).join('')}
-      </div>`:''}
-
-      <!-- Charts section -->
-      ${hasChart?`<div style="margin-top:12px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">📊 Gráficas</div>
-          <select onchange="switchRunChart(this,'${e.id}')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);">
-            ${e.paceSeries?.length&&e.fcSeries?.length?'<option value="pace-fc">Ritmo vs FC</option>':''}
-            ${e.paceSeries?.length&&e.cadSeries?.length?'<option value="pace-cad">Ritmo vs Cadencia</option>':''}
-            ${e.fcSeries?.length?'<option value="fc-only">FC por km</option>':''}
-            ${e.cadSeries?.length?'<option value="cad-only">Cadencia por km</option>':''}
-            ${e.paceSeries?.length?'<option value="pace-only">Ritmo por km</option>':''}
-          </select>
-        </div>
-        <div style="position:relative;height:160px;"><canvas id="${cid}"></canvas></div>
-      </div>`:''}
-
-      <div id="run-ai-${e.id}" style="margin-top:8px;"></div>
-      ${e.notes?`<div style="margin-top:5px;font-size:11px;color:var(--text3);">📝 ${e.notes}</div>`:''}
-    </div>`;
+  var data=ld('run');
+  var el=document.getElementById('run-list');
+  if(!data.length){ el.innerHTML='<div class="empty"><div class="empty-icon">🏃</div>Sin sesiones. Importa un GPX o registra manualmente.</div>'; return; }
+  el.innerHTML = data.map(function(e){
+    var sid = e.id.replace(/[^a-z0-9]/gi,'_');
+    var hasMap = e.gpx && e.gpx.lat && e.gpx.lat.length > 0;
+    var h = '<div class="session-card" data-sid="'+e.id+'">';
+    h += '<div class="session-hdr" onclick="toggleSess(this)">';
+    h += '<div style="flex:1;min-width:0;">';
+    h += '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;">'+fmtD(e.date)+'</div>';
+    h += '<div style="font-size:15px;font-weight:700;color:var(--text1);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(e.route||'Running')+'</div>';
+    h += '<div style="display:flex;gap:10px;margin-top:5px;flex-wrap:wrap;">';
+    if(e.dist) h+='<span style="font-size:12px;color:var(--text-sec);"><b style="font-family:var(--font-data);">'+e.dist+'</b> km</span>';
+    if(e.time) h+='<span style="font-size:12px;color:var(--text-sec);"><b style="font-family:var(--font-data);">'+Math.floor(e.time/60)+'h'+String(e.time%60).padStart(2,'0')+'</b></span>';
+    if(e.pace) h+='<span style="font-size:12px;color:var(--text-sec);"><b style="font-family:var(--font-data);">'+e.pace+'</b>/km</span>';
+    if(e.fcavg) h+='<span style="font-size:12px;color:var(--text-sec);">❤️ <b>'+e.fcavg+'</b>/'+(e.fcmax||'?')+'</span>';
+    h += '</div></div>';
+    h += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:8px;">';
+    h += '<button onclick="event.stopPropagation();actSession(this,\'editRun\')" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--text2)" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3l9-9z"/></svg></button>';
+    h += '<button onclick="event.stopPropagation();actSession(this,\'deleteRun\')" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.05);cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#EF4444" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg></button>';
+    h += '<span class="tog-icon" style="font-size:10px;color:var(--text3);margin-left:2px;">▼</span>';
+    h += '</div></div>';
+    h += '<div class="session-body" id="sb-'+sid+'">';
+    h += '<div class="stat-row">';
+    if(e.dist)   h+='<div class="stat-box"><div class="sv">'+e.dist+'</div><div class="sl">km</div></div>';
+    if(e.time)   h+='<div class="stat-box"><div class="sv">'+Math.floor(e.time/60)+'h'+String(e.time%60).padStart(2,'0')+'</div><div class="sl">Tiempo</div></div>';
+    if(e.pace)   h+='<div class="stat-box"><div class="sv">'+e.pace+'</div><div class="sl">Ritmo/km</div></div>';
+    if(e.fcavg)  h+='<div class="stat-box"><div class="sv">'+e.fcavg+'</div><div class="sl">FC Med</div></div>';
+    if(e.fcmax)  h+='<div class="stat-box"><div class="sv">'+e.fcmax+'</div><div class="sl">FC Máx</div></div>';
+    if(e.cadavg) h+='<div class="stat-box"><div class="sv">'+e.cadavg+'</div><div class="sl">Cad rpm</div></div>';
+    if(e.alt)    h+='<div class="stat-box"><div class="sv">'+e.alt+'</div><div class="sl">Alt m</div></div>';
+    h += '</div>';
+    if(e.notes) h+='<div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:var(--surface3);border-radius:6px;">'+e.notes+'</div>';
+    if(hasMap){
+      h += '<div class="gpx-map" id="map-'+sid+'" onclick="loadMap(this,\'#22C55E\')" style="display:flex;align-items:center;justify-content:center;">';
+      h += '<div style="color:var(--text3);font-size:12px;">🗺️ Toca para cargar mapa</div></div>';
+    }
+    h += '<div style="display:flex;gap:6px;margin-top:10px;">';
+    h += '<button class="btn btn-ai btn-sm" onclick="actSession(this,\'aiRunSession\')">🤖 Analizar</button>';
+    h += '</div>';
+    h += '<div id="ai-'+sid+'" style="margin-top:6px;"></div>';
+    h += '</div></div>';
+    return h;
   }).join('');
-
-  // Render initial charts
-  setTimeout(()=>{
-    data.forEach(e=>{
-      const cid='rc-'+e.id.replace(/[^a-z0-9]/gi,'');
-      const ctx=document.getElementById(cid);if(!ctx)return;
-      const sel=ctx.closest('.entry')?.querySelector('select');
-      if(sel)renderRunChart(cid,e,sel.value||sel.options[0]?.value||'pace-fc');
-    });
-  },100);
+  // Store gpx data in JS map for map rendering
+  window._gpxStore = window._gpxStore || {};
+  data.forEach(function(e){ if(e.gpx) window._gpxStore[e.id.replace(/[^a-z0-9]/gi,'_')] = e.gpx; });
 }
 
 function switchRunChart(sel,id){
@@ -1714,95 +2519,55 @@ Máx 400 palabras. Responde en español con negrita en secciones.`;
 
 
 function renderBike(){
-  const data=ld('bike');
-  const el=document.getElementById('bike-list');
-  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">🚴</div>Sin rutas de ciclismo.<br>Importa un GPX o registra manualmente.</div>';return;}
-  el.innerHTML=data.map(e=>{
-    const cid='bc-'+e.id.replace(/[^a-z0-9]/gi,'');
-    const hasChart=e.spdSeries?.length||e.fcSeries?.length||e.cadSeries?.length;
-    const zones=e.zones||{};
-    const totalZones=[zones.z1,zones.z2,zones.z3,zones.z4,zones.z5].map(Number).filter(Boolean);
-    const totalZMin=totalZones.reduce((a,b)=>a+b,0);
-    return`<div class="entry">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
-        <div>
-          <div class="entry-date mono">${fmtD(e.date)} · <span style="color:var(--accent);">${e.type||''}</span></div>
-          <div class="entry-title">${e.route||'Ruta ciclismo'}${e.dist?' · '+e.dist+' km':''}</div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;">
-            ${e.time?`<span class="tag tag-neutral">⏱ ${Math.floor(e.time/60)}h${String(Math.round(e.time%60)).padStart(2,'0')}m</span>`:''}
-            ${e.spd?`<span class="tag tag-blue">⚡ ${e.spd} km/h</span>`:''}
-            ${e.fc?`<span class="tag tag-green">❤️ ${e.fc} bpm</span>`:''}
-            ${e.cad?`<span class="tag tag-neutral">🔄 ${e.cad} rpm</span>`:''}
-            ${e.cal?`<span class="tag tag-orange">🔥 ${e.cal} kcal</span>`:''}
-          </div>
-        </div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;">
-          <button class="btn btn-ai btn-sm" onclick="aiBikeEntryAnalysis('${e.id}')" style="font-size:11px;">🤖 IA</button>
-          <button class="btn btn-edit btn-sm" onclick="editBike('${e.id}')" style="font-size:11px;background:var(--accent-lt);color:var(--accent);border:1px solid rgba(37,99,235,.2);">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="delEntry('bike','${e.id}',renderBike)">🗑️</button>
-        </div>
-      </div>
-
-      <!-- Full metrics grid -->
-      <div class="metric-grid" style="margin-top:10px;">
-        ${e.dist?`<div class="mbadge"><div class="mbadge-val">${e.dist}</div><div class="mbadge-lbl">Distancia km</div></div>`:''}
-        ${e.time?`<div class="mbadge"><div class="mbadge-val">${Math.floor(e.time/60)}:${String(Math.round(e.time%60)).padStart(2,'0')}</div><div class="mbadge-lbl">Tiempo</div></div>`:''}
-        ${e.spd?`<div class="mbadge"><div class="mbadge-val" style="color:var(--accent)">${e.spd}</div><div class="mbadge-lbl">Vel prom km/h</div></div>`:''}
-        ${e.spdmax?`<div class="mbadge"><div class="mbadge-val">${e.spdmax}</div><div class="mbadge-lbl">Vel máx km/h</div></div>`:''}
-        ${e.fc?`<div class="mbadge"><div class="mbadge-val" style="color:var(--red)">${e.fc}</div><div class="mbadge-lbl">FC prom bpm</div></div>`:''}
-        ${e.fcmax?`<div class="mbadge"><div class="mbadge-val" style="color:var(--red)">${e.fcmax}</div><div class="mbadge-lbl">FC máx bpm</div></div>`:''}
-        ${e.cad?`<div class="mbadge"><div class="mbadge-val" style="color:${parseFloat(e.cad)<80?'var(--orange)':'var(--green)'}">${e.cad}</div><div class="mbadge-lbl">Cadencia rpm</div></div>`:''}
-        ${e.power?`<div class="mbadge"><div class="mbadge-val" style="color:var(--purple)">${e.power}</div><div class="mbadge-lbl">Potencia W</div></div>`:''}
-        ${e.cal?`<div class="mbadge"><div class="mbadge-val">${e.cal}</div><div class="mbadge-lbl">Calorías</div></div>`:''}
-        ${e.elev?`<div class="mbadge"><div class="mbadge-val">${e.elev}</div><div class="mbadge-lbl">Desnivel m</div></div>`:''}
-        ${e.asc?`<div class="mbadge"><div class="mbadge-val">${e.asc}</div><div class="mbadge-lbl">Ascenso m</div></div>`:''}
-        ${e.altmax?`<div class="mbadge"><div class="mbadge-val">${e.altmax}</div><div class="mbadge-lbl">Alt máx m</div></div>`:''}
-        ${e.aero?`<div class="mbadge"><div class="mbadge-val">${e.aero}</div><div class="mbadge-lbl">Resist aeróbica</div></div>`:''}
-      </div>
-
-      <!-- HR Zones -->
-      ${totalZMin>0?`<div style="margin-top:10px;">
-        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">⏱ Tiempo en zonas cardíacas</div>
-        ${['Z1','Z2','Z3','Z4','Z5'].map((z,i)=>{
-          const mins=parseFloat([zones.z1,zones.z2,zones.z3,zones.z4,zones.z5][i])||0;
-          const pct=totalZMin>0?Math.round(mins/totalZMin*100):0;
-          return mins>0?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-            <span style="font-size:10px;font-weight:700;color:${ZONE_COLORS[i]};width:22px;">${z}</span>
-            <div style="flex:1;background:var(--surface3);border-radius:3px;height:7px;overflow:hidden;">
-              <div style="width:${pct}%;height:100%;background:${ZONE_COLORS[i]};border-radius:3px;"></div>
-            </div>
-            <span style="font-size:10px;color:var(--text3);width:52px;text-align:right;font-family:var(--font-mono);">${mins}min (${pct}%)</span>
-          </div>`:''}).join('')}
-      </div>`:''}
-
-      <!-- Charts -->
-      ${hasChart?`<div style="margin-top:12px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">📊 Gráficas</div>
-          <select onchange="switchBikeChart(this,'${e.id}')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);">
-            ${e.spdSeries?.length&&e.fcSeries?.length?'<option value="spd-fc">Velocidad vs FC</option>':''}
-            ${e.spdSeries?.length&&e.cadSeries?.length?'<option value="spd-cad">Velocidad vs Cadencia</option>':''}
-            ${e.fcSeries?.length?'<option value="fc-only">FC por km</option>':''}
-            ${e.cadSeries?.length?'<option value="cad-only">Cadencia por km</option>':''}
-            ${e.spdSeries?.length?'<option value="spd-only">Velocidad por km</option>':''}
-          </select>
-        </div>
-        <div style="position:relative;height:160px;"><canvas id="${cid}"></canvas></div>
-      </div>`:''}
-
-      <div id="bike-ai-${e.id}" style="margin-top:8px;"></div>
-      ${e.notes?`<div style="margin-top:5px;font-size:11px;color:var(--text3);">📝 ${e.notes}</div>`:''}
-    </div>`;
+  var data=ld('bike');
+  var el=document.getElementById('bike-list');
+  if(!data.length){ el.innerHTML='<div class="empty"><div class="empty-icon">🚴</div>Sin rutas. Importa un GPX o registra manualmente.</div>'; return; }
+  el.innerHTML = data.map(function(e){
+    var sid = e.id.replace(/[^a-z0-9]/gi,'_');
+    var hasMap = e.gpx && e.gpx.lat && e.gpx.lat.length > 0;
+    var h = '<div class="session-card" data-sid="'+e.id+'">';
+    h += '<div class="session-hdr" onclick="toggleSess(this)">';
+    h += '<div style="flex:1;min-width:0;">';
+    h += '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;">'+fmtD(e.date)+'</div>';
+    h += '<div style="font-size:15px;font-weight:700;color:var(--text1);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(e.route||e.type||'Ciclismo')+'</div>';
+    h += '<div style="display:flex;gap:10px;margin-top:5px;flex-wrap:wrap;">';
+    if(e.dist) h+='<span style="font-size:12px;color:var(--text-sec);"><b style="font-family:var(--font-data);">'+e.dist+'</b> km</span>';
+    if(e.time) h+='<span style="font-size:12px;color:var(--text-sec);"><b style="font-family:var(--font-data);">'+Math.floor(e.time/60)+'h'+String(e.time%60).padStart(2,'0')+'</b></span>';
+    if(e.spd)  h+='<span style="font-size:12px;color:var(--text-sec);"><b style="font-family:var(--font-data);">'+e.spd+'</b> km/h</span>';
+    if(e.fcavg) h+='<span style="font-size:12px;color:var(--text-sec);">❤️ <b>'+e.fcavg+'</b>/'+(e.fcmax||'?')+'</span>';
+    if(e.elev) h+='<span style="font-size:12px;color:var(--text-sec);">⛰️ <b>'+e.elev+'</b>m</span>';
+    h += '</div></div>';
+    h += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:8px;">';
+    h += '<button onclick="event.stopPropagation();actSession(this,\'editBike\')" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--text2)" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3l9-9z"/></svg></button>';
+    h += '<button onclick="event.stopPropagation();actSession(this,\'deleteBike\')" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.05);cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#EF4444" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg></button>';
+    h += '<span class="tog-icon" style="font-size:10px;color:var(--text3);margin-left:2px;">▼</span>';
+    h += '</div></div>';
+    h += '<div class="session-body" id="sb-'+sid+'">';
+    h += '<div class="stat-row">';
+    if(e.dist)   h+='<div class="stat-box"><div class="sv">'+e.dist+'</div><div class="sl">km</div></div>';
+    if(e.time)   h+='<div class="stat-box"><div class="sv">'+Math.floor(e.time/60)+'h'+String(e.time%60).padStart(2,'0')+'</div><div class="sl">Tiempo</div></div>';
+    if(e.spd)    h+='<div class="stat-box"><div class="sv">'+e.spd+'</div><div class="sl">km/h med</div></div>';
+    if(e.spdmax) h+='<div class="stat-box"><div class="sv">'+e.spdmax+'</div><div class="sl">km/h máx</div></div>';
+    if(e.fcavg)  h+='<div class="stat-box"><div class="sv">'+e.fcavg+'</div><div class="sl">FC Med</div></div>';
+    if(e.fcmax)  h+='<div class="stat-box"><div class="sv">'+e.fcmax+'</div><div class="sl">FC Máx</div></div>';
+    if(e.cadavg) h+='<div class="stat-box"><div class="sv">'+e.cadavg+'</div><div class="sl">Cad rpm</div></div>';
+    if(e.elev)   h+='<div class="stat-box"><div class="sv">'+e.elev+'</div><div class="sl">Desnivel m</div></div>';
+    if(e.temp)   h+='<div class="stat-box"><div class="sv">'+e.temp+'</div><div class="sl">°C</div></div>';
+    h += '</div>';
+    if(e.notes) h+='<div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:var(--surface3);border-radius:6px;">'+e.notes+'</div>';
+    if(hasMap){
+      h += '<div class="gpx-map" id="map-'+sid+'" onclick="loadMap(this,\'#84CC16\')" style="display:flex;align-items:center;justify-content:center;">';
+      h += '<div style="color:var(--text3);font-size:12px;">🗺️ Toca para cargar mapa</div></div>';
+    }
+    h += '<div style="display:flex;gap:6px;margin-top:10px;">';
+    h += '<button class="btn btn-ai btn-sm" onclick="actSession(this,\'aiBikeSession\')">🤖 Analizar</button>';
+    h += '</div>';
+    h += '<div id="ai-'+sid+'" style="margin-top:6px;"></div>';
+    h += '</div></div>';
+    return h;
   }).join('');
-
-  setTimeout(()=>{
-    data.forEach(e=>{
-      const cid='bc-'+e.id.replace(/[^a-z0-9]/gi,'');
-      const ctx=document.getElementById(cid);if(!ctx)return;
-      const sel=ctx.closest('.entry')?.querySelector('select');
-      if(sel)renderBikeChart(cid,e,sel.value||sel.options[0]?.value||'spd-fc');
-    });
-  },100);
+  window._gpxStore = window._gpxStore || {};
+  data.forEach(function(e){ if(e.gpx) window._gpxStore[e.id.replace(/[^a-z0-9]/gi,'_')] = e.gpx; });
 }
 
 function switchBikeChart(sel,id){
@@ -1943,7 +2708,7 @@ function renderRec(){
       <div class="entry-header">
         <div class="entry-date">${fmtD(e.date)}</div>
         <div style="display:flex;gap:5px;">
-          <button onclick="editRec('${e.id}')" style="font-size:11px;background:var(--accent-lt);color:var(--accent);border:1px solid rgba(37,99,235,.2);padding:4px 9px;border-radius:6px;cursor:pointer;font-weight:600;">✏️</button>
+          <button onclick="editRec('${e.id}')" style="font-size:11px;background:var(--accent-lt);color:var(--accent);border:1px solid rgba(37,99,235,.2);padding:4px 9px;border-radius:6px;cursor:pointer;font-weight:600;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--text2)" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3l9-9z"/></svg></button>
           <button class="btn btn-danger btn-sm" onclick="delEntry('rec','${e.id}',renderRec)">🗑️</button>
         </div>
       </div>
@@ -2231,14 +2996,16 @@ function fmtDur(el){
   el.value=v;
 }
 function getDurHHMM(){
-  var el=document.getElementById('g-dur-hhmm');
-  if(!el)return{h:0,m:0};
-  var val=(el.value||'').split(':');
-  return{h:parseInt(val[0])||0,m:parseInt(val[1])||0};
+  return {
+    h: parseInt(document.getElementById('g-dur-h')?.value||0)||0,
+    m: parseInt(document.getElementById('g-dur-m')?.value||0)||0
+  };
 }
-function setDurHHMM(h,m){
-  var el=document.getElementById('g-dur-hhmm');
-  if(el)el.value=(h||0).toString().padStart(2,'0')+':'+(m||0).toString().padStart(2,'0');
+function setDurHHMM(h, m){
+  var hEl = document.getElementById('g-dur-h');
+  var mEl = document.getElementById('g-dur-m');
+  if(hEl) hEl.value = String(Math.min(5, Math.max(0, parseInt(h)||0)));
+  if(mEl) mEl.value = String(Math.round(Math.min(59, Math.max(0, parseInt(m)||0))/5)*5);
 }
 
 function editInlineEx(i){
@@ -2676,6 +3443,377 @@ function exportAnalysisPDF(){
     '</body></html>');
   win.document.close();
 }
+
+// ══ MAP & SESSION HELPERS ══
+var _maps = {};
+var _gpxStore = {};
+
+function loadMap(el, color){
+  var sid = el.closest('[data-sid]')?.dataset.sid;
+  var mapId = el.id;
+  if(!sid || _maps[mapId]) return;
+  var gpx = _gpxStore[mapId.replace('map-','')];
+  if(!gpx && sid) {
+    // try to find from stored data
+    var all = ld('run').concat(ld('bike'));
+    var entry = all.find(function(e){ return e.id===sid; });
+    if(entry) gpx = entry.gpx;
+  }
+  if(!gpx || !gpx.lat || !gpx.lat.length){ el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Sin datos GPS disponibles</div>'; return; }
+  if(typeof L==='undefined'){ el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">🗺️ Mapa no disponible (requiere conexión)</div>'; return; }
+  el.innerHTML = '';
+  try{
+    var map = L.map(el.id, {zoomControl:true, scrollWheelZoom:false, attributionControl:false});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
+    var latlngs = gpx.lat.map(function(lat,i){ return [lat, gpx.lon[i]]; }).filter(function(p){ return !isNaN(p[0])&&!isNaN(p[1]); });
+    var poly = L.polyline(latlngs, {color:color||'#84CC16', weight:3.5, opacity:.9}).addTo(map);
+    map.fitBounds(poly.getBounds(), {padding:[12,12]});
+    var mkS = L.divIcon({html:'<div style="width:10px;height:10px;border-radius:50%;background:#22C55E;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>',className:'',iconSize:[10,10]});
+    var mkE = L.divIcon({html:'<div style="width:10px;height:10px;border-radius:50%;background:#EF4444;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>',className:'',iconSize:[10,10]});
+    L.marker(latlngs[0], {icon:mkS}).addTo(map);
+    L.marker(latlngs[latlngs.length-1], {icon:mkE}).addTo(map);
+    _maps[mapId] = map;
+  }catch(err){ el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Error: '+err.message+'</div>'; }
+}
+
+function toggleSess(hdr){
+  var card = hdr.closest('.session-card');
+  var sid = card?.dataset.sid?.replace(/[^a-z0-9]/gi,'_');
+  var body = document.getElementById('sb-'+sid);
+  var icon = hdr.querySelector('.tog-icon');
+  if(!body) return;
+  var open = body.classList.toggle('open');
+  if(icon) icon.textContent = open ? '▲' : '▼';
+  // lazy load map
+  if(open && sid){
+    var mapEl = document.getElementById('map-'+sid);
+    if(mapEl && !_maps['map-'+sid]){
+      var entry = ld('run').concat(ld('bike')).find(function(e){ return e.id===(card?.dataset.sid); });
+      if(entry && entry.gpx){ _gpxStore[sid] = entry.gpx; }
+    }
+  }
+}
+
+function toggleGym(hdr){
+  var card = hdr.closest('.gym-session');
+  var sid = card?.dataset.sid?.replace(/[^a-z0-9]/gi,'_');
+  var body = document.getElementById('gb-'+sid);
+  var icon = hdr.querySelector('.tog-icon');
+  if(!body) return;
+  var open = body.classList.toggle('open');
+  if(icon) icon.textContent = open ? '▲' : '▼';
+}
+
+function actSession(btn, action){
+  var card = btn.closest('[data-sid]');
+  var sid = card?.dataset.sid;
+  if(!sid) return;
+  var fns = {
+    editRun:editRun, deleteRun:deleteRun,
+    editBike:editBike, deleteBike:deleteBike,
+    editGym:editGym, deleteGym:deleteGym,
+    aiRunSession:aiRunSession, aiBikeSession:aiBikeSession, aiGymSession:aiGymSession
+  };
+  if(fns[action]) fns[action](sid);
+}
+
+
+// ══ DELETE FUNCTIONS ══
+function deleteRun(id){
+  if(!confirm('¿Eliminar esta sesión de running?')) return;
+  sv('run', ld('run').filter(function(e){return e.id!==id;}));
+  renderRun(); renderDash(); showToast('Sesión eliminada');
+}
+function deleteBike(id){
+  if(!confirm('¿Eliminar esta ruta de ciclismo?')) return;
+  sv('bike', ld('bike').filter(function(e){return e.id!==id;}));
+  renderBike(); renderDash(); showToast('Ruta eliminada');
+}
+function deleteGym(id){
+  if(!confirm('¿Eliminar esta sesión de gym?')) return;
+  sv('gym', ld('gym').filter(function(e){return e.id!==id;}));
+  renderGym(); renderDash(); showToast('Sesión eliminada');
+}
+
+// ══ AI SESSION STUBS (if not defined) ══
+function aiRunSession(id){
+  var e=ld('run').find(function(x){return x.id===id;});
+  if(!e) return;
+  var sid=id.replace(/[^a-z0-9]/gi,'_');
+  var el=document.getElementById('ai-'+sid);
+  if(!el) return;
+  var prompt='Analiza esta sesión de running como coach deportivo:\n'+
+    'Fecha: '+e.date+'\nDistancia: '+(e.dist||'?')+' km\nTiempo: '+(e.time||'?')+' min'+
+    '\nRitmo: '+(e.pace||'?')+'/km\nFC media/máx: '+(e.fcavg||'?')+'/'+(e.fcmax||'?')+
+    '\nCadencia: '+(e.cadavg||'?')+' rpm\nElevación: '+(e.alt||'?')+'m'+
+    '\nNotas: '+(e.notes||'')+'\nDa retroalimentación concisa en 3-4 puntos.';
+  setAI(el,'🤖 Analizando...','loading');
+  callAI(prompt).then(function(r){ setAI(el,r,r.startsWith('❌')?'err':'ok'); });
+}
+function aiBikeSession(id){
+  var e=ld('bike').find(function(x){return x.id===id;});
+  if(!e) return;
+  var sid=id.replace(/[^a-z0-9]/gi,'_');
+  var el=document.getElementById('ai-'+sid);
+  if(!el) return;
+  var prompt='Analiza esta salida de ciclismo como coach:\n'+
+    'Fecha: '+e.date+'\nDistancia: '+(e.dist||'?')+' km\nTiempo: '+(e.time||'?')+' min'+
+    '\nVelocidad media: '+(e.spd||'?')+' km/h\nFC media/máx: '+(e.fcavg||'?')+'/'+(e.fcmax||'?')+
+    '\nCadencia: '+(e.cadavg||'?')+' rpm\nDesnivel: '+(e.elev||'?')+'m'+
+    '\nTemperatura: '+(e.temp||'?')+'°C\nNotas: '+(e.notes||'')+
+    '\nDa retroalimentación concisa en 3-4 puntos.';
+  setAI(el,'🤖 Analizando...','loading');
+  callAI(prompt).then(function(r){ setAI(el,r,r.startsWith('❌')?'err':'ok'); });
+}
+function aiGymSession(id){
+  var e=ld('gym').find(function(x){return x.id===id;});
+  if(!e) return;
+  var sid=id.replace(/[^a-z0-9]/gi,'_');
+  var el=document.getElementById('ai-'+sid);
+  if(!el) return;
+  var exList=(e.exercises||[]).map(function(ex){
+    return (ex.name||ex.n)+'  '+ex.sets+'×'+(ex.reps||ex.r);
+  }).join(', ');
+  var prompt='Analiza esta sesión de gimnasio como coach:\n'+
+    'Fecha: '+e.date+'\nRutina: '+(e.routineName||'?')+
+    '\nIntensidad: '+(e.intensity||'?')+'/10\nEjercicios: '+exList+
+    '\nDolor: '+(e.pain||'ninguno')+(e.painLevel?' nivel '+e.painLevel:'')+'\nNotas: '+(e.notes||'')+
+    '\nDa retroalimentación concisa en 3-4 puntos.';
+  setAI(el,'🤖 Analizando...','loading');
+  callAI(prompt).then(function(r){ setAI(el,r,r.startsWith('❌')?'err':'ok'); });
+}
+
+// ══ FIT BINARY PARSER (Magene C606 / Garmin) ══
+function parseFIT(file, el){
+  setAI(el,'⏳ Procesando archivo FIT...','loading');
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      var buf = ev.target.result;
+      var bytes = new Uint8Array(buf);
+      // Validate FIT header
+      if(bytes[8]!==46||bytes[9]!==70||bytes[10]!==73||bytes[11]!==84){
+        setAI(el,'❌ Archivo FIT inválido (magic bytes incorrectos)','err'); return;
+      }
+      var dataSize = bytes[4]|(bytes[5]<<8)|(bytes[6]<<16)|(bytes[7]<<24);
+      // Parse FIT messages - simplified decoder for common fields
+      var offset = bytes[0]; // header size (usually 14)
+      var records = [];
+      var localMsgDefs = {};
+      var FIT_EPOCH = new Date('1989-12-31T00:00:00Z').getTime();
+      
+      // Field definitions for message types we care about
+      var FIELD_DEF = {
+        0: {name:'file_id'}, 4: {name:'record'}, 18: {name:'session'}, 19: {name:'lap'}
+      };
+      
+      var stats = {dist:0,time:0,hr:[],cad:[],power:[],speed:[],alt:[],timestamps:[]};
+      var startTs = null, endTs = null;
+      
+      while(offset < dataSize + bytes[0]){
+        if(offset >= bytes.length - 1) break;
+        var recHeader = bytes[offset++];
+        var isDefinition = (recHeader & 0x40) !== 0;
+        var localMsgNum = recHeader & 0x0F;
+        
+        if(isDefinition){
+          // Read definition message
+          offset++; // reserved
+          var arch = bytes[offset++]; // architecture (0=little endian)
+          var globalMsgNum = arch===0 ? (bytes[offset]|(bytes[offset+1]<<8)) : (bytes[offset]<<8|bytes[offset+1]);
+          offset+=2;
+          var numFields = bytes[offset++];
+          var fields = [];
+          for(var f=0;f<numFields;f++){
+            var fNum=bytes[offset++], fSize=bytes[offset++], fType=bytes[offset++];
+            fields.push({num:fNum, size:fSize, type:fType});
+          }
+          localMsgDefs[localMsgNum] = {globalMsg:globalMsgNum, fields:fields, arch:arch};
+        } else {
+          // Read data message
+          var def = localMsgDefs[localMsgNum];
+          if(!def){ break; }
+          var msgData = {};
+          for(var fi=0;fi<def.fields.length;fi++){
+            var field = def.fields[fi];
+            var val = 0;
+            if(field.size===1) val = bytes[offset];
+            else if(field.size===2) val = def.arch===0?(bytes[offset]|(bytes[offset+1]<<8)):(bytes[offset]<<8|bytes[offset+1]);
+            else if(field.size===4) val = def.arch===0?(bytes[offset]|(bytes[offset+1]<<8)|(bytes[offset+2]<<16)|(bytes[offset+3]<<24)):((bytes[offset]<<24)|(bytes[offset+1]<<16)|(bytes[offset+2]<<8)|bytes[offset+3]);
+            offset += field.size;
+            msgData[field.num] = val;
+          }
+          
+          // Parse known global message types
+          if(def.globalMsg === 20){ // record
+            var ts = msgData[253]; // timestamp
+            if(ts && ts < 0xFFFFFFFE){
+              var realTs = FIT_EPOCH + ts*1000;
+              if(!startTs) startTs = realTs;
+              endTs = realTs;
+              stats.timestamps.push(realTs);
+            }
+            var hr = msgData[3]; if(hr && hr<250) stats.hr.push(hr);
+            var cad = msgData[4]; if(cad && cad<250) stats.cad.push(cad*2); // cadence*2 for cycling
+            var pwr = msgData[7]; if(pwr && pwr<3000) stats.power.push(pwr);
+            var spd = msgData[6]; if(spd && spd<65535) stats.speed.push(spd/1000*3.6); // mm/s -> km/h
+            var alt = msgData[2]; if(alt && alt<65535) stats.alt.push(alt/5-500); // scaled
+          } else if(def.globalMsg === 18){ // session summary
+            var totalDist = msgData[9]; if(totalDist && totalDist<0xFFFFFFFF) stats.dist = totalDist/100000; // cm -> km
+            var totalTime = msgData[7]; if(totalTime && totalTime<0xFFFFFFFF) stats.time = Math.round(totalTime/60000); // ms -> min
+          }
+        }
+      }
+      
+      // Calculate stats
+      var avg = function(arr){ return arr.length ? Math.round(arr.reduce(function(a,b){return a+b;},0)/arr.length) : null; };
+      var mx  = function(arr){ return arr.length ? Math.round(Math.max.apply(null,arr)) : null; };
+      
+      var dur = startTs&&endTs ? Math.round((endTs-startTs)/60000) : stats.time;
+      var dist = stats.dist || 0;
+      var avgSpd = stats.speed.length ? (stats.speed.reduce(function(a,b){return a+b;},0)/stats.speed.length).toFixed(1) : (dist&&dur?(dist/(dur/60)).toFixed(1):'');
+      var date = startTs ? new Date(startTs).toISOString().split('T')[0] : today();
+      var hrAvg=avg(stats.hr), hrMax=mx(stats.hr);
+      var cadAvg=avg(stats.cad), pwrAvg=avg(stats.power), pwrMax=mx(stats.power);
+      var altGain=0;
+      for(var a=1;a<stats.alt.length;a++) if(stats.alt[a]>stats.alt[a-1]) altGain+=stats.alt[a]-stats.alt[a-1];
+      
+      var entry={
+        id:uid(), date:date, type:'FIT', dist:dist.toFixed(2), time:dur,
+        spd:avgSpd, fcavg:hrAvg, fcmax:hrMax, cadavg:cadAvg,
+        power:pwrAvg, powermax:pwrMax,
+        elev:Math.round(altGain)||0,
+        route:file.name.replace(/\.fit$/i,''),
+        notes:'FIT: '+file.name+(pwrAvg?' · ⚡ '+pwrAvg+'W avg':'')+(hrAvg?' · ❤️ '+hrAvg+'/'+hrMax+' bpm':''),
+        ts:Date.now()
+      };
+      
+      sv('bike',[entry].concat(ld('bike'))); renderBike(); renderDash();
+      
+      var msg='✅ <b>'+entry.route+'</b> (FIT importado)<br>';
+      if(dist) msg+='📍 '+dist.toFixed(2)+' km';
+      if(dur) msg+=' · ⏱ '+Math.floor(dur/60)+'h'+String(dur%60).padStart(2,'0')+'min';
+      if(avgSpd) msg+=' · '+avgSpd+' km/h';
+      if(hrAvg) msg+=' · ❤️ '+hrAvg+'/'+hrMax+' bpm';
+      if(cadAvg) msg+=' · 🔄 '+cadAvg+' rpm';
+      if(pwrAvg) msg+=' · ⚡ '+pwrAvg+'W';
+      if(altGain>0) msg+=' · ⛰️ '+Math.round(altGain)+'m';
+      setAI(el, msg, 'ok');
+    } catch(err){
+      setAI(el,'❌ Error FIT: '+err.message,'err');
+      console.error('FIT parse error:',err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Override importFile to handle FIT format for bike
+var _origImportFile = typeof importFile === 'function' ? importFile : null;
+function importFile(inp, type){
+  var file = inp.files ? inp.files[0] : inp;
+  if(!file) return;
+  var ext = file.name.split('.').pop().toLowerCase();
+  var el = document.getElementById(type === 'bike' ? 'bike-ir' : (type === 'run' ? 'run-ir' : 'import-result'));
+  if(!el) el = document.getElementById('import-result') || document.body;
+  if(ext === 'fit'){
+    parseFIT(file, el);
+  } else if(ext === 'gpx'){
+    parseGPX(file, type, el);
+  } else {
+    setAI(el,'❌ Formato no soportado. Usa .gpx o .fit','err');
+  }
+}
+
+// ══ GOOGLE INTEGRATION ══
+var _googleUser = null;
+var _googleToken = null;
+
+function googleSignIn(){
+  // Use Google Identity Services
+  var CLIENT_ID = profile.googleClientId || '';
+  if(!CLIENT_ID){
+    showToast('Configura tu Google Client ID en perfil');
+    return;
+  }
+  if(typeof google === 'undefined' || !google.accounts){
+    // Load GSI script dynamically
+    var s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.onload = function(){ _initGoogleSignIn(CLIENT_ID); };
+    document.head.appendChild(s);
+  } else {
+    _initGoogleSignIn(CLIENT_ID);
+  }
+}
+
+function _initGoogleSignIn(clientId){
+  google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/fitness.activity.read',
+    callback: function(resp){
+      if(resp.error){ showToast('Error Google: '+resp.error); return; }
+      _googleToken = resp.access_token;
+      _googleUser = 'Conectado';
+      updateGoogleUI(true);
+      showToast('✅ Google conectado correctamente');
+    }
+  }).requestAccessToken();
+}
+
+function updateGoogleUI(connected){
+  var status = document.getElementById('google-status');
+  var btnDrive = document.getElementById('btn-drive-sync');
+  var btnFit = document.getElementById('btn-fit-sync');
+  var btnSignin = document.getElementById('btn-google-signin');
+  if(status){ status.style.display='block'; status.textContent = connected ? '✅ Google conectado' : ''; }
+  if(btnDrive) btnDrive.disabled = !connected;
+  if(btnFit) btnFit.disabled = !connected;
+  if(btnSignin && connected) btnSignin.textContent = '✅ Google conectado';
+}
+
+function syncToDrive(){
+  if(!_googleToken){ showToast('Conecta Google primero'); return; }
+  var data = {
+    gym: ld('gym'), run: ld('run'), bike: ld('bike'),
+    weight: ld('weight'), profile: profile,
+    exportedAt: new Date().toISOString()
+  };
+  var blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+  var metadata = {name:'idg_training_backup.json', parents:['appDataFolder']};
+  var form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+  form.append('file', blob);
+  fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    method:'POST',
+    headers:{'Authorization':'Bearer '+_googleToken},
+    body: form
+  }).then(function(r){ return r.json(); })
+  .then(function(d){
+    showToast(d.id ? '✅ Guardado en Google Drive' : '❌ Error Drive: '+(d.error?.message||'?'));
+  }).catch(function(e){ showToast('❌ Error Drive: '+e.message); });
+}
+
+function syncGoogleFit(){
+  if(!_googleToken){ showToast('Conecta Google primero'); return; }
+  var now = Date.now();
+  var weekAgo = now - 7*24*60*60*1000;
+  fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate', {
+    method:'POST',
+    headers:{'Authorization':'Bearer '+_googleToken,'Content-Type':'application/json'},
+    body: JSON.stringify({
+      aggregateBy:[{dataTypeName:'com.google.step_count.delta'},{dataTypeName:'com.google.calories.expended'}],
+      bucketByTime:{durationMillis:86400000},
+      startTimeMillis:weekAgo, endTimeMillis:now
+    })
+  }).then(function(r){ return r.json(); })
+  .then(function(d){
+    var buckets = d.bucket || [];
+    var total = buckets.reduce(function(acc,b){
+      return acc + (b.dataset?.[0]?.point?.[0]?.value?.[0]?.intVal||0);
+    }, 0);
+    showToast('✅ Google Fit: '+total.toLocaleString()+' pasos esta semana');
+  }).catch(function(e){ showToast('❌ Error Fit: '+e.message); });
+}
 window.onload=()=>{
   // Hide all pages explicitly at startup
   document.querySelectorAll('.page').forEach(function(p){p.style.display='none';});
@@ -2707,777 +3845,7 @@ function openDrawer(){document.getElementById('main-drawer').classList.add('open
 function closeDrawer(){document.getElementById('main-drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');document.body.style.overflow='';}
 function drawerNav(p,b){closeDrawer();go(p,null);document.querySelectorAll('.drawer-item').forEach(x=>x.classList.toggle('active',x.getAttribute('data-page')===p));}
 
+
 </script>
-
-
-<!-- ═══ SIDEBAR ═══ -->
-<div class="app">
-<aside class="sidebar">
-  <div class="sb-brand">
-    <div class="sb-logo" style="font-family:var(--font-logo);font-weight:700;">IDG TRAINING PRO</div>
-    <div class="sb-tag">Performance Analytics</div>
-  </div>
-  <div class="sb-score-wrap">
-    <div class="sb-score-top">
-      <div class="score-circle" id="score-circle" style="font-family:var(--font-data);">78</div>
-      <div><div class="score-label">Score semanal</div><div class="score-status" id="score-status">Bueno</div></div>
-    </div>
-    <div class="score-bar"><div class="score-bar-fill" id="score-fill" style="width:78%"></div></div>
-  </div>
-  <nav class="sb-nav">
-    <div class="sb-section">Principal</div>
-    <button class="sb-item active" onclick="go('dash',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</button>
-    <button class="sb-item" onclick="go('gym',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16M18 4v16M3 9h3M18 9h3M3 15h3M18 15h3M6 12h12"/></svg>Gym</button>
-    <button class="sb-item" onclick="go('running',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="4.5" r="1.5"/><path d="m9 10 3-3 2.5 3L17 8"/><path d="M9 16.5 7 21"/><path d="m11.5 12.5-2 4.5 4.5 2"/></svg>Running</button>
-    <button class="sb-item" onclick="go('cycling',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M9 9h6l-1.5 4H9l-4 4M15 4h2l-2 5"/><circle cx="15" cy="4" r="1"/></svg>Ciclismo</button>
-    <div class="sb-section">Análisis</div>
-    <button class="sb-item" onclick="go('weight',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg>Peso & Cuerpo</button>
-    <button class="sb-item" onclick="go('recovery',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Recuperación</button>
-    <button class="sb-item" onclick="go('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>Metas & IA</button>
-    <div class="sb-section">Config</div>
-    <button class="sb-item" onclick="go('profile',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
-    <button class="sb-item" onclick="go('import',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0-4-4m4 4 4-4"/><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>Importar</button>
-  </nav>
-  <div class="sb-footer">
-    <div class="sb-quote">La disciplina hoy es el resultado de mañana.<br><strong style="color:var(--accent);font-style:normal;">IDG TRAINING PRO</strong></div>
-  </div>
-</aside>
-
-<!-- ═══ MAIN ═══ -->
-<div class="main">
-<div class="topnav">
-  <button class="hamburger" onclick="openDrawer()"><span></span><span></span><span></span></button>
-<div class="topnav-title" id="topnav-title">Dashboard</div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <span id="topnav-date" style="font-size:12px;color:var(--text3);font-family:var(--font-mono);"></span>
-    <div style="font-size:13px;font-weight:600;color:var(--text2);" id="topnav-name">Ivan</div>
-    <div class="avatar">IV</div>
-  </div>
-</div>
-
-<div class="content">
-
-<!-- ═══ DASHBOARD ═══ -->
-<div id="p-dash" class="page active">
-  <div class="kpi-row" id="dash-kpis"></div>
-  <div class="grid-2" style="margin-bottom:14px;">
-    <div>
-      <div class="card" style="margin-bottom:12px;">
-        <div class="card-title">Carga de entrenamiento</div>
-        <div class="card-sub">Últimos 7 días</div>
-        <div class="chart-wrap"><canvas id="chart-load"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Distribución por deporte</div>
-        <div class="card-sub" id="dash-dist-sub"></div>
-        <div style="display:flex;align-items:center;gap:16px;">
-          <div style="width:130px;height:130px;position:relative;flex-shrink:0;"><canvas id="chart-donut" style="width:130px!important;height:130px!important;"></canvas></div>
-          <div id="dash-legend" style="display:flex;flex-direction:column;gap:6px;flex:1;"></div>
-        </div>
-      </div>
-    </div>
-    <div>
-      <div class="card" style="margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div class="card-title" style="margin:0;">Importar actividad</div>
-          <div style="display:flex;gap:4px;">
-            <button onclick="switchIP('files')" id="iptab-f" class="btn btn-sm btn-primary" style="font-size:11px;">📁 Archivos</button>
-            <button onclick="switchIP('ai')" id="iptab-a" class="btn btn-sm btn-ghost" style="font-size:11px;">🤖 IA</button>
-          </div>
-        </div>
-        <div id="ip-files">
-          <div class="fmt-grid">
-            <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'bike')"><div class="fmt-icon">🗺️</div><div class="fmt-name">GPX</div><div class="fmt-desc">Rutas GPS</div></label></div>
-            <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".fit" style="display:none" onchange="importFile(this,'bike')"><div class="fmt-icon">⌚</div><div class="fmt-name">FIT</div><div class="fmt-desc">Garmin/Wahoo</div></label></div>
-            <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'run')"><div class="fmt-icon">🏃</div><div class="fmt-name">Running</div><div class="fmt-desc">GPX/FIT run</div></label></div>
-          </div>
-          <div class="import-zone" onclick="document.getElementById('di').click()">
-            <input type="file" id="di" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'bike')">
-            <div style="font-size:22px;margin-bottom:4px;">☁️</div>
-            <div style="font-size:12px;color:var(--text3);">Arrastra o haz clic · .gpx · .fit</div>
-          </div>
-          <div id="dash-ir"></div>
-        </div>
-        <div id="ip-ai" style="display:none;">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">Sube una captura de Huawei Health, Garmin, Strava o tu smartwatch para análisis automático con IA.</div>
-          <label class="btn btn-ai" style="width:100%;justify-content:center;cursor:pointer;">
-            📸 Subir imagen para análisis IA
-            <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'generic','dash-air')">
-          </label>
-          <div id="dash-air"></div>
-        </div>
-      </div>
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div class="card-title" style="margin:0;">Metas activas</div>
-          <button class="btn btn-sm btn-ghost" style="font-size:11px;" onclick="go('goals',null)">Ver todas →</button>
-        </div>
-        <div id="dash-goals-mini"></div>
-      </div>
-    </div>
-  </div>
-  <div class="status-bar" id="dash-status"></div>
-</div>
-
-<!-- ═══ GYM ═══ -->
-<div id="p-gym" class="page">
-  <!-- Gym: collapse workout form until routine is selected -->
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-    <select id="g-routine" onchange="onRoutineSelect()" style="font-size:13px;font-weight:600;width:auto;min-width:220px;">
-      <option value="">— Selecciona una rutina para comenzar —</option>
-      <option value="">— Selecciona rutina —</option><option value="1">Día 1 — Cuádriceps + Pantorrilla</option>
-      <option value="2">Día 2 — Isquios + Glúteo</option>
-      <option value="3">Día 3 — Espalda + Antebrazo</option>
-      <option value="4">Día 4 — Pecho + Hombro</option>
-      <option value="5">Día 5 — Bíceps + Tríceps</option>
-      <option value="wod">WOD Ranger</option>
-      <option value="custom">+ Personalizado</option>
-    </select>
-    <div class="unit-toggle">
-      <button class="ut-btn active" id="ut-lbs" onclick="setUnit('lbs')">lbs</button>
-      <button class="ut-btn" id="ut-kg" onclick="setUnit('kg')">kg</button>
-    </div>
-    <div style="flex:1;"></div>
-    <button class="btn btn-ai" onclick="aiGymAdvice()">🤖 Consejo IA</button>
-    <button class="btn btn-save" onclick="saveGym()">💾 Guardar sesión</button>
-  </div>
-
-  <!-- Gym fields -->
-  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-    <input type="date" id="g-date" style="width:auto;">
-    <input type="text" id="g-dur-hhmm" placeholder="HH:MM" maxlength="5" style="width:90px;text-align:center;letter-spacing:2px;" oninput="fmtDur(this)" title="Duración HH:MM">
-    <input type="number" id="g-int" placeholder="Intensidad 1-10" min="1" max="10" style="width:140px;">
-    <input type="text" id="g-pain" placeholder="Zona de dolor" style="width:140px;">
-    <input type="number" id="g-plevel" placeholder="Nivel dolor 0-10" style="width:140px;">
-  </div>
-  <textarea id="g-notes" placeholder="Notas generales..." style="margin-bottom:10px;height:56px;"></textarea>
-
-  <!-- Workout form: shown only after routine selected -->
-  <div id="gym-form-wrap" style="display:none;">
-  <!-- Exercise table -->
-  <div class="ex-wrap">
-    <div class="ex-header">
-      <div class="ex-col">#</div>
-      <div class="ex-col">Ejercicio</div>
-      <div class="ex-col">Series</div>
-      <div class="ex-col">Repeticiones</div>
-      <div class="ex-col">Series (peso por serie)</div>
-      <div class="ex-col">Descanso</div>
-      <div class="ex-col">IA</div>
-    </div>
-    <div id="ex-body"></div>
-  </div>
-  <div style="margin-top:8px;border:2px dashed var(--border2);border-radius:10px;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:var(--text3);" onclick="addEx()">+ Agregar ejercicio</div>
-
-  <div id="gym-ai-advice" style="margin-top:10px;"></div>
-
-  <!-- Gym history -->
-  </div><!-- end gym-form-wrap -->
-
-  <div class="card" style="margin-top:16px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <div class="card-title">📋 Historial de sesiones</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <select id="gym-filter" onchange="renderGym()" style="font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);">
-          <option value="">Todas las rutinas</option>
-          <option value="1">Día 1 — Cuádriceps</option>
-          <option value="2">Día 2 — Isquios + Glúteo</option>
-          <option value="3">Día 3 — Espalda</option>
-          <option value="4">Día 4 — Pecho + Hombro</option>
-          <option value="5">Día 5 — Bíceps + Tríceps</option>
-          <option value="wod">WOD Ranger</option>
-          <option value="custom">Personalizado</option>
-        </select>
-        <button class="btn btn-ai btn-sm" onclick="aiGymHistoryAnalysis()" style="font-size:11px;">🤖 Analizar rutinas IA</button>
-      </div>
-    </div>
-    <div id="gym-history-ai" style="margin-bottom:10px;"></div>
-    <div id="gym-list"></div>
-  </div>
-</div>
-
-<!-- ═══ RUNNING ═══ -->
-<div id="p-running" class="page">
-  <div class="inline-import">
-    <div class="ii-title">📥 Importar / Analizar running</div>
-    <div class="ii-btns">
-      <label class="btn btn-ghost btn-sm" style="cursor:pointer;">🗺️ GPX/FIT<input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'run')"></label>
-      <label class="btn btn-ai btn-sm" style="cursor:pointer;">🤖 Analizar imagen<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'run','run-ir')"></label>
-      <button class="btn btn-ghost btn-sm" onclick="go('goals',null)">🎯 Ver metas running</button>
-    </div>
-    <div id="run-ir"></div>
-  </div>
-  <div style="margin-bottom:10px;"><button class="btn btn-primary" onclick="openM('run')">+ Nueva sesión manual</button></div>
-  <div id="run-list"></div>
-</div>
-
-<!-- ═══ CYCLING ═══ -->
-<div id="p-cycling" class="page">
-  <div class="inline-import">
-    <div class="ii-title">📥 Importar / Analizar ciclismo</div>
-    <div class="ii-btns">
-      <label class="btn btn-ghost btn-sm" style="cursor:pointer;">🗺️ GPX/FIT<input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'bike')"></label>
-      <label class="btn btn-ai btn-sm" style="cursor:pointer;">🤖 Analizar imagen<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'bike','bike-ir')"></label>
-    </div>
-    <div id="bike-ir"></div>
-  </div>
-  <div style="margin-bottom:10px;"><button class="btn btn-primary" onclick="openM('bike')">+ Nueva ruta manual</button></div>
-  <div id="bike-list"></div>
-</div>
-
-<!-- ═══ WEIGHT ═══ -->
-<div id="p-weight" class="page">
-  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-    <label class="btn btn-ai" style="cursor:pointer;">📸 Foto balanza → IA<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'weight','weight-air')"></label>
-    <button class="btn btn-primary" onclick="openM('weight')">+ Registrar manual</button>
-  </div>
-  <div id="weight-air" style="margin-bottom:10px;"></div>
-  <div id="weight-summary" style="margin-bottom:12px;"></div>
-  <div class="card" style="margin-bottom:12px;">
-    <div class="card-title" style="margin-bottom:10px;">Evolución de peso</div>
-    <div class="chart-wrap"><canvas id="chart-weight"></canvas></div>
-  </div>
-  <div id="weight-list"></div>
-</div>
-
-<!-- ═══ RECOVERY ═══ -->
-<div id="p-recovery" class="page">
-  <div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;">
-    <button class="btn btn-primary" onclick="openM('rec')">+ Registrar recuperación</button>
-    <button class="btn btn-ai" onclick="aiRecAdvice()">🤖 Consejo IA basado en último entreno</button>
-  </div>
-  <div id="rec-advice" style="margin-bottom:12px;"></div>
-  <div class="grid-2" style="margin-bottom:12px;">
-    <div class="card">
-      <div class="card-title" style="margin-bottom:8px;">Calidad de sueño</div>
-      <div class="chart-wrap-sm"><canvas id="chart-sleep"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title" style="margin-bottom:8px;">Energía & Ánimo</div>
-      <div class="chart-wrap-sm"><canvas id="chart-energy"></canvas></div>
-    </div>
-  </div>
-  <div id="rec-list"></div>
-</div>
-
-<!-- ═══ GOALS ═══ -->
-<div id="p-goals" class="page">
-
-  <!-- ── Metas activas ── -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-    <div>
-      <div style="font-size:17px;font-weight:700;color:var(--text1);">Metas &amp; IA</div>
-      <div style="font-size:12px;color:var(--text3);">Seguimiento de objetivos y análisis inteligente</div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="openM('goal')">+ Nueva meta</button>
-      <button class="btn btn-ai" onclick="aiGoalPlan()">🤖 Plan IA</button>
-    </div>
-  </div>
-  <div id="goals-ai" style="margin-bottom:12px;"></div>
-  <div id="goals-list" style="margin-bottom:20px;"></div>
-
-  <!-- ══════════════════════════════════════
-       ANÁLISIS DE PERÍODO
-  ══════════════════════════════════════ -->
-  <div style="border-top:2px solid var(--border);padding-top:20px;margin-top:4px;">
-    <div style="font-size:16px;font-weight:700;color:var(--text1);margin-bottom:4px;">📊 Análisis de Período</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:16px;">Análisis narrativo de tu entrenamiento generado por IA</div>
-
-    <!-- Filtros -->
-    <div class="card" style="margin-bottom:14px;padding:16px 18px;">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Filtros del análisis</div>
-
-      <!-- Deporte -->
-      <div style="margin-bottom:12px;">
-        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Deporte</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="ap-sport-btns">
-          <button class="ap-sport-btn active" data-sport="all" onclick="apSetSport(this,'all')">🏅 Todos</button>
-          <button class="ap-sport-btn" data-sport="run" onclick="apSetSport(this,'run')">🏃 Running</button>
-          <button class="ap-sport-btn" data-sport="bike" onclick="apSetSport(this,'bike')">🚴 Ciclismo</button>
-          <button class="ap-sport-btn" data-sport="gym" onclick="apSetSport(this,'gym')">🏋️ Gym</button>
-        </div>
-      </div>
-
-      <!-- Período -->
-      <div style="margin-bottom:12px;">
-        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Período</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="ap-period-btns">
-          <button class="ap-period-btn active" data-period="week-to-date" onclick="apSetPeriod(this,'week-to-date')">Esta semana <span style="opacity:.6;font-size:10px;">(lun→hoy)</span></button>
-          <button class="ap-period-btn" data-period="week-full" onclick="apSetPeriod(this,'week-full')">Semana completa</button>
-          <button class="ap-period-btn" data-period="month-to-date" onclick="apSetPeriod(this,'month-to-date')">Este mes <span style="opacity:.6;font-size:10px;">(1→hoy)</span></button>
-          <button class="ap-period-btn" data-period="month-full" onclick="apSetPeriod(this,'month-full')">Mes completo</button>
-        </div>
-      </div>
-
-      <!-- Tipo de análisis -->
-      <div style="margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Tipo de análisis</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="ap-type-btns">
-          <button class="ap-type-btn active" data-type="rendimiento" onclick="apSetType(this,'rendimiento')">📈 Rendimiento</button>
-          <button class="ap-type-btn" data-type="recuperacion" onclick="apSetType(this,'recuperacion')">💚 Recuperación</button>
-          <button class="ap-type-btn" data-type="recomendacion" onclick="apSetType(this,'recomendacion')">🎯 Recomendación</button>
-        </div>
-      </div>
-
-      <!-- Contexto adicional -->
-      <div style="margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;">Contexto adicional <span style="font-weight:400;opacity:.6;">(opcional)</span></div>
-        <textarea id="ap-context" placeholder="Ej: tuve molestia en el hombro, estoy en fase de volumen, empecé dieta..." style="min-height:60px;font-size:12px;resize:vertical;"></textarea>
-      </div>
-
-      <div style="display:flex;gap:8px;">
-          <button class="btn btn-ai" onclick="runPeriodAnalysis()" style="width:100%;justify-content:center;font-size:14px;padding:11px;">
-        🤖 Generar análisis con Gemini
-      </button>
-          <button class="btn btn-ghost" onclick="exportAnalysisPDF()" id="ap-pdf-btn" style="padding:0 16px;font-size:13px;font-weight:600;white-space:nowrap;" title="Exportar a PDF">📄 PDF</button>
-        </div>
-    </div>
-
-    <!-- Alertas proactivas -->
-    <div id="ap-alerts" style="margin-bottom:14px;"></div>
-
-    <!-- Resultado del análisis -->
-    <div id="ap-result" style="margin-bottom:14px;"></div>
-
-    <!-- Puntuaciones -->
-    <div id="ap-scores" style="margin-bottom:14px;"></div>
-
-    <!-- Historial de análisis -->
-    <div id="ap-history-section" style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div style="font-size:13px;font-weight:700;color:var(--text1);">📋 Historial de análisis</div>
-        <button class="btn btn-ghost btn-sm" onclick="apClearHistory()">Limpiar</button>
-      </div>
-      <div id="ap-history-list"></div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ═══ PROFILE ═══ -->
-<div id="p-profile" class="page">
-  <div class="grid-2">
-    <div>
-      <!-- ── Card: Identidad ── -->
-      <div class="card" style="margin-bottom:12px;">
-        <div class="card-title" style="margin-bottom:14px;">👤 Identidad del Atleta</div>
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-          <div class="profile-avatar" id="prof-avatar">IV</div>
-          <div>
-            <div id="prof-name-display" style="font-size:18px;font-weight:700;"></div>
-            <div id="prof-age-display" style="font-size:13px;color:var(--text3);"></div>
-          </div>
-        </div>
-        <div class="fg2">
-          <div class="fg"><label class="fl">Nombre</label><input id="prof-name" placeholder="Tu nombre" oninput="updateProfileDisplay()"></div>
-          <div class="fg"><label class="fl">Fecha de nacimiento</label><input id="prof-dob" type="date" title="Fecha de nacimiento"></div>
-        </div>
-        <div class="fg2">
-          <div class="fg"><label class="fl">Peso actual (kg)</label><input id="prof-weight" type="number" step="0.1" placeholder="67.5"></div>
-          <div class="fg"><label class="fl">Altura (cm)</label><input id="prof-height" type="number" placeholder="175"></div>
-        </div>
-        <div class="fg2">
-          <div class="fg"><label class="fl">Peso objetivo (kg)</label><input id="prof-weight-goal" type="number" step="0.1" placeholder="65.0"></div>
-          <div class="fg"><label class="fl">Fecha meta</label><input id="prof-weight-date" type="date"></div>
-        </div>
-      </div>
-
-      <!-- ── Card: Fisiología ── -->
-      <div class="card" style="margin-bottom:12px;">
-        <div class="card-title" style="margin-bottom:12px;">❤️ Fisiología &amp; Zonas</div>
-        <div class="fg2">
-          <div class="fg"><label class="fl">FC máxima (bpm)</label><input id="prof-fcmax" type="number" placeholder="190" oninput="updateZones()"></div>
-          <div class="fg"><label class="fl">FC reposo (bpm)</label><input id="prof-fcrest" type="number" placeholder="54" oninput="updateZones()"></div>
-        </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">⚡ Zonas FC (personalizables)</div>
-          <div id="zones-form" style="display:flex;flex-direction:column;gap:6px;"></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:6px;">Calculadas automáticamente desde tu FC máx. Ajusta manualmente si lo necesitas.</div>
-        </div>
-      </div>
-
-      <!-- ── Card: Nivel por deporte ── -->
-      <div class="card" style="margin-bottom:12px;">
-        <div class="card-title" style="margin-bottom:12px;">🏅 Nivel por Deporte</div>
-        <div class="fg3">
-          <div class="fg">
-            <label class="fl">Running</label>
-            <select id="prof-lvl-run">
-              <option value="">— Nivel —</option>
-              <option value="principiante">Principiante</option>
-              <option value="intermedio">Intermedio</option>
-              <option value="avanzado">Avanzado</option>
-              <option value="elite">Elite</option>
-            </select>
-          </div>
-          <div class="fg">
-            <label class="fl">Ciclismo</label>
-            <select id="prof-lvl-bike">
-              <option value="">— Nivel —</option>
-              <option value="principiante">Principiante</option>
-              <option value="intermedio">Intermedio</option>
-              <option value="avanzado">Avanzado</option>
-              <option value="elite">Elite</option>
-            </select>
-          </div>
-          <div class="fg">
-            <label class="fl">Gym</label>
-            <select id="prof-lvl-gym">
-              <option value="">— Nivel —</option>
-              <option value="principiante">Principiante</option>
-              <option value="intermedio">Intermedio</option>
-              <option value="avanzado">Avanzado</option>
-              <option value="elite">Elite</option>
-            </select>
-          </div>
-        </div>
-        <div class="fg">
-          <label class="fl">Objetivo principal</label>
-          <select id="prof-goal">
-            <option value="rendimiento">Mejorar rendimiento deportivo</option>
-            <option value="masa">Ganar masa muscular</option>
-            <option value="perdida">Bajar peso</option>
-            <option value="resistencia">Aumentar resistencia aeróbica</option>
-            <option value="ironman">Preparar Ironman / Triatlón</option>
-          </select>
-        </div>
-        <div class="fg">
-          <label class="fl">Deportes activos</label>
-          <select id="prof-sports" multiple style="height:72px;">
-            <option value="cycling" selected>🚴 Ciclismo</option>
-            <option value="running" selected>🏃 Running</option>
-            <option value="gym" selected>🏋️ Gym</option>
-            <option value="triathlon">🏊 Triatlón</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- ── Card: Salud ── -->
-      <div class="card" style="margin-bottom:12px;">
-        <div class="card-title" style="margin-bottom:12px;">🏥 Historial de Salud</div>
-        <div class="fg">
-          <label class="fl">Enfermedades diagnosticadas</label>
-          <textarea id="prof-diseases" placeholder="Ej: Hipertensión leve, Hipotiroidismo..." style="min-height:64px;"></textarea>
-        </div>
-        <div class="fg">
-          <label class="fl">Medicamentos actuales</label>
-          <textarea id="prof-meds" placeholder="Ej: Losartan 50mg diario, Levotiroxina 100mcg..." style="min-height:64px;"></textarea>
-        </div>
-        <div class="fg">
-          <label class="fl">Historial de lesiones</label>
-          <textarea id="prof-injuries" placeholder="Ej: Hombro derecho 2023 (manguito rotador), Fascitis plantar izq 2022 (resuelta)..." style="min-height:80px;"></textarea>
-        </div>
-        <div style="background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15);border-radius:8px;padding:10px 12px;">
-          <div style="font-size:10px;color:var(--danger);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">⚠️ Privacidad</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.5;">Datos almacenados solo en tu dispositivo. La IA los usa para análisis más precisos.</div>
-        </div>
-      </div>
-
-      <!-- ── Card: API Key ── -->
-      <div class="card">
-        <div class="card-title" style="margin-bottom:10px;">🔑 API Key Gemini</div>
-        <div class="fg">
-          <input type="password" id="prof-apikey" placeholder="AIzaSy...">
-          <div style="font-size:10px;color:var(--text3);margin-top:3px;">Obtén una gratis en <strong>aistudio.google.com</strong></div>
-        </div>
-        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px;" onclick="saveProfile()">💾 Guardar perfil</button>
-      </div>
-    </div>
-    <div>
-      <div class="card" style="margin-bottom:12px;">
-        <div class="card-title" style="margin-bottom:10px;">📊 Resumen del atleta</div>
-        <div id="prof-summary"></div>
-      </div>
-      <div class="card">
-        <div class="card-title" style="margin-bottom:8px;">🤖 Análisis IA de mi perfil</div>
-        <button class="btn btn-ai" style="width:100%;margin-bottom:8px;" onclick="aiProfileAnalysis()">Analizar mi perfil y recomendar</button>
-        <div id="prof-ai"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="google-drive-card-container" style="margin-top:16px;"></div>
-</div>
-
-
-
-<!-- ═══ IMPORT ═══ -->
-<div id="p-import" class="page">
-  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
-    <div style="font-size:12px;color:var(--text3);font-weight:600;">💾 Backup manual:</div>
-    <button class="btn btn-ghost btn-sm" onclick="exportBackup()" style="font-size:11px;">⬇️ Exportar JSON</button>
-    <button class="btn btn-ghost btn-sm" onclick="importBackup()" style="font-size:11px;">⬆️ Importar JSON</button>
-    <div style="font-size:10px;color:var(--text3);">Guarda el JSON en OneDrive, Google Drive o iCloud para sincronizar entre dispositivos</div>
-  </div>
-  <div class="card" style="margin-bottom:12px;">
-    <div class="card-title" style="margin-bottom:12px;">📥 Importar archivos de actividad</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-      <label class="btn btn-ghost" style="cursor:pointer;">🗺️ GPX<input type="file" accept=".gpx" style="display:none" onchange="importFile(this,'bike')"></label>
-      <label class="btn btn-ghost" style="cursor:pointer;">⌚ FIT (Garmin)<input type="file" accept=".fit" style="display:none" onchange="importFile(this,'bike')"></label>
-      <label class="btn btn-ai" style="cursor:pointer;">🤖 Analizar imagen IA<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'generic','imp-air')"></label>
-    </div>
-    <div id="imp-air"></div>
-  </div>
-  
-  <div class="card">
-    <div class="card-title" style="margin-bottom:10px;">📌 Guía de exportación</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.8;">
-      <div>⌚ <strong>Garmin/Wahoo:</strong> Garmin Connect → Actividad → ··· → Exportar GPX o FIT</div>
-      <div>🟠 <strong>Strava:</strong> Actividad → ··· → Exportar GPX → subir aquí</div>
-      <div>📱 <strong>Huawei Health:</strong> Captura la pantalla de la sesión → botón "Analizar imagen IA"</div>
-      <div>🍎 <strong>Apple Salud:</strong> Captura de pantalla → "Analizar imagen IA"</div>
-      <div style="margin-top:8px;padding:8px 12px;background:var(--orange-lt);border-radius:8px;font-size:12px;color:var(--orange);">
-        💡 La IA usa <strong>modelos gratuitos de Gemini</strong> con fallback automático. Si un modelo falla, prueba el siguiente. Configura tu API key en Perfil o aquí arriba.
-      </div>
-    </div>
-  </div>
-</div>
-<!-- ══ ONEDRIVE SYNC CARD ══ -->
-
-
-
-</div><!-- content -->
-</div><!-- main -->
-
-<!-- ═══ MODALS ═══ -->
-<div class="overlay" id="m-run">
-<div class="modal">
-  <button class="modal-close" onclick="closeM('run')">✕</button>
-  <div class="modal-title" id="run-modal-title">🏃 Registrar sesión de running</div>
-  <input type="hidden" id="run-eid">
-  <div class="fg2">
-    <div class="fg"><label class="fl">Fecha</label><input type="date" id="r-date"></div>
-    <div class="fg"><label class="fl">Distancia (km)</label><input type="number" id="r-dist" step="0.01" placeholder="5.72"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">Tiempo (min)</label><input type="number" id="r-time" step="0.1" placeholder="32"></div>
-    <div class="fg"><label class="fl">Ritmo (min/km)</label><input type="text" id="r-pace" placeholder="5:35"></div>
-    <div class="fg"><label class="fl">Calorías (kcal)</label><input type="number" id="r-cal" placeholder="380"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">FC prom (bpm)</label><input type="number" id="r-fcavg" placeholder="156"></div>
-    <div class="fg"><label class="fl">FC máx (bpm)</label><input type="number" id="r-fcmax" placeholder="178"></div>
-    <div class="fg"><label class="fl">VO2max est.</label><input type="number" id="r-vo2" step="0.1" placeholder="52"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">Cadencia (ppm)</label><input type="number" id="r-cad" placeholder="168"></div>
-    <div class="fg"><label class="fl">Oscilación (cm)</label><input type="number" id="r-osc" step="0.1" placeholder="7.6"></div>
-    <div class="fg"><label class="fl">Contacto suelo (ms)</label><input type="number" id="r-contact" placeholder="268"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">Equilibrio Izq (%)</label><input type="number" id="r-balL" step="0.1" placeholder="51.1"></div>
-    <div class="fg"><label class="fl">Equilibrio Der (%)</label><input type="number" id="r-balR" step="0.1" placeholder="48.9"></div>
-    <div class="fg"><label class="fl">Altitud (m)</label><input type="number" id="r-alt" placeholder="947"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">Velocidad prom (km/h)</label><input type="number" id="r-spd" step="0.1" placeholder="10.3"></div>
-    <div class="fg"><label class="fl">Long. zancada (m)</label><input type="number" id="r-stride" step="0.01" placeholder="1.08"></div>
-    <div class="fg"><label class="fl">% FC máx</label><input type="number" id="r-fcpct" step="0.1" placeholder="87.6"></div>
-  </div>
-  <div class="fg2">
-    <div class="fg"><label class="fl">Resistencia aeróbica</label><input type="number" id="r-aero" step="0.1" placeholder="3.2"></div>
-    <div class="fg"><label class="fl">Ruta / Lugar</label><input type="text" id="r-route" placeholder="La Gran Feria — Bucaramanga"></div>
-  </div>
-  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
-    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⏱ Tiempo en zonas cardíacas (minutos)</div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
-      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z1 (min)</label><input type="number" id="r-z1" placeholder="0" style="font-size:12px;padding:6px;"></div>
-      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z2 (min)</label><input type="number" id="r-z2" placeholder="5" style="font-size:12px;padding:6px;"></div>
-      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z3 (min)</label><input type="number" id="r-z3" placeholder="15" style="font-size:12px;padding:6px;"></div>
-      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z4 (min)</label><input type="number" id="r-z4" placeholder="8" style="font-size:12px;padding:6px;"></div>
-      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z5 (min)</label><input type="number" id="r-z5" placeholder="2" style="font-size:12px;padding:6px;"></div>
-    </div>
-  </div>
-  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
-    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📊 Datos para graficar (opcional — separados por coma)</div>
-    <div class="fg"><label class="fl">Ritmo por km (ej: 5:30,5:28,5:35...)</label><input type="text" id="r-pace-series" placeholder="5:30,5:28,5:35,5:40,5:25"></div>
-    <div class="fg"><label class="fl">FC por km (ej: 150,155,158...)</label><input type="text" id="r-fc-series" placeholder="150,155,158,162,157"></div>
-    <div class="fg"><label class="fl">Cadencia por km (ej: 168,170,172...)</label><input type="text" id="r-cad-series" placeholder="168,170,172,169,175"></div>
-  </div>
-  <div class="fg"><label class="fl">Notas</label><textarea id="r-notes" placeholder="Sensaciones, clima, molestias..."></textarea></div>
-  <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="closeM('run')">Cancelar</button>
-    <button class="btn btn-ai" onclick="aiRunAnalysis()">🤖 Analizar con IA</button>
-    <button class="btn btn-primary" onclick="saveRun()">Guardar</button>
-  </div>
-  <div id="run-modal-ai" style="margin-top:10px;"></div>
-</div>
-</div>
-
-<div class="overlay" id="m-bike">
-<div class="modal">
-  <button class="modal-close" onclick="closeM('bike')">✕</button>
-  <div class="modal-title" id="bike-modal-title">🚴 Registrar ruta de ciclismo</div>
-  <input type="hidden" id="bike-eid">
-  <div class="fg2">
-    <div class="fg"><label class="fl">Fecha</label><input type="date" id="b-date"></div>
-    <div class="fg"><label class="fl">Tipo</label><select id="b-type"><option>Ruta de fondo</option><option>Montaña</option><option>Cadencia / Plana</option><option>Rodillo / Indoor</option><option>Entrenamiento</option></select></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">Distancia (km)</label><input type="number" id="b-dist" step="0.1" placeholder="40.64"></div>
-    <div class="fg"><label class="fl">Tiempo (min)</label><input type="number" id="b-time" placeholder="105"></div>
-    <div class="fg"><label class="fl">Calorías (kcal)</label><input type="number" id="b-cal" placeholder="825"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">Vel. prom (km/h)</label><input type="number" id="b-spd" step="0.1" placeholder="23.19"></div>
-    <div class="fg"><label class="fl">Vel. máx (km/h)</label><input type="number" id="b-spdmax" step="0.1" placeholder="56.52"></div>
-    <div class="fg"><label class="fl">Cadencia prom (rpm)</label><input type="number" id="b-cad" placeholder="69"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">FC prom (bpm)</label><input type="number" id="b-fc" placeholder="139"></div>
-    <div class="fg"><label class="fl">FC máx (bpm)</label><input type="number" id="b-fcmax" placeholder="166"></div>
-    <div class="fg"><label class="fl">Potencia virtual (W)</label><input type="number" id="b-power" placeholder="137"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">Desnivel total (m)</label><input type="number" id="b-elev" placeholder="560"></div>
-    <div class="fg"><label class="fl">Ascenso (m)</label><input type="number" id="b-asc" placeholder="556"></div>
-    <div class="fg"><label class="fl">Altitud máx (m)</label><input type="number" id="b-altmax" placeholder="979"></div>
-  </div>
-  <div class="fg2">
-    <div class="fg"><label class="fl">Resistencia aeróbica</label><input type="number" id="b-aero" step="0.1" placeholder="3.2"></div>
-    <div class="fg"><label class="fl">Nombre de la ruta</label><input type="text" id="b-route" placeholder="Floridablanca → Girón"></div>
-  </div>
-  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
-    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⏱ Tiempo en zonas cardíacas (minutos)</div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
-      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z1 (min)</label><input type="number" id="b-z1" placeholder="0" style="font-size:12px;padding:6px;"></div>
-      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z2 (min)</label><input type="number" id="b-z2" placeholder="24" style="font-size:12px;padding:6px;"></div>
-      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z3 (min)</label><input type="number" id="b-z3" placeholder="37" style="font-size:12px;padding:6px;"></div>
-      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z4 (min)</label><input type="number" id="b-z4" placeholder="5" style="font-size:12px;padding:6px;"></div>
-      <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Z5 (min)</label><input type="number" id="b-z5" placeholder="1" style="font-size:12px;padding:6px;"></div>
-    </div>
-  </div>
-  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
-    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📊 Datos para graficar (opcional — por km, separados por coma)</div>
-    <div class="fg"><label class="fl">Velocidad por km (ej: 22,24,25...)</label><input type="text" id="b-spd-series" placeholder="22,24,25,23,20"></div>
-    <div class="fg"><label class="fl">FC por km (ej: 130,138,142...)</label><input type="text" id="b-fc-series" placeholder="130,138,142,145,139"></div>
-    <div class="fg"><label class="fl">Cadencia por km (ej: 68,72,75...)</label><input type="text" id="b-cad-series" placeholder="68,72,75,70,65"></div>
-  </div>
-  <div class="fg"><label class="fl">Notas</label><textarea id="b-notes" placeholder="Terreno, sensaciones, posición..."></textarea></div>
-  <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="closeM('bike')">Cancelar</button>
-    <button class="btn btn-ai" onclick="aiBikeAnalysis()">🤖 Analizar con IA</button>
-    <button class="btn btn-primary" onclick="saveBike()">Guardar</button>
-  </div>
-  <div id="bike-modal-ai" style="margin-top:10px;"></div>
-</div>
-</div>
-
-<div class="overlay" id="m-weight">
-<div class="modal">
-  <button class="modal-close" onclick="closeM('weight')">✕</button>
-  <div class="modal-title">⚖️ Registrar peso / composición</div>
-  <input type="hidden" id="w-eid">
-  <div class="fg2">
-    <div class="fg"><label class="fl">Fecha</label><input type="date" id="w-date"></div>
-    <div class="fg"><label class="fl">Peso (kg)</label><input type="number" id="w-kg" step="0.1" placeholder="67.5" oninput="syncProfileWeight()"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">% Grasa</label><input type="number" id="w-fat" step="0.1" placeholder="18.5"></div>
-    <div class="fg"><label class="fl">% Músculo</label><input type="number" id="w-muscle" step="0.1" placeholder="38.2"></div>
-    <div class="fg"><label class="fl">% Agua</label><input type="number" id="w-water" step="0.1" placeholder="55.0"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">IMC</label><input type="number" id="w-imc" step="0.1" placeholder="23.4"></div>
-    <div class="fg"><label class="fl">Masa ósea (kg)</label><input type="number" id="w-bone" step="0.1" placeholder="3.2"></div>
-    <div class="fg"><label class="fl">Met. basal (kcal)</label><input type="number" id="w-bmr" placeholder="1820"></div>
-  </div>
-  <div class="fg2">
-    <div class="fg"><label class="fl">Momento</label><select id="w-when"><option>Ayunas AM</option><option>Medio día</option><option>Noche</option></select></div>
-    <div class="fg"><label class="fl">Estado de hidratación</label><select id="w-hydra"><option>Normal</option><option>Deshidratado</option><option>Bien hidratado</option></select></div>
-  </div>
-  <div class="fg"><label class="fl">Notas</label><textarea id="w-notes" placeholder="Cómo amaneciste, alimentación especial..."></textarea></div>
-  <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="closeM('weight')">Cancelar</button>
-    <button class="btn btn-primary" onclick="saveWeight()">Guardar</button>
-  </div>
-</div>
-</div>
-
-<div class="overlay" id="m-rec">
-<div class="modal">
-  <button class="modal-close" onclick="closeM('rec')">✕</button>
-  <div class="modal-title">🔄 Registrar recuperación</div>
-  <input type="hidden" id="rc-eid">
-  <div class="fg2">
-    <div class="fg"><label class="fl">Fecha</label><input type="date" id="rc-date"></div>
-    <div class="fg"><label class="fl">Horas de sueño</label><input type="number" id="rc-sleep" step="0.5" placeholder="7.5"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">Calidad sueño 1–10</label><input type="number" id="rc-sleepq" min="1" max="10" placeholder="8"></div>
-    <div class="fg"><label class="fl">Energía 1–10</label><input type="number" id="rc-energy" min="1" max="10" placeholder="7"></div>
-    <div class="fg"><label class="fl">Ánimo 1–10</label><input type="number" id="rc-mood" min="1" max="10" placeholder="8"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">Dolor muscular 0–10</label><input type="number" id="rc-sore" min="0" max="10" placeholder="3"></div>
-    <div class="fg"><label class="fl">FC reposo (bpm)</label><input type="number" id="rc-fcrest" placeholder="58"></div>
-    <div class="fg"><label class="fl">HRV (ms)</label><input type="number" id="rc-hrv" placeholder="42"></div>
-  </div>
-  <div class="fg"><label class="fl">Zona de molestia</label><input type="text" id="rc-zone" placeholder="Ej: cuádriceps derecho, hombro"></div>
-  <div class="fg"><label class="fl">Notas</label><textarea id="rc-notes" placeholder="Cómo te sientes, qué hiciste para recuperar..."></textarea></div>
-  <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="closeM('rec')">Cancelar</button>
-    <button class="btn btn-primary" onclick="saveRec()">Guardar</button>
-  </div>
-</div>
-</div>
-
-<div class="overlay" id="m-goal">
-<div class="modal">
-  <button class="modal-close" onclick="closeM('goal')">✕</button>
-  <div class="modal-title">🎯 Nueva meta</div>
-  <input type="hidden" id="gl-eid">
-  <div class="fg"><label class="fl">Nombre de la meta</label><input type="text" id="gl-name" placeholder="Ej: Completar Ironman 70.3 · Ruta 200 km · Maratón < 4h"></div>
-  <div class="fg2">
-    <div class="fg"><label class="fl">Categoría</label>
-      <select id="gl-cat">
-        <option value="cycling">🚴 Ciclismo</option>
-        <option value="running">🏃 Running</option>
-        <option value="triathlon">🏊 Triatlón / Ironman</option>
-        <option value="gym">🏋️ Gym — Fuerza</option>
-        <option value="weight">⚖️ Peso corporal</option>
-        <option value="aspiration">⭐ Aspiración / Evento</option>
-      </select>
-    </div>
-    <div class="fg"><label class="fl">Fecha límite / Evento</label><input type="date" id="gl-deadline"></div>
-  </div>
-  <div class="fg3">
-    <div class="fg"><label class="fl">Valor actual</label><input type="number" id="gl-current" step="0.1" placeholder="0"></div>
-    <div class="fg"><label class="fl">Valor objetivo</label><input type="number" id="gl-target" step="0.1" placeholder="200"></div>
-    <div class="fg"><label class="fl">Unidad</label><input type="text" id="gl-unit" placeholder="km, kg, h:mm..."></div>
-  </div>
-  <div class="fg"><label class="fl">Descripción / contexto</label><textarea id="gl-desc" placeholder="Describe tu meta, motivación y punto de partida..."></textarea></div>
-  <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="closeM('goal')">Cancelar</button>
-    <button class="btn btn-ai" onclick="aiGoalGuide()">🤖 Generar guía IA</button>
-    <button class="btn btn-primary" onclick="saveGoal()">Crear meta</button>
-  </div>
-  <div id="goal-modal-ai" style="margin-top:10px;"></div>
-</div>
-</div>
-
-
-
-<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
-<div class="drawer" id="main-drawer">
-  <div class="drawer-header"><div><div class="drawer-logo" style="font-family:var(--font-logo);font-weight:700;">IDG TRAINING PRO</div><div class="drawer-tag">Performance Analytics</div></div><button class="drawer-close" onclick="closeDrawer()">✕</button></div>
-  <div class="drawer-nav">
-    <div class="drawer-section">Principal</div>
-    <button class="drawer-item active" data-page="dash" onclick="drawerNav('dash',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</button>
-    <button class="drawer-item" data-page="gym" onclick="drawerNav('gym',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16M18 4v16M3 9h3M18 9h3M3 15h3M18 15h3M6 12h12"/></svg>Gym</button>
-    <button class="drawer-item" data-page="running" onclick="drawerNav('running',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="4.5" r="1.5"/><path d="m9 10 3-3 2.5 3L17 8"/><path d="M9 16.5 7 21"/><path d="m11.5 12.5-2 4.5 4.5 2"/></svg>Running</button>
-    <button class="drawer-item" data-page="cycling" onclick="drawerNav('cycling',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M9 9h6l-1.5 4H9l-4 4M15 4h2l-2 5"/><circle cx="15" cy="4" r="1"/></svg>Ciclismo</button>
-    <div class="drawer-section">Salud</div>
-    <button class="drawer-item" data-page="weight" onclick="drawerNav('weight',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg>Peso &amp; Cuerpo</button>
-    <button class="drawer-item" data-page="recovery" onclick="drawerNav('recovery',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Recuperación</button>
-    <button class="drawer-item" data-page="goals" onclick="drawerNav('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>Metas &amp; IA</button>
-    <div class="drawer-section">Config</div>
-    <button class="drawer-item" data-page="profile" onclick="drawerNav('profile',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
-    <button class="drawer-item" data-page="import" onclick="drawerNav('import',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0-4-4m4 4 4-4"/><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>Importar &amp; IA</button>
-  </div>
-</div>
-
-
 </body>
 </html>
