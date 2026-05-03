@@ -272,6 +272,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-si
 
 /* PROFILE */
 .profile-grid{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px;}
+/* Profile page — equal height columns */
+#p-profile > div:first-child > div { display:flex; flex-direction:column; }
+#p-profile > div:first-child > div > .card:last-child { flex:1; }
 .profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;font-size:28px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
 
 /* BUTTONS */
@@ -514,17 +517,17 @@ window.addEventListener('unhandledrejection', function(e){
   </div>
   <nav class="sb-nav">
     <div class="sb-section">Principal</div>
-    <button class="sb-item active" onclick="go('dash',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</button>
-    <button class="sb-item" onclick="go('gym',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16M18 4v16M3 9h3M18 9h3M3 15h3M18 15h3M6 12h12"/></svg>Gym</button>
-    <button class="sb-item" onclick="go('running',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="4.5" r="1.5"/><path d="m9 10 3-3 2.5 3L17 8"/><path d="M9 16.5 7 21"/><path d="m11.5 12.5-2 4.5 4.5 2"/></svg>Running</button>
-    <button class="sb-item" onclick="go('cycling',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M9 9h6l-1.5 4H9l-4 4M15 4h2l-2 5"/><circle cx="15" cy="4" r="1"/></svg>Ciclismo</button>
+    <button class="sb-item active" onclick="go('dash',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2" width="9" height="11" rx="1.5"/><rect x="13" y="2" width="9" height="6" rx="1.5"/><rect x="2" y="15" width="9" height="7" rx="1.5"/><rect x="13" y="10" width="9" height="12" rx="1.5"/></svg>Dashboard</button>
+    <button class="sb-item" onclick="go('gym',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 12h4M18 12h4M6 9v6M18 9v6M6 12h12"/><circle cx="4" cy="12" r="2"/><circle cx="20" cy="12" r="2"/></svg>Gym</button>
+    <button class="sb-item" onclick="go('running',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><line x1="1" y1="8" x2="7" y2="8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="1" y1="11.5" x2="6" y2="11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".65"/><line x1="1.5" y1="15" x2="5.5" y2="15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".38"/><circle cx="17" cy="3" r="2" fill="currentColor"/><path d="M17 5 L14.5 9 L13 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L10 17 L8.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L15 17.5 L13.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8 L11.5 10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15.5 8 L19.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Running</button>
+    <button class="sb-item" onclick="go('cycling',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="4.2" stroke-width="1.6"/><circle cx="19" cy="17" r="4.2" stroke-width="1.6"/><path d="M5 17 L11 6.5 L19 17" stroke-width="1.6"/><path d="M11 6.5 L19 17" stroke-width="1.4"/><path d="M11 6.5 L11 3.5" stroke-width="1.4"/><path d="M9 3.5 L13 3.5" stroke-width="2.5"/><path d="M19 11.5 L19 17" stroke-width="1.4"/><path d="M17 10.5 L21 10 L21.5 12" stroke-width="1.7"/><circle cx="11" cy="17" r="1.4" fill="currentColor" stroke="none"/></svg>Ciclismo</button>
     <div class="sb-section">Análisis</div>
-    <button class="sb-item" onclick="go('weight',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg>Peso & Cuerpo</button>
-    <button class="sb-item" onclick="go('recovery',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Recuperación</button>
-    <button class="sb-item" onclick="go('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>Metas & IA</button>
+    <button class="sb-item" onclick="go('weight',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg>Peso & Cuerpo</button>
+    <button class="sb-item" onclick="go('recovery',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="m16 12 4 4-4 4"/><path d="M20 16h-8"/></svg>Recuperación</button>
+    <button class="sb-item" onclick="go('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 9 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-7z"/></svg>Metas & IA</button>
     <div class="sb-section">Config</div>
-    <button class="sb-item" onclick="go('profile',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
-    <button class="sb-item" onclick="go('import',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0-4-4m4 4 4-4"/><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>Importar</button>
+    <button class="sb-item" onclick="go('profile',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
+    <button class="sb-item" onclick="go('import',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2.5 L4 2.5 Q2 2.5 2 4.5 L2 19.5 Q2 21.5 4 21.5 L20 21.5 Q22 21.5 22 19.5 L22 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><text x="4.5" y="16.5" font-family="system-ui,Arial,sans-serif" font-size="9" font-weight="800" fill="currentColor">AI</text><path d="M18 1 L19.1 4.2 L22.5 5.3 L19.1 6.4 L18 9.5 L16.9 6.4 L13.5 5.3 L16.9 4.2 Z" fill="currentColor"/></svg>Importar</button>
   </nav>
   <div class="sb-footer">
     <div class="sb-quote">La disciplina hoy es el resultado de mañana.<br><strong style="color:var(--accent);font-style:normal;">IDG TRAINING PRO</strong></div>
@@ -556,12 +559,18 @@ window.addEventListener('unhandledrejection', function(e){
         <div class="chart-wrap"><canvas id="chart-load"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-title">Distribución por deporte</div>
-        <div class="card-sub" id="dash-dist-sub"></div>
-        <div style="display:flex;align-items:center;gap:16px;">
-          <div style="width:130px;height:130px;position:relative;flex-shrink:0;"><canvas id="chart-donut" style="width:130px!important;height:130px!important;"></canvas></div>
-          <div id="dash-legend" style="display:flex;flex-direction:column;gap:6px;flex:1;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div class="card-title" style="margin:0;">Distribución por deporte</div>
+          <div style="display:flex;gap:4px;">
+            <button onclick="setDistPeriod(7,this)" id="dist-btn-week" class="btn btn-sm btn-primary" style="font-size:10px;padding:3px 8px;">7d</button>
+            <button onclick="setDistPeriod(30,this)" id="dist-btn-month" class="btn btn-sm btn-ghost" style="font-size:10px;padding:3px 8px;">30d</button>
+            <button onclick="setDistPeriod(0,this)" id="dist-btn-all" class="btn btn-sm btn-ghost" style="font-size:10px;padding:3px 8px;">Todo</button>
+          </div>
         </div>
+        <div class="card-sub" id="dash-dist-sub" style="margin-bottom:12px;"></div>
+        <div id="dash-dist-band" style="display:flex;border-radius:5px;overflow:hidden;height:20px;margin-bottom:4px;"></div>
+        <div id="dash-dist-blabels" style="display:flex;justify-content:space-between;padding:0 2px;margin-bottom:12px;font-size:9px;color:var(--text3);"></div>
+        <div id="dash-legend" style="display:flex;flex-direction:column;gap:6px;"></div>
       </div>
     </div>
     <div>
@@ -577,7 +586,7 @@ window.addEventListener('unhandledrejection', function(e){
           <div class="fmt-grid">
             <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'bike')"><div class="fmt-icon">🗺️</div><div class="fmt-name">GPX</div><div class="fmt-desc">Rutas GPS</div></label></div>
             <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".fit" style="display:none" onchange="importFile(this,'bike')"><div class="fmt-icon">⌚</div><div class="fmt-name">FIT</div><div class="fmt-desc">Garmin/Wahoo</div></label></div>
-            <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'run')"><div class="fmt-icon">🏃</div><div class="fmt-name">Running</div><div class="fmt-desc">GPX/FIT run</div></label></div>
+            <div class="fmt-card"><label style="cursor:pointer;"><input type="file" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'run')"><div class="fmt-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><line x1="1" y1="8" x2="7" y2="8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="1" y1="11.5" x2="6" y2="11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".65"/><line x1="1.5" y1="15" x2="5.5" y2="15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".38"/><circle cx="17" cy="3" r="2" fill="currentColor"/><path d="M17 5 L14.5 9 L13 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L10 17 L8.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L15 17.5 L13.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8 L11.5 10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15.5 8 L19.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="fmt-name">Running</div><div class="fmt-desc">GPX/FIT run</div></label></div>
           </div>
           <div class="import-zone" onclick="document.getElementById('di').click()">
             <input type="file" id="di" accept=".gpx,.fit" style="display:none" onchange="importFile(this,'bike')">
@@ -846,12 +855,12 @@ window.addEventListener('unhandledrejection', function(e){
 <!-- ═══ PROFILE ═══ -->
 <div id="p-profile" class="page">
 
-  <!-- ── Row 1: 3 columns ── -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+  <!-- ── Row 1: 3 columns — equal height ── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;align-items:start;">
 
     <!-- Col 1: Identidad + Fisiología -->
-    <div>
-      <div class="card" style="margin-bottom:12px;">
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card">
         <div class="card-title" style="margin-bottom:12px;">👤 Identidad</div>
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
           <div class="profile-avatar" id="prof-avatar">IV</div>
@@ -872,7 +881,7 @@ window.addEventListener('unhandledrejection', function(e){
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" style="flex:1;">
         <div class="card-title" style="margin-bottom:10px;">❤️ Fisiología</div>
         <div class="fg2">
           <div class="fg"><label class="fl">FC máx (bpm)</label><input id="prof-fcmax" type="number" placeholder="190" oninput="updateZones()"></div>
@@ -886,8 +895,8 @@ window.addEventListener('unhandledrejection', function(e){
     </div>
 
     <!-- Col 2: Salud + Nivel -->
-    <div>
-      <div class="card" style="margin-bottom:12px;">
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card">
         <div class="card-title" style="margin-bottom:10px;">🏥 Salud</div>
         <div class="fg"><label class="fl">Enfermedades diagnosticadas</label><textarea id="prof-diseases" placeholder="Ej: Hipertensión leve..." style="min-height:56px;font-size:12px;"></textarea></div>
         <div class="fg"><label class="fl">Medicamentos actuales</label><textarea id="prof-meds" placeholder="Ej: Losartan 50mg diario..." style="min-height:56px;font-size:12px;"></textarea></div>
@@ -895,7 +904,7 @@ window.addEventListener('unhandledrejection', function(e){
         <div style="background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15);border-radius:6px;padding:8px 10px;font-size:10px;color:var(--danger);">⚠️ Solo local · La IA usa estos datos para análisis personalizados</div>
       </div>
 
-      <div class="card">
+      <div class="card" style="flex:1;">
         <div class="card-title" style="margin-bottom:10px;">🏅 Nivel por deporte</div>
         <div class="fg">
           <label class="fl">Running</label>
@@ -923,9 +932,9 @@ window.addEventListener('unhandledrejection', function(e){
     </div>
 
     <!-- Col 3: API Key + Google + Resumen -->
-    <div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
       <!-- Google Integration -->
-      <div class="card" style="margin-bottom:12px;">
+      <div class="card">
         <div class="card-title" style="margin-bottom:10px;">🔗 Conectar servicios</div>
         <div id="google-drive-card-container"></div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
@@ -945,8 +954,8 @@ window.addEventListener('unhandledrejection', function(e){
         </div>
       </div>
 
-      <!-- Google Client ID -->
-      <div class="card" style="margin-bottom:12px;">
+      <!-- Credenciales -->
+      <div class="card">
         <div class="card-title" style="margin-bottom:8px;">🔑 Credenciales</div>
         <div class="fg">
           <label class="fl">Google Client ID</label>
@@ -962,11 +971,11 @@ window.addEventListener('unhandledrejection', function(e){
         </div>
       </div>
 
-      <!-- Resumen rápido -->
-      <div class="card">
+      <!-- Resumen — flex:1 para llenar espacio restante -->
+      <div class="card" style="flex:1;display:flex;flex-direction:column;">
         <div class="card-title" style="margin-bottom:8px;">📊 Resumen</div>
-        <div id="prof-summary"></div>
-        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:10px;" onclick="saveProfile()">💾 Guardar perfil</button>
+        <div id="prof-summary" style="flex:1;"></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:12px;" onclick="saveProfile()">💾 Guardar perfil</button>
       </div>
     </div>
   </div>
@@ -1243,17 +1252,17 @@ window.addEventListener('unhandledrejection', function(e){
   <div class="drawer-header"><div><div class="drawer-logo" style="font-family:var(--font-logo);font-weight:700;">IDG TRAINING PRO</div><div class="drawer-tag">Performance Analytics</div></div><button class="drawer-close" onclick="closeDrawer()">✕</button></div>
   <div class="drawer-nav">
     <div class="drawer-section">Principal</div>
-    <button class="drawer-item active" data-page="dash" onclick="drawerNav('dash',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</button>
-    <button class="drawer-item" data-page="gym" onclick="drawerNav('gym',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16M18 4v16M3 9h3M18 9h3M3 15h3M18 15h3M6 12h12"/></svg>Gym</button>
-    <button class="drawer-item" data-page="running" onclick="drawerNav('running',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="4.5" r="1.5"/><path d="m9 10 3-3 2.5 3L17 8"/><path d="M9 16.5 7 21"/><path d="m11.5 12.5-2 4.5 4.5 2"/></svg>Running</button>
-    <button class="drawer-item" data-page="cycling" onclick="drawerNav('cycling',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M9 9h6l-1.5 4H9l-4 4M15 4h2l-2 5"/><circle cx="15" cy="4" r="1"/></svg>Ciclismo</button>
+    <button class="drawer-item active" data-page="dash" onclick="drawerNav('dash',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2" width="9" height="11" rx="1.5"/><rect x="13" y="2" width="9" height="6" rx="1.5"/><rect x="2" y="15" width="9" height="7" rx="1.5"/><rect x="13" y="10" width="9" height="12" rx="1.5"/></svg>Dashboard</button>
+    <button class="drawer-item" data-page="gym" onclick="drawerNav('gym',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 12h4M18 12h4M6 9v6M18 9v6M6 12h12"/><circle cx="4" cy="12" r="2"/><circle cx="20" cy="12" r="2"/></svg>Gym</button>
+    <button class="drawer-item" data-page="running" onclick="drawerNav('running',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><line x1="1" y1="8" x2="7" y2="8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="1" y1="11.5" x2="6" y2="11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".65"/><line x1="1.5" y1="15" x2="5.5" y2="15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".38"/><circle cx="17" cy="3" r="2" fill="currentColor"/><path d="M17 5 L14.5 9 L13 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L10 17 L8.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L15 17.5 L13.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8 L11.5 10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15.5 8 L19.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Running</button>
+    <button class="drawer-item" data-page="cycling" onclick="drawerNav('cycling',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="4.2" stroke-width="1.6"/><circle cx="19" cy="17" r="4.2" stroke-width="1.6"/><path d="M5 17 L11 6.5 L19 17" stroke-width="1.6"/><path d="M11 6.5 L19 17" stroke-width="1.4"/><path d="M11 6.5 L11 3.5" stroke-width="1.4"/><path d="M9 3.5 L13 3.5" stroke-width="2.5"/><path d="M19 11.5 L19 17" stroke-width="1.4"/><path d="M17 10.5 L21 10 L21.5 12" stroke-width="1.7"/><circle cx="11" cy="17" r="1.4" fill="currentColor" stroke="none"/></svg>Ciclismo</button>
     <div class="drawer-section">Salud</div>
-    <button class="drawer-item" data-page="weight" onclick="drawerNav('weight',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg>Peso &amp; Cuerpo</button>
-    <button class="drawer-item" data-page="recovery" onclick="drawerNav('recovery',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Recuperación</button>
-    <button class="drawer-item" data-page="goals" onclick="drawerNav('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>Metas &amp; IA</button>
+    <button class="drawer-item" data-page="weight" onclick="drawerNav('weight',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg>Peso &amp; Cuerpo</button>
+    <button class="drawer-item" data-page="recovery" onclick="drawerNav('recovery',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="m16 12 4 4-4 4"/><path d="M20 16h-8"/></svg>Recuperación</button>
+    <button class="drawer-item" data-page="goals" onclick="drawerNav('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 9 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-7z"/></svg>Metas &amp; IA</button>
     <div class="drawer-section">Config</div>
-    <button class="drawer-item" data-page="profile" onclick="drawerNav('profile',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
-    <button class="drawer-item" data-page="import" onclick="drawerNav('import',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0-4-4m4 4 4-4"/><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>Importar &amp; IA</button>
+    <button class="drawer-item" data-page="profile" onclick="drawerNav('profile',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
+    <button class="drawer-item" data-page="import" onclick="drawerNav('import',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2.5 L4 2.5 Q2 2.5 2 4.5 L2 19.5 Q2 21.5 4 21.5 L20 21.5 Q22 21.5 22 19.5 L22 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><text x="4.5" y="16.5" font-family="system-ui,Arial,sans-serif" font-size="9" font-weight="800" fill="currentColor">AI</text><path d="M18 1 L19.1 4.2 L22.5 5.3 L19.1 6.4 L18 9.5 L16.9 6.4 L13.5 5.3 L16.9 4.2 Z" fill="currentColor"/></svg>Importar &amp; IA</button>
   </div>
 </div>
 
@@ -2036,6 +2045,78 @@ function resetBikeModal(){
 }
 
 // ══ RENDER FUNCTIONS ══
+// ── Distribution band + bars ──
+var _distDays = 7;
+
+function setDistPeriod(days, btn){
+  _distDays = days;
+  // Toggle buttons
+  ['dist-btn-week','dist-btn-month','dist-btn-all'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){ el.className='btn btn-sm btn-ghost'; el.style.fontSize='10px'; el.style.padding='3px 8px'; }
+  });
+  if(btn){ btn.className='btn btn-sm btn-primary'; }
+  renderDistChart();
+}
+
+function renderDistChart(){
+  var now = new Date();
+  var gym=ld('gym'), run=ld('run'), bike=ld('bike');
+  var cutoff = _distDays === 0 ? null : new Date(now.getTime() - _distDays*24*60*60*1000);
+
+  function filterPeriod(arr){
+    if(!cutoff) return arr;
+    return arr.filter(function(e){ return e.date && new Date(e.date) >= cutoff; });
+  }
+
+  var gF=filterPeriod(gym), rF=filterPeriod(run), bF=filterPeriod(bike);
+  var total = gF.length + rF.length + bF.length || 1;
+
+  var sports = [
+    {l:'🏃 Running',  v:rF.length,  c:'#10b981'},
+    {l:'🏋️ Gym',     v:gF.length,  c:'#2563eb'},
+    {l:'🚴 Ciclismo', v:bF.length,  c:'#8b5cf6'},
+  ];
+
+  // Sub label
+  var sub=document.getElementById('dash-dist-sub');
+  if(sub){
+    var label = _distDays===7?'Últimos 7 días':_distDays===30?'Últimos 30 días':'Todo el historial';
+    sub.textContent = total-1+' actividades · '+label;
+  }
+
+  // Band
+  var band=document.getElementById('dash-dist-band');
+  if(band){
+    band.innerHTML = sports.map(function(s){
+      var pct = Math.max(s.v/total*100, s.v>0?2:0);
+      var showLabel = pct > 10;
+      return '<div style="flex:'+pct+';background:'+s.c+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:rgba(255,255,255,0.92);min-width:'+(s.v>0?'4px':'0')+'">'+(showLabel?Math.round(s.v/total*100)+'%':'')+'</div>';
+    }).join('');
+  }
+
+  // Band labels
+  var blabels=document.getElementById('dash-dist-blabels');
+  if(blabels) blabels.innerHTML = sports.map(function(s){ return '<span>'+s.l.split(' ')[1]+'</span>'; }).join('');
+
+  // Bars
+  var lg=document.getElementById('dash-legend');
+  if(lg){
+    lg.innerHTML = sports.map(function(s){
+      var pct = total>1?Math.round(s.v/(total)*100):0;
+      var barW = Math.max(pct, s.v>0?1:0);
+      return '<div style="display:flex;align-items:center;gap:8px;">'+
+        '<div style="width:80px;font-size:10px;color:var(--text3);font-weight:600;flex-shrink:0;white-space:nowrap;">'+s.l+'</div>'+
+        '<div style="flex:1;background:var(--border-light);border-radius:3px;height:13px;overflow:hidden;">'+
+          '<div style="width:'+barW+'%;height:100%;background:'+s.c+';border-radius:3px;"></div>'+
+        '</div>'+
+        '<span style="font-size:10px;font-weight:700;color:'+s.c+';min-width:28px;text-align:right;">'+pct+'%</span>'+
+        '<span style="font-size:10px;color:var(--text3);min-width:14px;text-align:right;">'+s.v+'</span>'+
+        '</div>';
+    }).join('');
+  }
+}
+
 function renderDash(){
   const gym=ld('gym'),run=ld('run'),bike=ld('bike'),weight=ld('weight'),goals=ld('goals'),rec=ld('rec');
   const now=new Date(),weekAgo=new Date(now-7*86400000);
@@ -2053,11 +2134,11 @@ function renderDash(){
 
   // KPIs
   document.getElementById('dash-kpis').innerHTML=`
-    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Entrenamientos</div><div class="kpi-ico" style="background:var(--accent-lt);">📅</div></div><div class="kpi-val">${gym.length+run.length+bike.length}</div><div class="kpi-sub">Total registrados</div><div class="trend trend-up">↑ Esta sem: ${wGym.length+wRun.length+wBike.length}</div></div>
-    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Running km</div><div class="kpi-ico" style="background:var(--green-lt);">🏃</div></div><div class="kpi-val">${totalKmR.toFixed(1)}</div><div class="kpi-sub">Total acumulado</div><div class="trend trend-up">↑ Sem: ${wRun.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(1)}km</div></div>
-    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Ciclismo km</div><div class="kpi-ico" style="background:var(--purple-lt);">🚴</div></div><div class="kpi-val">${totalKmB.toFixed(0)}</div><div class="kpi-sub">Total acumulado</div><div class="trend trend-up">↑ Sem: ${wBike.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(0)}km</div></div>
-    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Peso actual</div><div class="kpi-ico" style="background:var(--orange-lt);">⚖️</div></div><div class="kpi-val">${latW}</div><div class="kpi-sub">Meta: 66 kg</div><div class="trend ${weight.length>=2&&parseFloat(weight[0].kg)<parseFloat(weight[1].kg)?'trend-up':'trend-dn'}">${weight.length>=2?(parseFloat(weight[0].kg)<parseFloat(weight[1].kg)?'↓ Bajando':'↑ Subiendo'):'→ Sin datos'}</div></div>
-    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Score semanal</div><div class="kpi-ico" style="background:var(--teal-lt);">⚡</div></div><div class="kpi-val">${sc}</div><div class="kpi-sub">${sc>=70?'Excelente rendimiento':'Mejora el volumen'}</div><div class="trend trend-up">↑ /100</div></div>
+    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Entrenamientos</div><div class="kpi-ico" style="background:var(--accent-lt);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></div></div><div class="kpi-val">${gym.length+run.length+bike.length}</div><div class="kpi-sub">Total registrados</div><div class="trend trend-up">↑ Esta sem: ${wGym.length+wRun.length+wBike.length}</div></div>
+    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Running km</div><div class="kpi-ico" style="background:var(--green-lt);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><line x1="1" y1="8" x2="7" y2="8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="1" y1="11.5" x2="6" y2="11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".65"/><line x1="1.5" y1="15" x2="5.5" y2="15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".38"/><circle cx="17" cy="3" r="2" fill="currentColor"/><path d="M17 5 L14.5 9 L13 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L10 17 L8.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L15 17.5 L13.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8 L11.5 10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15.5 8 L19.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div></div><div class="kpi-val">${totalKmR.toFixed(1)}</div><div class="kpi-sub">Total acumulado</div><div class="trend trend-up">↑ Sem: ${wRun.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(1)}km</div></div>
+    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Ciclismo km</div><div class="kpi-ico" style="background:var(--purple-lt);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="4.2" stroke-width="1.6"/><circle cx="19" cy="17" r="4.2" stroke-width="1.6"/><path d="M5 17 L11 6.5 L19 17" stroke-width="1.6"/><path d="M11 6.5 L19 17" stroke-width="1.4"/><path d="M11 6.5 L11 3.5" stroke-width="1.4"/><path d="M9 3.5 L13 3.5" stroke-width="2.5"/><path d="M19 11.5 L19 17" stroke-width="1.4"/><path d="M17 10.5 L21 10 L21.5 12" stroke-width="1.7"/><circle cx="11" cy="17" r="1.4" fill="currentColor" stroke="none"/></svg></div></div><div class="kpi-val">${totalKmB.toFixed(0)}</div><div class="kpi-sub">Total acumulado</div><div class="trend trend-up">↑ Sem: ${wBike.reduce((s,e)=>s+(parseFloat(e.dist)||0),0).toFixed(0)}km</div></div>
+    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Peso actual</div><div class="kpi-ico" style="background:var(--orange-lt);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg></div></div><div class="kpi-val">${latW}</div><div class="kpi-sub">Meta: 66 kg</div><div class="trend ${weight.length>=2&&parseFloat(weight[0].kg)<parseFloat(weight[1].kg)?'trend-up':'trend-dn'}">${weight.length>=2?(parseFloat(weight[0].kg)<parseFloat(weight[1].kg)?'↓ Bajando':'↑ Subiendo'):'→ Sin datos'}</div></div>
+    <div class="kpi"><div class="kpi-head"><div class="kpi-lbl">Score semanal</div><div class="kpi-ico" style="background:var(--teal-lt);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H12L11 22l8.5-11.5H13z"/></svg></div></div><div class="kpi-val">${sc}</div><div class="kpi-sub">${sc>=70?'Excelente rendimiento':'Mejora el volumen'}</div><div class="trend trend-up">↑ /100</div></div>
   `;
 
   // Load chart - últimos 7 días calendario reales
@@ -2078,15 +2159,9 @@ function renderDash(){
       {label:'Ciclismo',data:bikeV,backgroundColor:'rgba(139,92,246,.7)',borderRadius:3},
     ],{legend:true,scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:9},color:'#94a3b8'}},y:{stacked:true,grid:{color:'rgba(148,163,184,.1)'},ticks:{font:{size:9},color:'#94a3b8'}}}});
 
-    // Donut
-    const total=gym.length+run.length+bike.length||1;
-    const sub=document.getElementById('dash-dist-sub');if(sub)sub.textContent=`Total: ${total} actividades`;
-    const lg=document.getElementById('dash-legend');
-    const sports=[{l:'Running',v:run.length,c:'#10b981'},{l:'Gym',v:gym.length,c:'#2563eb'},{l:'Ciclismo',v:bike.length,c:'#8b5cf6'}];
-    if(lg)lg.innerHTML=sports.map(s=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;"><div style="width:10px;height:10px;border-radius:50%;background:${s.c};flex-shrink:0;"></div><span style="flex:1;color:var(--text2);">${s.l}</span><span style="font-weight:700;">${total>0?Math.round(s.v/total*100):0}% (${s.v})</span></div>`).join('');
-    if(charts['chart-donut'])charts['chart-donut'].destroy();
-    const ctx=document.getElementById('chart-donut');
-    if(ctx)charts['chart-donut']=new Chart(ctx,{type:'doughnut',data:{labels:sports.map(s=>s.l),datasets:[{data:sports.map(s=>s.v),backgroundColor:sports.map(s=>s.c),borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%',animation:{duration:600}}});
+    // Distribución por deporte — banda + barras
+    window._distPeriod = window._distPeriod || 'month';
+    renderDistChart();
   },100);
 
   // Mini goals
@@ -2103,9 +2178,9 @@ function renderDash(){
   const recL=rec[0];
   document.getElementById('dash-status').innerHTML=`
     <div class="sb-stat"><span class="sb-stat-ico">👟</span><div><div class="sb-stat-val">Racha: ${gym.length>0?'Activo':'—'}</div><div class="sb-stat-lbl">Constancia</div></div></div>
-    <div class="sb-stat"><span class="sb-stat-ico">❤️</span><div><div class="sb-stat-val">${recL?`E:${recL.energy}/10 S:${recL.sleep}h`:'Sin datos'}</div><div class="sb-stat-lbl">Recuperación</div></div></div>
+    <div class="sb-stat"><span class="sb-stat-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l9.84-9.84a5.5 5.5 0 0 0 0-7.78z"/></svg></span><div><div class="sb-stat-val">${recL?`E:${recL.energy}/10 S:${recL.sleep}h`:'Sin datos'}</div><div class="sb-stat-lbl">Recuperación</div></div></div>
     <div class="sb-stat"><span class="sb-stat-ico">🔥</span><div><div class="sb-stat-val">${sc>=70?'Productivo':sc>=50?'Activo':'Descansando'}</div><div class="sb-stat-lbl">Estado de forma</div></div></div>
-    <div class="sb-stat"><span class="sb-stat-ico">🔄</span><div><div class="sb-stat-val">${new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}</div><div class="sb-stat-lbl">Actualizado</div></div></div>
+    <div class="sb-stat"><span class="sb-stat-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span><div><div class="sb-stat-val">${new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}</div><div class="sb-stat-lbl">Actualizado</div></div></div>
   `;
 }
 
@@ -2191,7 +2266,7 @@ async function aiSessionAnalysis(id){
 function renderRun(){
   var data=ld('run');
   var el=document.getElementById('run-list');
-  if(!data.length){ el.innerHTML='<div class="empty"><div class="empty-icon">🏃</div>Sin sesiones. Importa un GPX o registra manualmente.</div>'; return; }
+  if(!data.length){ el.innerHTML='<div class="empty"><div class="empty-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><line x1="1" y1="8" x2="7" y2="8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="1" y1="11.5" x2="6" y2="11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".65"/><line x1="1.5" y1="15" x2="5.5" y2="15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".38"/><circle cx="17" cy="3" r="2" fill="currentColor"/><path d="M17 5 L14.5 9 L13 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L10 17 L8.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L15 17.5 L13.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8 L11.5 10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15.5 8 L19.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>Sin sesiones. Importa un GPX o registra manualmente.</div>'; return; }
   window._gpxStore = window._gpxStore || {};
   data.forEach(function(e){ if(e.gpx) window._gpxStore[e.id.replace(/[^a-z0-9]/gi,'_')] = e.gpx; });
 
@@ -2327,7 +2402,7 @@ function renderRun(){
 function renderBike(){
   var data=ld('bike');
   var el=document.getElementById('bike-list');
-  if(!data.length){ el.innerHTML='<div class="empty"><div class="empty-icon">🚴</div>Sin rutas. Importa un GPX o registra manualmente.</div>'; return; }
+  if(!data.length){ el.innerHTML='<div class="empty"><div class="empty-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="4.2" stroke-width="1.6"/><circle cx="19" cy="17" r="4.2" stroke-width="1.6"/><path d="M5 17 L11 6.5 L19 17" stroke-width="1.6"/><path d="M11 6.5 L19 17" stroke-width="1.4"/><path d="M11 6.5 L11 3.5" stroke-width="1.4"/><path d="M9 3.5 L13 3.5" stroke-width="2.5"/><path d="M19 11.5 L19 17" stroke-width="1.4"/><path d="M17 10.5 L21 10 L21.5 12" stroke-width="1.7"/><circle cx="11" cy="17" r="1.4" fill="currentColor" stroke="none"/></svg></div>Sin rutas. Importa un GPX o registra manualmente.</div>'; return; }
   window._gpxStore = window._gpxStore || {};
   data.forEach(function(e){ if(e.gpx) window._gpxStore[e.id.replace(/[^a-z0-9]/gi,'_')] = e.gpx; });
 
@@ -3039,7 +3114,7 @@ function renderWeight(){
     }
   },100);
   const list=document.getElementById('weight-list');
-  if(!data.length){list.innerHTML='<div class="empty"><div class="empty-icon">⚖️</div>Sin registros de peso.</div>';return;}
+  if(!data.length){list.innerHTML='<div class="empty"><div class="empty-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg></div>Sin registros de peso.</div>';return;}
   list.innerHTML=data.map(e=>`
     <div class="entry">
       <div class="entry-header">
@@ -3071,7 +3146,7 @@ function renderRec(){
     }
   },100);
   const el=document.getElementById('rec-list');
-  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔄</div>Sin registros de recuperación.</div>';return;}
+  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></div>Sin registros de recuperación.</div>';return;}
   el.innerHTML=data.map(e=>`
     <div class="entry">
       <div class="entry-header">
