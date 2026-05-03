@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+><!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -391,6 +391,91 @@ textarea{resize:vertical;min-height:68px;}
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ═══ PLAN SEMANAL ═══ */
+.plan-prog-strip{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border-light);}
+.pps-stat{text-align:center;flex-shrink:0;}
+.pps-val{font-size:18px;font-weight:800;color:var(--accent);line-height:1;}
+.pps-lbl{font-size:9px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:.5px;}
+.pps-div{width:1px;height:32px;background:var(--border);flex-shrink:0;}
+.pps-bar-wrap{flex:1;min-width:0;}
+.pps-bar-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:5px;}
+.pps-bar-track{height:5px;background:var(--surface3);border-radius:3px;}
+.pps-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),#22c55e);border-radius:3px;transition:width .4s;}
+
+.plan-week-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border-light);}
+.pwn-label{font-size:13px;font-weight:700;color:var(--text1);}
+.pwn-sub{font-size:10px;color:var(--text3);margin-top:1px;}
+.pwn-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.pwn-btn:hover{border-color:var(--accent);color:var(--accent);}
+.pwn-today{padding:5px 11px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:10px;font-weight:700;cursor:pointer;}
+.pwn-today:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Mini grid */
+.plan-mini-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:12px 14px;border-bottom:1px solid var(--border-light);}
+.pmg-day{border-radius:9px;border:1px solid var(--border);background:var(--surface2);padding:7px 6px;min-height:72px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:3px;}
+.pmg-day:hover{border-color:var(--accent);background:var(--accent-lt);}
+.pmg-day.pmg-selected{border-color:var(--accent);background:var(--accent-lt);box-shadow:0 0 0 2px rgba(132,204,22,.15);}
+.pmg-day.pmg-today{border-color:var(--accent);}
+.pmg-day.pmg-rest{border-style:dashed;opacity:.55;}
+.pmg-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;}
+.pmg-name{font-size:8px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;}
+.pmg-num{font-size:13px;font-weight:800;color:var(--text3);}
+.pmg-num.pmg-today-n{color:var(--accent);}
+.pmg-sess{display:flex;align-items:center;gap:3px;font-size:9px;font-weight:600;}
+.pmg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.pmg-dot.plan{border-width:1.5px;border-style:dashed;background:transparent;}
+.pmg-add{font-size:9px;color:var(--text3);margin-top:auto;opacity:.5;}
+.pmg-miss{font-size:8px;color:var(--danger);font-weight:700;margin-top:1px;}
+
+/* Day detail */
+.plan-day-detail{padding:16px 18px;}
+.pdd-title{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px;}
+.pdd-sess-card{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface2);border-radius:10px;margin-bottom:8px;border-left:3px solid transparent;transition:.15s;}
+.pdd-sess-card.done{border-left-color:var(--accent);}
+.pdd-sess-card.plan{border-left-width:3px;border-left-style:dashed;}
+.pdd-sess-icon{font-size:20px;flex-shrink:0;}
+.pdd-sess-info{flex:1;min-width:0;}
+.pdd-sess-name{font-size:13px;font-weight:700;color:var(--text1);}
+.pdd-sess-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+.pdd-sess-status{font-size:11px;font-weight:700;flex-shrink:0;}
+.pdd-add-btn{width:100%;padding:9px;border-radius:9px;border:1.5px dashed var(--border);background:transparent;color:var(--text3);font-size:11px;font-weight:600;cursor:pointer;margin-top:4px;}
+.pdd-add-btn:hover{border-color:var(--accent);color:var(--accent);}
+.pdd-empty{text-align:center;padding:20px;color:var(--text3);font-size:12px;}
+
+/* Plan builder */
+.plan-builder{padding:16px 18px;border-top:2px solid var(--border-light);margin-top:4px;}
+.pb-title{font-size:15px;font-weight:700;color:var(--text1);margin-bottom:4px;}
+.pb-sub{font-size:12px;color:var(--text3);margin-bottom:16px;}
+.pb-days-row{display:flex;gap:6px;margin-bottom:16px;}
+.pb-day-toggle{flex:1;text-align:center;padding:9px 4px;border-radius:10px;border:1.5px solid var(--border);background:transparent;cursor:pointer;transition:.15s;}
+.pb-day-toggle.pb-on{border-color:var(--accent);background:var(--accent-lt);}
+.pb-day-toggle .pbd-name{font-size:8px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;}
+.pb-day-toggle .pbd-num{font-size:15px;font-weight:800;color:var(--text3);margin-top:2px;}
+.pb-day-toggle.pb-on .pbd-name,.pb-day-toggle.pb-on .pbd-num{color:var(--accent);}
+.pb-sport-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.pb-sport-row{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border-light);}
+.pb-sport-row.pb-combo{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.04);}
+.pb-sport-day-lbl{font-size:11px;font-weight:700;color:var(--text2);width:56px;flex-shrink:0;}
+.pb-chips{display:flex;gap:6px;flex:1;flex-wrap:wrap;}
+.pb-chip{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:transparent;font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;transition:.15s;user-select:none;}
+.pb-chip:hover{border-color:var(--accent);}
+.pb-chip.pb-gym.pb-sel{border-color:#60a5fa;background:rgba(96,165,250,.1);color:#60a5fa;}
+.pb-chip.pb-run.pb-sel{border-color:#10b981;background:rgba(16,185,129,.1);color:#10b981;}
+.pb-chip.pb-bike.pb-sel{border-color:var(--accent);background:var(--accent-lt);color:var(--accent);}
+.pb-combo-badge{font-size:9px;padding:2px 8px;border-radius:20px;background:rgba(245,158,11,.1);color:#f59e0b;border:1px solid rgba(245,158,11,.25);white-space:nowrap;}
+.pb-gen-btn{width:100%;padding:13px;border-radius:10px;background:var(--accent-lt);border:1.5px solid var(--accent);color:var(--accent);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s;}
+.pb-gen-btn:hover{background:var(--accent);color:#0f172a;}
+
+/* AI result */
+.plan-ai-result{padding:14px 18px;border-top:1px solid var(--border-light);}
+.par-alert{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:9px 12px;font-size:11px;color:#f59e0b;margin-bottom:10px;display:flex;gap:8px;}
+.par-summary{background:var(--surface2);border-radius:10px;padding:12px 14px;font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:12px;border:1px solid var(--border-light);}
+.par-apply-row{display:flex;gap:8px;}
+.par-apply{flex:1;padding:11px;border-radius:10px;background:var(--accent);border:none;color:#0f172a;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;}
+.par-apply:hover{background:var(--accent-dk);}
+.par-regen{padding:11px 16px;border-radius:10px;background:transparent;border:1.5px solid var(--border);color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;}
+.par-regen:hover{border-color:var(--accent);color:var(--accent);}
 </style>
 <script>
 /* Inline Chart Engine — Safari/iOS/Android safe, ES5 */
@@ -518,13 +603,14 @@ window.addEventListener('unhandledrejection', function(e){
   <nav class="sb-nav">
     <div class="sb-section">Principal</div>
     <button class="sb-item active" onclick="go('dash',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2" width="9" height="11" rx="1.5"/><rect x="13" y="2" width="9" height="6" rx="1.5"/><rect x="2" y="15" width="9" height="7" rx="1.5"/><rect x="13" y="10" width="9" height="12" rx="1.5"/></svg>Dashboard</button>
+    <button class="sb-item" onclick="go('plan',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>Plan Semanal</button>
     <button class="sb-item" onclick="go('gym',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 12h4M18 12h4M6 9v6M18 9v6M6 12h12"/><circle cx="4" cy="12" r="2"/><circle cx="20" cy="12" r="2"/></svg>Gym</button>
     <button class="sb-item" onclick="go('running',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><line x1="1" y1="8" x2="7" y2="8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="1" y1="11.5" x2="6" y2="11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".65"/><line x1="1.5" y1="15" x2="5.5" y2="15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".38"/><circle cx="17" cy="3" r="2" fill="currentColor"/><path d="M17 5 L14.5 9 L13 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L10 17 L8.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L15 17.5 L13.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8 L11.5 10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15.5 8 L19.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Running</button>
     <button class="sb-item" onclick="go('cycling',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="4.2" stroke-width="1.6"/><circle cx="19" cy="17" r="4.2" stroke-width="1.6"/><path d="M5 17 L11 6.5 L19 17" stroke-width="1.6"/><path d="M11 6.5 L19 17" stroke-width="1.4"/><path d="M11 6.5 L11 3.5" stroke-width="1.4"/><path d="M9 3.5 L13 3.5" stroke-width="2.5"/><path d="M19 11.5 L19 17" stroke-width="1.4"/><path d="M17 10.5 L21 10 L21.5 12" stroke-width="1.7"/><circle cx="11" cy="17" r="1.4" fill="currentColor" stroke="none"/></svg>Ciclismo</button>
     <div class="sb-section">Análisis</div>
     <button class="sb-item" onclick="go('weight',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg>Peso & Cuerpo</button>
     <button class="sb-item" onclick="go('recovery',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="m16 12 4 4-4 4"/><path d="M20 16h-8"/></svg>Recuperación</button>
-    <button class="sb-item" onclick="go('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 9 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-7z"/></svg>Metas & IA</button>
+    <button class="sb-item" onclick="go('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 9 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-7z"/></svg>Metas y Análisis IA</button>
     <div class="sb-section">Config</div>
     <button class="sb-item" onclick="go('profile',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
     <button class="sb-item" onclick="go('import',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2.5 L4 2.5 Q2 2.5 2 4.5 L2 19.5 Q2 21.5 4 21.5 L20 21.5 Q22 21.5 22 19.5 L22 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><text x="4.5" y="16.5" font-family="system-ui,Arial,sans-serif" font-size="9" font-weight="800" fill="currentColor">AI</text><path d="M18 1 L19.1 4.2 L22.5 5.3 L19.1 6.4 L18 9.5 L16.9 6.4 L13.5 5.3 L16.9 4.2 Z" fill="currentColor"/></svg>Importar</button>
@@ -551,6 +637,15 @@ window.addEventListener('unhandledrejection', function(e){
 <!-- ═══ DASHBOARD ═══ -->
 <div id="p-dash" class="page active">
   <div class="kpi-row" id="dash-kpis"></div>
+  <!-- Streak KPI — separate card always visible -->
+  <div id="kpi-streak" class="kpi" style="margin-bottom:12px;background:linear-gradient(135deg,rgba(132,204,22,.08),rgba(132,204,22,.03));border:1.5px solid rgba(132,204,22,.2);">
+    <div class="kpi-head">
+      <div class="kpi-lbl">Racha de entrenamiento</div>
+      <div class="kpi-ico" style="background:rgba(132,204,22,.15);font-size:18px;">👟</div>
+    </div>
+    <div class="kpi-val" style="color:var(--accent);">—</div>
+    <div class="kpi-sub">Calculando...</div>
+  </div>
   <div class="grid-2" style="margin-bottom:14px;">
     <div>
       <div class="card" style="margin-bottom:12px;">
@@ -614,6 +709,86 @@ window.addEventListener('unhandledrejection', function(e){
     </div>
   </div>
   <div class="status-bar" id="dash-status"></div>
+</div>
+
+<!-- ═══ PLAN SEMANAL ═══ -->
+<div id="p-plan" class="page">
+
+  <!-- Card principal: calendario -->
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px;">
+
+    <!-- Progress strip -->
+    <div class="plan-prog-strip">
+      <div class="pps-stat"><div class="pps-val" id="plan-done-ct">0</div><div class="pps-lbl">Hechas</div></div>
+      <div class="pps-div"></div>
+      <div class="pps-stat"><div class="pps-val" id="plan-total-ct" style="color:var(--text3);">0</div><div class="pps-lbl">Plan</div></div>
+      <div class="pps-div"></div>
+      <div class="pps-stat"><div class="pps-val" id="plan-streak-val">—</div><div class="pps-lbl" id="plan-streak-lbl">Racha</div></div>
+      <div class="pps-div"></div>
+      <div class="pps-bar-wrap">
+        <div class="pps-bar-lbl"><span id="plan-week-range">—</span><span id="plan-pct" style="color:var(--accent);">0%</span></div>
+        <div class="pps-bar-track"><div class="pps-bar-fill" id="plan-bar" style="width:0%;"></div></div>
+      </div>
+    </div>
+
+    <!-- Week nav -->
+    <div class="plan-week-nav">
+      <div>
+        <div class="pwn-label" id="plan-week-label">—</div>
+        <div class="pwn-sub" id="plan-week-sub">—</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="pwn-btn" onclick="planNavWeek(-1)">←</button>
+        <button class="pwn-today" onclick="planNavWeek(0)">Hoy</button>
+        <button class="pwn-btn" onclick="planNavWeek(1)">→</button>
+      </div>
+    </div>
+
+    <!-- Mini grid -->
+    <div class="plan-mini-grid" id="plan-mini-grid"></div>
+
+    <!-- Leyenda -->
+    <div style="display:flex;gap:14px;padding:6px 14px 10px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);"><div style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></div>Ejecutado</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);"><div style="width:8px;height:8px;border-radius:50%;border:1.5px dashed var(--accent);"></div>Planificado</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);"><div style="width:8px;height:8px;border-radius:50%;background:var(--danger);"></div>No cumplido</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);"><div style="width:8px;height:8px;border-radius:50%;background:var(--border);border:1.5px dashed var(--border);"></div>Descanso</div>
+    </div>
+
+    <!-- Day detail -->
+    <div class="plan-day-detail" id="plan-day-detail" style="border-top:1px solid var(--border-light);"></div>
+
+  </div>
+
+  <!-- Plan builder + IA -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="plan-builder">
+      <div class="pb-title">🤖 Planificar semana con IA</div>
+      <div class="pb-sub">Indica qué días y deportes — la IA optimiza el detalle para la semana siguiente</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:9px 12px;background:var(--accent-lt);border-radius:8px;border:1px solid rgba(132,204,22,.2);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span style="font-size:11px;color:var(--accent);font-weight:600;" id="pb-week-target">Próxima semana</span>
+      </div>
+
+      <!-- Paso 1: días -->
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">Paso 1 — ¿Qué días entrenas?</div>
+      <div class="pb-days-row" id="pb-days-row"></div>
+
+      <!-- Paso 2: deportes por día -->
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">Paso 2 — ¿Qué haces cada día?</div>
+      <div class="pb-sport-rows" id="pb-sport-rows"></div>
+
+      <!-- Generar -->
+      <button class="pb-gen-btn" onclick="planGenerateIA()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 9 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-7z"/></svg>
+        Generar plan con IA
+      </button>
+    </div>
+
+    <!-- AI result area -->
+    <div class="plan-ai-result" id="plan-ai-result" style="display:none;"></div>
+  </div>
+
 </div>
 
 <!-- ═══ GYM ═══ -->
@@ -724,18 +899,55 @@ window.addEventListener('unhandledrejection', function(e){
 
 <!-- ═══ WEIGHT ═══ -->
 <div id="p-weight" class="page">
+  <!-- Toolbar -->
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
     <label class="btn btn-ai" style="cursor:pointer;">📸 Foto balanza → IA<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'weight','weight-air')"></label>
     <button class="btn btn-primary" onclick="openM('weight')">+ Registrar manual</button>
   </div>
   <div id="weight-air" style="margin-bottom:10px;"></div>
+
+  <!-- Summary KPIs -->
   <div id="weight-summary" style="margin-bottom:12px;"></div>
-  <div class="card" style="margin-bottom:12px;">
-    <div class="card-title" style="margin-bottom:10px;">Evolución de peso</div>
-    <div class="chart-wrap"><canvas id="chart-weight"></canvas></div>
+
+  <!-- Chart card -->
+  <div class="card" style="margin-bottom:12px;padding:0;overflow:hidden;">
+    <!-- Header: título + selector período -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--border-light);">
+      <span style="font-size:12px;font-weight:700;color:var(--text2);">Evolución de peso</span>
+      <div style="display:flex;gap:6px;">
+        <button onclick="setWeightPeriod(30,this)"  id="wt-btn-30"  class="sess-chart-btn active" style="padding:4px 10px;font-size:11px;">30d</button>
+        <button onclick="setWeightPeriod(90,this)"  id="wt-btn-90"  class="sess-chart-btn"        style="padding:4px 10px;font-size:11px;">90d</button>
+        <button onclick="setWeightPeriod(180,this)" id="wt-btn-180" class="sess-chart-btn"        style="padding:4px 10px;font-size:11px;">6m</button>
+        <button onclick="setWeightPeriod(0,this)"   id="wt-btn-all" class="sess-chart-btn"        style="padding:4px 10px;font-size:11px;">Todo</button>
+      </div>
+    </div>
+    <!-- Leyenda métricas -->
+    <div style="display:flex;gap:16px;padding:10px 18px 0;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:5px;cursor:pointer;" onclick="toggleWeightSeries('fat')" id="wt-leg-fat">
+        <div style="width:24px;height:3px;background:#f59e0b;border-radius:2px;"></div>
+        <span style="font-size:10px;color:var(--text3);">% Grasa</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;cursor:pointer;" onclick="toggleWeightSeries('muscle')" id="wt-leg-muscle">
+        <div style="width:24px;height:3px;background:#10b981;border-radius:2px;"></div>
+        <span style="font-size:10px;color:var(--text3);">% Músculo</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <div style="width:24px;height:2px;background:#84cc16;border-radius:2px;border-top:2px dashed #84cc16;"></div>
+        <span style="font-size:10px;color:var(--text3);">Meta</span>
+      </div>
+    </div>
+    <!-- Stats bar -->
+    <div class="sess-metric-stats" id="wt-stats" style="margin-top:10px;"></div>
+    <!-- Canvas -->
+    <div style="height:280px;position:relative;padding:0 0 8px;">
+      <canvas id="canvas-weight" style="width:100%;height:100%;display:block;"></canvas>
+    </div>
   </div>
+
+  <!-- Historial -->
   <div id="weight-list"></div>
 </div>
+
 
 <!-- ═══ RECOVERY ═══ -->
 <div id="p-recovery" class="page">
@@ -763,7 +975,7 @@ window.addEventListener('unhandledrejection', function(e){
   <!-- ── Metas activas ── -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
     <div>
-      <div style="font-size:17px;font-weight:700;color:var(--text1);">Metas &amp; IA</div>
+      <div style="font-size:17px;font-weight:700;color:var(--text1);">Metas y Análisis IA</div>
       <div style="font-size:12px;color:var(--text3);">Seguimiento de objetivos y análisis inteligente</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -773,6 +985,60 @@ window.addEventListener('unhandledrejection', function(e){
   </div>
   <div id="goals-ai" style="margin-bottom:12px;"></div>
   <div id="goals-list" style="margin-bottom:20px;"></div>
+
+  <!-- ══════════════════════════════════════
+       COMPARATIVA DE SESIONES
+  ══════════════════════════════════════ -->
+  <div style="border-top:2px solid var(--border);padding-top:20px;margin-top:4px;margin-bottom:0;">
+    <div style="font-size:16px;font-weight:700;color:var(--text1);margin-bottom:4px;">⚖️ Comparativa de sesiones</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">Compara dos sesiones de running o ciclismo en el mismo eje</div>
+
+    <!-- Selector deporte -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button id="cmp-btn-bike" class="ap-sport-btn active" onclick="setCmpSport('bike',this)">🚴 Ciclismo</button>
+      <button id="cmp-btn-run"  class="ap-sport-btn"        onclick="setCmpSport('run',this)">🏃 Running</button>
+    </div>
+
+    <!-- Selectores A y B -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div class="card" style="padding:14px 16px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">Sesión A</div>
+        <select id="cmp-sel-a" onchange="renderCompare()" style="width:100%;font-size:12px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text1);">
+          <option value="">— Seleccionar —</option>
+        </select>
+        <div id="cmp-meta-a" style="margin-top:8px;font-size:11px;color:var(--text3);min-height:30px;"></div>
+      </div>
+      <div class="card" style="padding:14px 16px;">
+        <div style="font-size:10px;font-weight:700;color:#8b5cf6;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">Sesión B</div>
+        <select id="cmp-sel-b" onchange="renderCompare()" style="width:100%;font-size:12px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text1);">
+          <option value="">— Seleccionar —</option>
+        </select>
+        <div id="cmp-meta-b" style="margin-top:8px;font-size:11px;color:var(--text3);min-height:30px;"></div>
+      </div>
+    </div>
+
+    <!-- KPI comparison -->
+    <div id="cmp-kpis" style="display:none;margin-bottom:14px;"></div>
+
+    <!-- Gráfica comparativa -->
+    <div id="cmp-metric-row" style="display:none;" class="card" style="margin-bottom:14px;padding:0;overflow:hidden;">
+      <div style="padding:12px 18px 10px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;">Métrica:</span>
+        <button id="cmpM-hr"  class="sess-chart-btn active" onclick="setCmpMetric('hr',this)"  style="padding:5px 14px;font-size:11px;">FC</button>
+        <button id="cmpM-spd" class="sess-chart-btn"        onclick="setCmpMetric('spd',this)" style="padding:5px 14px;font-size:11px;">Velocidad</button>
+        <button id="cmpM-cad" class="sess-chart-btn"        onclick="setCmpMetric('cad',this)" style="padding:5px 14px;font-size:11px;">Cadencia</button>
+        <button id="cmpM-ele" class="sess-chart-btn"        onclick="setCmpMetric('ele',this)" style="padding:5px 14px;font-size:11px;">Altitud</button>
+      </div>
+      <div id="cmp-stats" style="display:flex;border-bottom:1px solid var(--border-light);"></div>
+      <div style="height:260px;position:relative;">
+        <canvas id="canvas-compare" style="width:100%;height:100%;display:block;"></canvas>
+      </div>
+    </div>
+
+    <div id="cmp-empty" style="text-align:center;padding:30px 20px;color:var(--text3);font-size:13px;background:var(--surface2);border-radius:12px;margin-bottom:14px;">
+      Selecciona dos sesiones arriba para ver la comparativa
+    </div>
+  </div>
 
   <!-- ══════════════════════════════════════
        ANÁLISIS DE PERÍODO
@@ -1152,6 +1418,30 @@ window.addEventListener('unhandledrejection', function(e){
 </div>
 </div>
 
+<!-- ═══ MODAL: Añadir sesión planificada ═══ -->
+<div class="overlay" id="m-plan">
+<div class="modal">
+  <button class="modal-close" onclick="closeM('plan')">✕</button>
+  <div class="modal-title">📅 Añadir sesión planificada</div>
+  <input type="hidden" id="plan-modal-date">
+  <div class="fg"><label class="fl">Fecha</label><input type="date" id="plan-m-date" readonly></div>
+  <div class="fg"><label class="fl">Deporte</label>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button id="pm-btn-gym"  onclick="setPlanSport('gym')"  class="sess-chart-btn" style="flex:1;">🏋️ Gym</button>
+      <button id="pm-btn-run"  onclick="setPlanSport('run')"  class="sess-chart-btn" style="flex:1;">🏃 Running</button>
+      <button id="pm-btn-bike" onclick="setPlanSport('bike')" class="sess-chart-btn" style="flex:1;">🚴 Ciclismo</button>
+      <button id="pm-btn-rest" onclick="setPlanSport('rest')" class="sess-chart-btn" style="flex:1;">😴 Descanso</button>
+    </div>
+  </div>
+  <div class="fg"><label class="fl">Nota / tipo de sesión</label><input id="plan-m-note" placeholder="Ej: Fuerza superior, Rodaje Z2, Ruta larga..."></div>
+  <div class="fg"><label class="fl">Duración estimada (min)</label><input type="number" id="plan-m-dur" placeholder="60"></div>
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="savePlanSession()">Guardar</button>
+    <button class="btn btn-ghost" onclick="closeM('plan')">Cancelar</button>
+  </div>
+</div>
+</div>
+
 <div class="overlay" id="m-weight">
 <div class="modal">
   <button class="modal-close" onclick="closeM('weight')">✕</button>
@@ -1253,13 +1543,14 @@ window.addEventListener('unhandledrejection', function(e){
   <div class="drawer-nav">
     <div class="drawer-section">Principal</div>
     <button class="drawer-item active" data-page="dash" onclick="drawerNav('dash',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2" width="9" height="11" rx="1.5"/><rect x="13" y="2" width="9" height="6" rx="1.5"/><rect x="2" y="15" width="9" height="7" rx="1.5"/><rect x="13" y="10" width="9" height="12" rx="1.5"/></svg>Dashboard</button>
+    <button class="drawer-item" data-page="plan" onclick="drawerNav('plan',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>Plan Semanal</button>
     <button class="drawer-item" data-page="gym" onclick="drawerNav('gym',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 12h4M18 12h4M6 9v6M18 9v6M6 12h12"/><circle cx="4" cy="12" r="2"/><circle cx="20" cy="12" r="2"/></svg>Gym</button>
     <button class="drawer-item" data-page="running" onclick="drawerNav('running',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><line x1="1" y1="8" x2="7" y2="8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="1" y1="11.5" x2="6" y2="11.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".65"/><line x1="1.5" y1="15" x2="5.5" y2="15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".38"/><circle cx="17" cy="3" r="2" fill="currentColor"/><path d="M17 5 L14.5 9 L13 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L10 17 L8.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 12 L15 17.5 L13.5 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8 L11.5 10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15.5 8 L19.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Running</button>
     <button class="drawer-item" data-page="cycling" onclick="drawerNav('cycling',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="4.2" stroke-width="1.6"/><circle cx="19" cy="17" r="4.2" stroke-width="1.6"/><path d="M5 17 L11 6.5 L19 17" stroke-width="1.6"/><path d="M11 6.5 L19 17" stroke-width="1.4"/><path d="M11 6.5 L11 3.5" stroke-width="1.4"/><path d="M9 3.5 L13 3.5" stroke-width="2.5"/><path d="M19 11.5 L19 17" stroke-width="1.4"/><path d="M17 10.5 L21 10 L21.5 12" stroke-width="1.7"/><circle cx="11" cy="17" r="1.4" fill="currentColor" stroke="none"/></svg>Ciclismo</button>
     <div class="drawer-section">Salud</div>
     <button class="drawer-item" data-page="weight" onclick="drawerNav('weight',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg>Peso &amp; Cuerpo</button>
     <button class="drawer-item" data-page="recovery" onclick="drawerNav('recovery',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="m16 12 4 4-4 4"/><path d="M20 16h-8"/></svg>Recuperación</button>
-    <button class="drawer-item" data-page="goals" onclick="drawerNav('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 9 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-7z"/></svg>Metas &amp; IA</button>
+    <button class="drawer-item" data-page="goals" onclick="drawerNav('goals',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 9 9H2l5.5 4-2 7L12 16l6.5 4-2-7L22 9h-7z"/></svg>Metas y Análisis IA</button>
     <div class="drawer-section">Config</div>
     <button class="drawer-item" data-page="profile" onclick="drawerNav('profile',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Perfil</button>
     <button class="drawer-item" data-page="import" onclick="drawerNav('import',this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2.5 L4 2.5 Q2 2.5 2 4.5 L2 19.5 Q2 21.5 4 21.5 L20 21.5 Q22 21.5 22 19.5 L22 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><text x="4.5" y="16.5" font-family="system-ui,Arial,sans-serif" font-size="9" font-weight="800" fill="currentColor">AI</text><path d="M18 1 L19.1 4.2 L22.5 5.3 L19.1 6.4 L18 9.5 L16.9 6.4 L13.5 5.3 L16.9 4.2 Z" fill="currentColor"/></svg>Importar &amp; IA</button>
@@ -1272,7 +1563,7 @@ window.addEventListener('unhandledrejection', function(e){
 
 
 // ══ STORAGE — Safari/iOS safe with memory fallback ══
-const K={gym:'iv_gym',run:'iv_run',bike:'iv_bike',weight:'iv_wgt',rec:'iv_rec',goals:'iv_goals',profile:'iv_profile'};
+const K={gym:'iv_gym',run:'iv_run',bike:'iv_bike',weight:'iv_wgt',rec:'iv_rec',goals:'iv_goals',profile:'iv_profile',plan:'iv_plan'};
 var _mem={};
 function _lsGet(k){try{return localStorage.getItem(k);}catch(e){return _mem[k]||null;}}
 function _lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){_mem[k]=v;}}
@@ -2117,6 +2408,717 @@ function renderDistChart(){
   }
 }
 
+// ══════════════════════════════════════
+// COMPARE ENGINE
+// ══════════════════════════════════════
+var _cmpSport = 'bike';
+var _cmpMetric = 'hr';
+
+var CMP_METRIC_CFG = {
+  hr:  { key:'hr',  label:'FC',         unit:'bpm',   color:['#ef4444','#8b5cf6'], yMin:60  },
+  spd: { key:'spd', label:'Velocidad',  unit:'km/h',  color:['#2563eb','#8b5cf6'], yMin:0   },
+  cad: { key:'cad', label:'Cadencia',   unit:'rpm',   color:['#10b981','#8b5cf6'], yMin:40  },
+  ele: { key:'ele', label:'Altitud',    unit:'m',     color:['#f59e0b','#8b5cf6'], yMin:null},
+};
+
+function setCmpSport(sport, btn){
+  _cmpSport = sport;
+  ['bike','run'].forEach(function(s){
+    var b=document.getElementById('cmp-btn-'+s);
+    if(b) b.classList.remove('active');
+  });
+  if(btn) btn.classList.add('active');
+  populateCmpSelectors();
+  renderCompare();
+}
+
+function setCmpMetric(m, btn){
+  _cmpMetric = m;
+  ['hr','spd','cad','ele'].forEach(function(k){
+    var b=document.getElementById('cmpM-'+k);
+    if(b) b.classList.remove('active');
+  });
+  if(btn) btn.classList.add('active');
+  drawCmpChart();
+}
+
+function populateCmpSelectors(){
+  var sessions = ld(_cmpSport==='bike'?'bike':'run');
+  var opts = sessions.map(function(e,i){
+    var label = (e.date||'') + ' — ' + (e.route||e.dist+'km') + ' (' + (e.dist||'?') + 'km)';
+    return '<option value="'+i+'">'+label+'</option>';
+  }).join('');
+  var html = '<option value="">— Seleccionar —</option>' + opts;
+  var selA = document.getElementById('cmp-sel-a');
+  var selB = document.getElementById('cmp-sel-b');
+  if(selA){ selA.innerHTML = html; }
+  if(selB){ selB.innerHTML = html; }
+}
+
+function getCmpEntry(selId){
+  var sel = document.getElementById(selId);
+  if(!sel || sel.value==='') return null;
+  var sessions = ld(_cmpSport==='bike'?'bike':'run');
+  return sessions[parseInt(sel.value)] || null;
+}
+
+function fmtMeta(e){
+  if(!e) return '';
+  var parts = [e.dist+'km', e.time+'min'];
+  if(e.fcavg) parts.push('FC '+e.fcavg+'bpm');
+  if(e.spd)   parts.push(e.spd+'km/h');
+  if(e.elev)  parts.push('+'+e.elev+'m');
+  return parts.join(' · ');
+}
+
+function renderCompare(){
+  var eA = getCmpEntry('cmp-sel-a');
+  var eB = getCmpEntry('cmp-sel-b');
+
+  // Meta cards
+  var metaA = document.getElementById('cmp-meta-a');
+  var metaB = document.getElementById('cmp-meta-b');
+  if(metaA) metaA.innerHTML = eA ? '<span style="color:var(--accent);">'+fmtMeta(eA)+'</span>' : '';
+  if(metaB) metaB.innerHTML = eB ? '<span style="color:#8b5cf6;">'+fmtMeta(eB)+'</span>' : '';
+
+  var empty = document.getElementById('cmp-empty');
+  var metricRow = document.getElementById('cmp-metric-row');
+  var kpisEl = document.getElementById('cmp-kpis');
+
+  if(!eA || !eB){
+    if(empty) empty.style.display='block';
+    if(metricRow) metricRow.style.display='none';
+    if(kpisEl) kpisEl.style.display='none';
+    return;
+  }
+
+  if(empty) empty.style.display='none';
+  if(metricRow) metricRow.style.display='block';
+
+  // KPI comparison
+  if(kpisEl){
+    kpisEl.style.display='grid';
+    kpisEl.style.gridTemplateColumns='repeat(auto-fit,minmax(120px,1fr))';
+    kpisEl.style.gap='10px';
+    var metrics = [
+      {l:'Distancia', a:eA.dist+'km', b:eB.dist+'km', aV:parseFloat(eA.dist), bV:parseFloat(eB.dist)},
+      {l:'Duración',  a:eA.time+'min', b:eB.time+'min', aV:parseInt(eA.time), bV:parseInt(eB.time)},
+      {l:'FC promedio', a:(eA.fcavg||'—')+'bpm', b:(eB.fcavg||'—')+'bpm', aV:eA.fcavg, bV:eB.fcavg},
+      {l:'Velocidad avg', a:(eA.spd||'—')+'km/h', b:(eB.spd||'—')+'km/h', aV:parseFloat(eA.spd), bV:parseFloat(eB.spd)},
+      {l:'Desnivel', a:'+'+(eA.elev||0)+'m', b:'+'+(eB.elev||0)+'m', aV:eA.elev, bV:eB.elev},
+    ];
+    if(_cmpSport==='bike'){
+      metrics.push({l:'Cadencia avg', a:(eA.cadavg||'—')+'rpm', b:(eB.cadavg||'—')+'rpm', aV:eA.cadavg, bV:eB.cadavg});
+    } else {
+      metrics.push({l:'Ritmo', a:(eA.pace||'—')+'/km', b:(eB.pace||'—')+'/km', aV:null, bV:null});
+    }
+    kpisEl.innerHTML = metrics.map(function(m){
+      var aWin = m.aV && m.bV && m.aV > m.bV;
+      var bWin = m.aV && m.bV && m.bV > m.aV;
+      // For FC lower is better in efficiency, but higher is harder — neutral comparison
+      return '<div class="card" style="padding:12px 14px;text-align:center;">' +
+        '<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">'+m.l+'</div>' +
+        '<div style="display:flex;justify-content:space-around;align-items:center;gap:8px;">' +
+          '<div style="font-size:15px;font-weight:700;color:'+(aWin?'var(--accent)':'var(--text1)')+'">'+m.a+'</div>' +
+          '<div style="font-size:10px;color:var(--text3);">vs</div>' +
+          '<div style="font-size:15px;font-weight:700;color:'+(bWin?'#8b5cf6':'var(--text1)')+'">'+m.b+'</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  drawCmpChart();
+}
+
+function drawCmpChart(){
+  var eA = getCmpEntry('cmp-sel-a');
+  var eB = getCmpEntry('cmp-sel-b');
+  if(!eA || !eB) return;
+
+  var canvas = document.getElementById('canvas-compare');
+  if(!canvas) return;
+
+  var cfg = CMP_METRIC_CFG[_cmpMetric];
+  var key = cfg.key;
+
+  // Get data arrays — normalize to 200 points each
+  function getArr(e){
+    var gpx = e.gpx || {};
+    var raw = gpx[key] || [];
+    if(!raw.length) return [];
+    // Downsample/upsample to 200 pts
+    var out = [], target = 200;
+    for(var i=0;i<target;i++){
+      var srcI = Math.round(i/(target-1)*(raw.length-1));
+      out.push(raw[srcI]);
+    }
+    return out;
+  }
+
+  var arrA = getArr(eA);
+  var arrB = getArr(eB);
+
+  if(!arrA.length && !arrB.length){
+    var ctx2=canvas.getContext('2d');
+    ctx2.clearRect(0,0,canvas.width,canvas.height);
+    ctx2.fillStyle='#94a3b8'; ctx2.font='13px system-ui'; ctx2.textAlign='center';
+    ctx2.fillText('Sin datos de '+cfg.label+' para estas sesiones', canvas.width/2, canvas.height/2);
+    return;
+  }
+
+  // Canvas setup
+  var dpr = window.devicePixelRatio||1;
+  var W = canvas.parentElement.clientWidth;
+  var H = 280;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  var ml=46, mr=16, mt=16, mb=32;
+  var cW=W-ml-mr, cH=H-mt-mb;
+  ctx.clearRect(0,0,W,H);
+
+  // Y scale
+  var allVals = arrA.concat(arrB).filter(function(v){return v!==null&&v!==undefined;});
+  if(!allVals.length) return;
+  var minV=Math.min.apply(null,allVals), maxV=Math.max.apply(null,allVals);
+  if(cfg.yMin!==null) minV=Math.min(minV,cfg.yMin);
+  var pad=(maxV-minV)*0.12||2;
+  minV=Math.floor(minV-pad); maxV=Math.ceil(maxV+pad);
+
+  function yv(v){ return v===null?null: mt+cH-(v-minV)/(maxV-minV)*cH; }
+  function xv(i,n){ return ml+(n<=1?cW/2:i/(n-1)*cW); }
+
+  // Grid
+  var step = maxV-minV<=20?2:maxV-minV<=50?5:maxV-minV<=100?10:20;
+  ctx.strokeStyle='rgba(148,163,184,0.1)'; ctx.lineWidth=1;
+  for(var gv=Math.ceil(minV/step)*step; gv<=maxV; gv+=step){
+    var gy=yv(gv);
+    ctx.beginPath(); ctx.moveTo(ml,gy); ctx.lineTo(ml+cW,gy); ctx.stroke();
+    ctx.fillStyle='#94a3b8'; ctx.font='10px system-ui'; ctx.textAlign='right';
+    ctx.fillText(gv, ml-5, gy+4);
+  }
+
+  // Draw series
+  function drawSeries(arr, color, label){
+    if(!arr.length) return;
+    var valid = arr.filter(function(v){return v!==null;});
+    if(!valid.length) return;
+    var n = arr.length;
+
+    // Gradient fill
+    var grad=ctx.createLinearGradient(0,mt,0,mt+cH);
+    grad.addColorStop(0,color.replace(')',',0.18)').replace('rgb','rgba'));
+    grad.addColorStop(1,color.replace(')',',0)').replace('rgb','rgba'));
+    if(color.startsWith('#')){
+      // hex — use opacity directly
+      ctx.globalAlpha=0.12;
+    } else ctx.globalAlpha=1;
+
+    ctx.beginPath();
+    var first=true;
+    arr.forEach(function(v,i){
+      if(v===null) return;
+      var x=xv(i,n), y=yv(v);
+      first?ctx.moveTo(x,y):ctx.lineTo(x,y); first=false;
+    });
+    ctx.lineTo(xv(n-1,n),mt+cH); ctx.lineTo(xv(0,n),mt+cH); ctx.closePath();
+    ctx.fillStyle=color; ctx.globalAlpha=0.1; ctx.fill();
+    ctx.globalAlpha=1;
+
+    // Line
+    ctx.beginPath(); first=true;
+    arr.forEach(function(v,i){
+      if(v===null) return;
+      var x=xv(i,n), y=yv(v);
+      first?ctx.moveTo(x,y):ctx.lineTo(x,y); first=false;
+    });
+    ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+  }
+
+  drawSeries(arrA, cfg.color[0], 'A');
+  drawSeries(arrB, cfg.color[1], 'B');
+
+  // X axis: % of session
+  ctx.fillStyle='#94a3b8'; ctx.font='10px system-ui'; ctx.textAlign='center';
+  [0,25,50,75,100].forEach(function(pct){
+    var xi = Math.round(pct/100*199);
+    var xp = xv(xi,200);
+    ctx.fillText(pct+'%', xp, mt+cH+18);
+  });
+
+  // Legend
+  ctx.font='bold 11px system-ui';
+  ctx.fillStyle=cfg.color[0]; ctx.textAlign='left';
+  var dateA = (eA.date||'').slice(5);
+  var dateB = (eB.date||'').slice(5);
+  ctx.fillRect(ml,4,20,4); ctx.fillText('A · '+dateA+' ('+eA.dist+'km)', ml+26, 11);
+  ctx.fillStyle=cfg.color[1];
+  ctx.fillRect(ml+140,4,20,4); ctx.fillText('B · '+dateB+' ('+eB.dist+'km)', ml+166, 11);
+
+  // Stats bar
+  var statsEl = document.getElementById('cmp-stats');
+  if(statsEl){
+    function statFor(arr, color){
+      var v=arr.filter(function(x){return x!==null;});
+      if(!v.length) return '<div style="flex:1;text-align:center;padding:8px;color:'+color+';">—</div>';
+      var mn=Math.round(Math.min.apply(null,v)),mx=Math.round(Math.max.apply(null,v)),av=Math.round(v.reduce(function(a,b){return a+b;})/v.length);
+      return '<div style="flex:1;display:flex;gap:0;border-right:1px solid var(--border-light);">'+
+        '<div class="sms-item" style="flex:1;border:none;"><div class="sms-val" style="color:'+color+';">'+mn+'</div><div class="sms-lbl">A Mín</div></div>'+
+        '<div class="sms-item" style="flex:1;border:none;background:rgba(0,0,0,.03);"><div class="sms-val" style="color:'+color+';">'+av+'</div><div class="sms-lbl">A Med</div></div>'+
+        '<div class="sms-item" style="flex:1;border:none;"><div class="sms-val" style="color:'+color+';">'+mx+'</div><div class="sms-lbl">A Máx</div></div>'+
+      '</div>';
+    }
+    function statForB(arr, color){
+      var v=arr.filter(function(x){return x!==null;});
+      if(!v.length) return '<div style="flex:1;text-align:center;padding:8px;color:'+color+';">—</div>';
+      var mn=Math.round(Math.min.apply(null,v)),mx=Math.round(Math.max.apply(null,v)),av=Math.round(v.reduce(function(a,b){return a+b;})/v.length);
+      return '<div style="flex:1;display:flex;gap:0;">'+
+        '<div class="sms-item" style="flex:1;border:none;"><div class="sms-val" style="color:'+color+';">'+mn+'</div><div class="sms-lbl">B Mín</div></div>'+
+        '<div class="sms-item" style="flex:1;border:none;background:rgba(0,0,0,.03);"><div class="sms-val" style="color:'+color+';">'+av+'</div><div class="sms-lbl">B Med</div></div>'+
+        '<div class="sms-item" style="flex:1;border:none;"><div class="sms-val" style="color:'+color+';">'+mx+'</div><div class="sms-lbl">B Máx</div></div>'+
+      '</div>';
+    }
+    statsEl.innerHTML = statFor(arrA, cfg.color[0]) + statForB(arrB, cfg.color[1]);
+  }
+}
+
+function renderCompareTab(){
+  populateCmpSelectors();
+  renderCompare();
+}
+
+// ══════════════════════════════════════════════
+// PLAN SEMANAL MODULE
+// ══════════════════════════════════════════════
+var _planWeekOffset = 0;  // 0=current, -1=prev, +1=next
+var _planSelectedDay = null; // 'YYYY-MM-DD'
+var _planSport = 'bike'; // modal sport selector
+var _pbDays = {}; // {dayIndex: true/false} for builder
+var _pbSports = {}; // {dayIndex: {gym,run,bike}}
+
+// ── Helpers ──
+function planWeekDates(offset){
+  var now = new Date();
+  var day = now.getDay(); // 0=Sun
+  var mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (day===0?6:day-1) + offset*7);
+  var days = [];
+  for(var i=0;i<7;i++){
+    var d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+i);
+    days.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
+  }
+  return days;
+}
+function planFmtRange(dates){
+  var a=new Date(dates[0]), b=new Date(dates[6]);
+  var mo=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return a.getDate()+' '+mo[a.getMonth()]+' — '+b.getDate()+' '+mo[b.getMonth()]+' '+b.getFullYear();
+}
+function planDayName(ds){ return ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date(ds+'T12:00:00').getDay()]; }
+function planToday(){ var n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); }
+
+// Sport config
+var PLAN_SPORT = {
+  bike:{ icon:'🚴', label:'Ciclismo', color:'var(--accent)',    dotCls:'#84cc16' },
+  run: { icon:'🏃', label:'Running',  color:'#10b981',          dotCls:'#10b981' },
+  gym: { icon:'🏋️', label:'Gym',      color:'#60a5fa',          dotCls:'#60a5fa' },
+  rest:{ icon:'😴', label:'Descanso', color:'var(--text3)',      dotCls:'#94a3b8' },
+};
+
+// Get executed sessions for a date
+function planGetExecuted(ds){
+  var runs  = ld('run').filter(function(e){return e.date===ds;});
+  var bikes = ld('bike').filter(function(e){return e.date===ds;});
+  var gyms  = ld('gym').filter(function(e){return e.date===ds;});
+  var out = [];
+  runs.forEach(function(e){ out.push({sport:'run', e:e, done:true}); });
+  bikes.forEach(function(e){ out.push({sport:'bike', e:e, done:true}); });
+  gyms.forEach(function(e){ out.push({sport:'gym', e:e, done:true}); });
+  return out;
+}
+// Get planned sessions for a date
+function planGetPlanned(ds){
+  var plans = ld('iv_plan').filter(function(p){return p.date===ds;});
+  return plans;
+}
+
+// ── Nav ──
+function planNavWeek(dir){
+  if(dir===0){ _planWeekOffset=0; _planSelectedDay=planToday(); }
+  else _planWeekOffset += dir;
+  renderPlan();
+}
+
+// ── Main render ──
+function renderPlan(){
+  var dates = planWeekDates(_planWeekOffset);
+  var today = planToday();
+  if(!_planSelectedDay || dates.indexOf(_planSelectedDay)<0){
+    _planSelectedDay = dates.indexOf(today)>=0 ? today : dates[0];
+  }
+
+  // Week label
+  document.getElementById('plan-week-label').textContent = planFmtRange(dates);
+
+  // Sub label — semana actual / pasada / siguiente
+  var weekSub;
+  if(_planWeekOffset === 0){
+    var daysLeft = dates.filter(function(d){return d>=today;}).length;
+    weekSub = 'Semana actual · '+daysLeft+' días restantes';
+  } else if(_planWeekOffset < 0){
+    weekSub = 'Semana pasada';
+  } else if(_planWeekOffset === 1){
+    weekSub = 'Próxima semana';
+  } else {
+    weekSub = 'En '+_planWeekOffset+' semanas';
+  }
+  document.getElementById('plan-week-sub').textContent = weekSub;
+
+  // Progress
+  var totalPlanned=0, totalDone=0;
+  dates.forEach(function(ds){
+    var exec = planGetExecuted(ds);
+    var plan = planGetPlanned(ds).filter(function(p){return p.sport!=='rest';});
+    totalDone += exec.length;
+    totalPlanned += Math.max(exec.length, plan.length);
+  });
+  document.getElementById('plan-done-ct').textContent  = totalDone;
+  document.getElementById('plan-total-ct').textContent = totalPlanned||'—';
+  var pct = totalPlanned>0 ? Math.round(totalDone/totalPlanned*100) : 0;
+  document.getElementById('plan-pct').textContent = pct+'%';
+  document.getElementById('plan-bar').style.width = pct+'%';
+  document.getElementById('plan-week-range').textContent = planFmtRange(dates);
+
+  // Streak (reuse from renderDash logic)
+  var allDates={};
+  ld('run').concat(ld('bike')).concat(ld('gym')).forEach(function(e){ if(e.date) allDates[e.date]=true; });
+  var streak=0, cd=new Date();
+  var todayStr=planToday();
+  var yesterStr=new Date(Date.now()-86400000);
+  yesterStr=yesterStr.getFullYear()+'-'+String(yesterStr.getMonth()+1).padStart(2,'0')+'-'+String(yesterStr.getDate()).padStart(2,'0');
+  var checkFrom=allDates[todayStr]?new Date():( allDates[yesterStr]?new Date(Date.now()-86400000):null);
+  if(checkFrom){ var cx=new Date(checkFrom); for(var si=0;si<365;si++){ var ds2=cx.getFullYear()+'-'+String(cx.getMonth()+1).padStart(2,'0')+'-'+String(cx.getDate()).padStart(2,'0'); if(!allDates[ds2]) break; streak++; cx=new Date(cx.getTime()-86400000); } }
+  var sEmoji=streak>=14?'🔥':streak>=7?'⚡':streak>=3?'💪':'👟';
+  document.getElementById('plan-streak-val').textContent = streak>0?streak+' d':sEmoji;
+  document.getElementById('plan-streak-lbl').textContent = streak>=7?'¡Racha!':'Racha';
+
+  // ── Mini grid ──
+  var grid = document.getElementById('plan-mini-grid');
+  var DAY_NAMES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  grid.innerHTML = dates.map(function(ds, i){
+    var exec = planGetExecuted(ds);
+    var plans = planGetPlanned(ds);
+    var isToday = ds===today;
+    var isPast = ds<today;
+    var isSelected = ds===_planSelectedDay;
+    var isRest = plans.some(function(p){return p.sport==='rest';}) && exec.length===0;
+    var hasUnmet = isPast && plans.filter(function(p){return p.sport!=='rest';}).length>0 && exec.length===0;
+
+    var cls = 'pmg-day';
+    if(isSelected) cls+=' pmg-selected';
+    if(isToday) cls+=' pmg-today';
+    if(isRest) cls+=' pmg-rest';
+
+    // Build dots
+    var dots = '';
+    // Executed
+    exec.forEach(function(s){
+      var col = PLAN_SPORT[s.sport]?PLAN_SPORT[s.sport].dotCls:'#94a3b8';
+      dots += '<div class="pmg-sess" style="color:'+col+'"><div class="pmg-dot" style="background:'+col+';"></div><span style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50px;">'+PLAN_SPORT[s.sport].label.slice(0,4)+' ✓</span></div>';
+    });
+    // Planned not yet executed
+    plans.filter(function(p){return p.sport!=='rest';}).forEach(function(p){
+      var alreadyDone = exec.some(function(e){return e.sport===p.sport;});
+      if(!alreadyDone){
+        var col = PLAN_SPORT[p.sport]?PLAN_SPORT[p.sport].dotCls:'#94a3b8';
+        var miss = hasUnmet;
+        dots += '<div class="pmg-sess" style="color:'+(miss?'var(--danger)':col)+'"><div class="pmg-dot plan" style="border-color:'+(miss?'var(--danger)':col)+';"></div><span style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50px;">'+PLAN_SPORT[p.sport].label.slice(0,4)+(miss?' ✗':'')+' </span></div>';
+      }
+    });
+    if(isRest) dots = '<div class="pmg-sess" style="color:var(--text3);opacity:.5;"><div class="pmg-dot" style="background:var(--border);"></div><span style="font-size:9px;">Desc.</span></div>';
+    if(!exec.length && !plans.length && !isRest) dots = '<div class="pmg-add">+ añadir</div>';
+
+    return '<div class="'+cls+'" onclick="planSelectDay(\''+ds+'\')" style="'+(hasUnmet?'border-color:var(--danger);':'')+'">'
+      +'<div class="pmg-hdr"><span class="pmg-name">'+DAY_NAMES[i]+'</span><span class="pmg-num'+(isToday?' pmg-today-n':'')+'">'+parseInt(ds.slice(8))+'</span></div>'
+      +dots
+      +'</div>';
+  }).join('');
+
+  // Day detail
+  planRenderDayDetail(_planSelectedDay);
+
+  // Builder
+  planRenderBuilder(dates);
+}
+
+function planSelectDay(ds){
+  _planSelectedDay = ds;
+  var cells = document.querySelectorAll('.pmg-day');
+  cells.forEach(function(c){ c.classList.remove('pmg-selected'); });
+  var dates = planWeekDates(_planWeekOffset);
+  var idx = dates.indexOf(ds);
+  if(idx>=0 && cells[idx]) cells[idx].classList.add('pmg-selected');
+  planRenderDayDetail(ds);
+}
+
+function planRenderDayDetail(ds){
+  var el = document.getElementById('plan-day-detail');
+  if(!el) return;
+  var today = planToday();
+  var isPast = ds < today;
+  var exec = planGetExecuted(ds);
+  var plans = planGetPlanned(ds);
+  var DAY_NAMES=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  var d = new Date(ds+'T12:00:00');
+  var mo=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var title = DAY_NAMES[d.getDay()]+' '+d.getDate()+' de '+mo[d.getMonth()];
+
+  var html = '<div class="pdd-title">'+title+(ds===today?' · Hoy':'')+'</div>';
+
+  // Executed sessions
+  exec.forEach(function(s){
+    var cfg = PLAN_SPORT[s.sport];
+    var e = s.e;
+    var sub = [];
+    if(e.dist) sub.push(e.dist+'km');
+    if(e.time) sub.push(e.time+'min');
+    if(e.fcavg) sub.push('FC '+e.fcavg+'bpm');
+    if(e.elev) sub.push('+'+e.elev+'m');
+    html += '<div class="pdd-sess-card done" style="border-left-color:'+cfg.color+';">'
+      +'<span class="pdd-sess-icon">'+cfg.icon+'</span>'
+      +'<div class="pdd-sess-info"><div class="pdd-sess-name" style="color:'+cfg.color+';">'+cfg.label+(e.route?' · '+e.route:'')+'</div>'
+      +'<div class="pdd-sess-sub">'+(sub.join(' · ')||'Sin datos')+'</div></div>'
+      +'<div class="pdd-sess-status" style="color:'+cfg.color+';">✓ Hecho</div>'
+      +'</div>';
+  });
+
+  // Planned sessions
+  plans.filter(function(p){return p.sport!=='rest';}).forEach(function(p){
+    var cfg = PLAN_SPORT[p.sport] || PLAN_SPORT.rest;
+    var alreadyDone = exec.some(function(e){return e.sport===p.sport;});
+    if(!alreadyDone){
+      var isUnmet = isPast;
+      html += '<div class="pdd-sess-card plan" style="border-left-color:'+(isUnmet?'var(--danger)':cfg.color)+';">'
+        +'<span class="pdd-sess-icon">'+cfg.icon+'</span>'
+        +'<div class="pdd-sess-info"><div class="pdd-sess-name" style="color:'+(isUnmet?'var(--danger)':cfg.color)+';">'+cfg.label+(p.note?' · '+p.note:'')+'</div>'
+        +'<div class="pdd-sess-sub">Planificado'+(p.dur?' · ~'+p.dur+'min':'')+(p.order?' · '+p.order:'')+'</div></div>'
+        +'<div class="pdd-sess-status" style="color:'+(isUnmet?'var(--danger)':'var(--text3)')+';">'+(isUnmet?'✗ No cumplido':'Pendiente')+'</div>'
+        +'<button onclick="planDelSession(\''+p.id+'\')" style="margin-left:8px;padding:3px 7px;border-radius:6px;border:none;background:rgba(239,68,68,.1);color:var(--danger);font-size:10px;cursor:pointer;">✕</button>'
+        +'</div>';
+    }
+  });
+  // Rest day
+  var restPlan = plans.find(function(p){return p.sport==='rest';});
+  if(restPlan && exec.length===0){
+    html += '<div class="pdd-sess-card plan" style="border-left-color:var(--text3);opacity:.6;">'
+      +'<span class="pdd-sess-icon">😴</span>'
+      +'<div class="pdd-sess-info"><div class="pdd-sess-name">Descanso</div><div class="pdd-sess-sub">'+(restPlan.note||'Recuperación')+'</div></div>'
+      +'<button onclick="planDelSession(\''+restPlan.id+'\')" style="margin-left:8px;padding:3px 7px;border-radius:6px;border:none;background:rgba(239,68,68,.1);color:var(--danger);font-size:10px;cursor:pointer;">✕</button>'
+      +'</div>';
+  }
+
+  if(!exec.length && !plans.length){
+    html += '<div class="pdd-empty">Sin sesiones este día</div>';
+  }
+
+  html += '<button class="pdd-add-btn" onclick="planOpenModal(\''+ds+'\')">+ Añadir sesión planificada</button>';
+  el.innerHTML = html;
+}
+
+function planDelSession(id){
+  var plans = ld('iv_plan').filter(function(p){return p.id!==id;});
+  sv('iv_plan', plans);
+  planRenderDayDetail(_planSelectedDay);
+  renderPlan();
+}
+
+// ── Modal ──
+function planOpenModal(ds){
+  document.getElementById('plan-modal-date').value = ds;
+  document.getElementById('plan-m-date').value = ds;
+  document.getElementById('plan-m-note').value = '';
+  document.getElementById('plan-m-dur').value = '';
+  setPlanSport('bike');
+  openM('plan');
+}
+function setPlanSport(sport){
+  _planSport = sport;
+  ['gym','run','bike','rest'].forEach(function(s){
+    var b=document.getElementById('pm-btn-'+s);
+    if(b){ b.classList.toggle('active', s===sport); }
+  });
+}
+function savePlanSession(){
+  var ds = document.getElementById('plan-modal-date').value;
+  if(!ds) return;
+  var entry = {
+    id: uid(), date: ds, sport: _planSport,
+    note: document.getElementById('plan-m-note').value,
+    dur:  document.getElementById('plan-m-dur').value,
+    ts:   Date.now()
+  };
+  var plans = ld('iv_plan');
+  plans.push(entry);
+  sv('iv_plan', sortByDate(plans));
+  closeM('plan');
+  renderPlan();
+  showToast('✅ Sesión planificada añadida');
+}
+
+// ── Plan builder ──
+function planRenderBuilder(dates){
+  var DAY_NAMES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  var today = planToday();
+
+  // Builder title shows which week it targets
+  var builderOffset = (_planWeekOffset >= 0) ? _planWeekOffset + 1 : _planWeekOffset;
+  var builderDates = planWeekDates(builderOffset);
+  var builderLabel = builderOffset===1 ? 'Próxima semana ('+planFmtRange(builderDates)+')' : planFmtRange(builderDates);
+  var builderSubEl = document.getElementById('pb-week-target');
+  if(builderSubEl) builderSubEl.textContent = builderLabel;
+
+  // Days row — only future/today days in builder week
+  var daysEl = document.getElementById('pb-days-row');
+  if(!daysEl) return;
+  daysEl.innerHTML = builderDates.map(function(ds, i){
+    var isPast = ds < today;
+    if(isPast){ // skip past days — can't plan them
+      return '<div class="pb-day-toggle" style="opacity:.25;cursor:not-allowed;pointer-events:none;">'
+        +'<div class="pbd-name">'+DAY_NAMES[i]+'</div>'
+        +'<div class="pbd-num">'+parseInt(ds.slice(8))+'</div>'
+        +'</div>';
+    }
+    var on = _pbDays[i] !== undefined ? _pbDays[i] : true; // default all on
+    if(_pbDays[i]===undefined) _pbDays[i]=on;
+    return '<div class="pb-day-toggle'+(on?' pb-on':'')+'" onclick="pbToggleDay('+i+')">'
+      +'<div class="pbd-name">'+DAY_NAMES[i]+'</div>'
+      +'<div class="pbd-num">'+parseInt(ds.slice(8))+'</div>'
+      +'</div>';
+  }).join('');
+
+  // Sports rows for active days
+  var sportsEl = document.getElementById('pb-sport-rows');
+  var hasActive = builderDates.some(function(ds,i){ return _pbDays[i] && ds>=today; });
+  if(!hasActive){
+    sportsEl.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:8px 0;">Selecciona al menos un día arriba</div>';
+    return;
+  }
+  sportsEl.innerHTML = builderDates.map(function(ds, i){
+    if(!_pbDays[i] || ds<today) return '';
+    if(!_pbSports[i]) _pbSports[i]={gym:false,run:false,bike:false};
+    var sp = _pbSports[i];
+    var combo = (sp.gym&&sp.bike)||(sp.gym&&sp.run)||(sp.run&&sp.bike);
+    return '<div class="pb-sport-row'+(combo?' pb-combo':'')+'" id="pb-row-'+i+'">'
+      +'<div class="pb-sport-day-lbl">'+DAY_NAMES[i]+'</div>'
+      +'<div class="pb-chips">'
+        +'<div class="pb-chip pb-gym'+(sp.gym?' pb-sel':'')+'" onclick="pbToggleSport('+i+',\'gym\')">'
+          +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 12h4M18 12h4M6 9v6M18 9v6M6 12h12"/><circle cx="4" cy="12" r="2"/><circle cx="20" cy="12" r="2"/></svg>Gym</div>'
+        +'<div class="pb-chip pb-run'+(sp.run?' pb-sel':'')+'" onclick="pbToggleSport('+i+',\'run\')">'
+          +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><line x1="1" y1="8" x2="7" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="16" cy="3" r="2" fill="currentColor"/><path d="M15 5 L12 9 L11 13 L9 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M11 13 L13.5 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Running</div>'
+        +'<div class="pb-chip pb-bike'+(sp.bike?' pb-sel':'')+'" onclick="pbToggleSport('+i+',\'bike\')">'
+          +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="5.5" cy="17" r="3.5"/><circle cx="18.5" cy="17" r="3.5"/><path d="M5.5 17 L11 7 L18.5 17M11 7 L11 4M9 4 L13 4"/><circle cx="11" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg>Ciclismo</div>'
+      +'</div>'
+      +(combo?'<div class="pb-combo-badge">Doble ⚡</div>':'')
+      +'</div>';
+  }).join('');
+}
+
+function pbToggleDay(i){
+  _pbDays[i] = !_pbDays[i];
+  if(!_pbDays[i]) delete _pbSports[i];
+  planRenderBuilder(planWeekDates(_planWeekOffset));
+}
+function pbToggleSport(i, sport){
+  if(!_pbSports[i]) _pbSports[i]={gym:false,run:false,bike:false};
+  _pbSports[i][sport] = !_pbSports[i][sport];
+  planRenderBuilder(planWeekDates(_planWeekOffset));
+}
+
+// ── IA Generate ──
+function planGenerateIA(){
+  var builderOffset = (_planWeekOffset >= 0) ? _planWeekOffset + 1 : _planWeekOffset;
+  var builderDates = planWeekDates(builderOffset);
+  var DAY_NAMES=['Lun','Mar','Mie','Jue','Vie','Sab','Dom'];
+  var today = planToday();
+
+  var selection = [];
+  builderDates.forEach(function(ds, i){
+    if(!_pbDays[i] || ds<today) return;
+    var sp = _pbSports[i]||{};
+    var sports = Object.keys(sp).filter(function(k){return sp[k];});
+    if(sports.length>0) selection.push({day:DAY_NAMES[i], date:ds, sports:sports});
+  });
+  if(!selection.length){ showToast('Selecciona al menos un dia y deporte'); return; }
+
+  var key = getApiKey();
+  if(!key){ showToast('Agrega tu API Key en Perfil'); return; }
+
+  var resultEl = document.getElementById('plan-ai-result');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<div style="padding:14px 18px;"><div id="plan-ai-stream"></div></div>';
+  var streamEl = document.getElementById('plan-ai-stream');
+
+  var prof = ldObj('profile');
+  var lastBike = ld('bike')[0], lastRun = ld('run')[0];
+  var ctx = '';
+  if(lastBike) ctx += 'Ultima bici: '+lastBike.dist+'km '+lastBike.time+'min FC '+lastBike.fcavg+'bpm. ';
+  if(lastRun)  ctx += 'Ultimo run: '+lastRun.dist+'km FC '+lastRun.fcavg+'bpm. ';
+
+  var selStr = selection.map(function(s){ return s.day+': '+s.sports.join('+'); }).join(', ');
+  var rangeLabel = planFmtRange(builderDates);
+  var prompt = 'Atleta Ivan, 46 anios, '+(prof.weight||68)+'kg, FC max '+(prof.fcmax||190)+'bpm. Lesiones: hombro derecho, cuadriceps sensible. '+ctx
+    +' Quiere entrenar la proxima semana ('+rangeLabel+'): '+selStr+'.'
+    +' Por cada dia dame: tipo de sesion, duracion en minutos, tip breve.'
+    +' Si hay doble sesion indica orden. Al final una alerta si hay riesgo.'
+    +' Responde en espanol, maximo 200 palabras.';
+
+  window._lastPlanIA = { selection: selection, dates: builderDates };
+
+  callAI(prompt, streamEl).then(function(){
+    var rangeLabel = planFmtRange(builderDates);
+    var btnDiv = document.createElement('div');
+    btnDiv.className = 'par-apply-row';
+    btnDiv.style.marginTop = '12px';
+    btnDiv.innerHTML = '<button class="par-apply" onclick="planApplyIA()">Aplicar plan - '+rangeLabel+'</button>'
+      +'<button class="par-regen" onclick="planGenerateIA()">Regenerar</button>';
+    resultEl.querySelector('div').appendChild(btnDiv);
+  });
+}
+
+
+function planApplyIA(){
+  var data = window._lastPlanIA;
+  if(!data) return;
+  var weekDates = data.dates;
+  // Remove existing plans only for target week
+  var existing = ld('iv_plan').filter(function(p){ return weekDates.indexOf(p.date)<0; });
+  var newPlans = [];
+  data.selection.forEach(function(s){
+    s.sports.forEach(function(sport, idx){
+      newPlans.push({ id:uid(), date:s.date, sport:sport, note:'Plan IA', dur:'',
+        order: s.sports.length>1?(idx===0?'① Mañana':'② Tarde'):'', ts:Date.now() });
+    });
+  });
+  // Mark rest days in that week
+  weekDates.forEach(function(ds){
+    var isActive = data.selection.some(function(s){ return s.date===ds; });
+    if(!isActive) newPlans.push({ id:uid(), date:ds, sport:'rest', note:'Descanso', dur:'', ts:Date.now() });
+  });
+  sv('iv_plan', sortByDate(existing.concat(newPlans)));
+  document.getElementById('plan-ai-result').style.display='none';
+  // Navigate to the target week to show the applied plan
+  var todayDs = planToday();
+  var currentWeek = planWeekDates(0);
+  _planWeekOffset = weekDates[0] > currentWeek[6] ? 1 : 0;
+  _planSelectedDay = weekDates[0];
+  showToast('✅ Plan aplicado — semana '+planFmtRange(weekDates));
+  renderPlan();
+}
+
+// ── Register ──
+function renderPlanTab(){ _planWeekOffset=0; _planSelectedDay=planToday(); _pbDays={}; _pbSports={}; renderPlan(); }
+
 function renderDash(){
   const gym=ld('gym'),run=ld('run'),bike=ld('bike'),weight=ld('weight'),goals=ld('goals'),rec=ld('rec');
   const now=new Date(),weekAgo=new Date(now-7*86400000);
@@ -2174,14 +3176,42 @@ function renderDash(){
       return`<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px;"><span>${g.name}</span>${dl!==null?`<span style="color:${dl<7?'var(--red)':'var(--text3)'};">${dl>0?dl+'d':'Vencida'}</span>`:''}</div><div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${pct>=100?'var(--green)':pct>50?'var(--accent)':'var(--orange)'}"></div></div><div class="prog-labels"><span>${g.current} ${g.unit}</span><span>${pct.toFixed(0)}%</span><span>${g.target} ${g.unit}</span></div></div>`;}).join(''):'<div style="font-size:12px;color:var(--text3);">Sin metas. Crea tu primer objetivo.</div>';
   }
 
+  // ── Streak: consecutive training days ──
+  var _allDates={};
+  gym.concat(run).concat(bike).forEach(function(e){ if(e.date) _allDates[e.date]=true; });
+  var streakDays=0;
+  var todayStr2=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  var yest2=new Date(now-86400000);
+  var yesterStr2=yest2.getFullYear()+'-'+String(yest2.getMonth()+1).padStart(2,'0')+'-'+String(yest2.getDate()).padStart(2,'0');
+  var checkStart=_allDates[todayStr2]?new Date(now):(_allDates[yesterStr2]?new Date(now-86400000):null);
+  if(checkStart){
+    var cd3=new Date(checkStart);
+    for(var si=0;si<365;si++){
+      var ds3=cd3.getFullYear()+'-'+String(cd3.getMonth()+1).padStart(2,'0')+'-'+String(cd3.getDate()).padStart(2,'0');
+      if(!_allDates[ds3]) break;
+      streakDays++; cd3=new Date(cd3.getTime()-86400000);
+    }
+  }
+  var streakEmoji=streakDays>=14?'🔥':streakDays>=7?'⚡':streakDays>=3?'💪':'👟';
+  var streakLabel=streakDays===0?'Sin racha':streakDays===1?'1 día':streakDays+' días';
+  var streakSub=streakDays>=7?'¡Semana completa!':streakDays>=3?'¡Vas bien!':streakDays>0?'Sigue así':'Entrena hoy';
+
   // Status bar
   const recL=rec[0];
   document.getElementById('dash-status').innerHTML=`
-    <div class="sb-stat"><span class="sb-stat-ico">👟</span><div><div class="sb-stat-val">Racha: ${gym.length>0?'Activo':'—'}</div><div class="sb-stat-lbl">Constancia</div></div></div>
+    <div class="sb-stat"><span class="sb-stat-ico">${streakEmoji}</span><div><div class="sb-stat-val">Racha: ${streakLabel}</div><div class="sb-stat-lbl">${streakSub}</div></div></div>
     <div class="sb-stat"><span class="sb-stat-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l9.84-9.84a5.5 5.5 0 0 0 0-7.78z"/></svg></span><div><div class="sb-stat-val">${recL?`E:${recL.energy}/10 S:${recL.sleep}h`:'Sin datos'}</div><div class="sb-stat-lbl">Recuperación</div></div></div>
     <div class="sb-stat"><span class="sb-stat-ico">🔥</span><div><div class="sb-stat-val">${sc>=70?'Productivo':sc>=50?'Activo':'Descansando'}</div><div class="sb-stat-lbl">Estado de forma</div></div></div>
     <div class="sb-stat"><span class="sb-stat-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span><div><div class="sb-stat-val">${new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}</div><div class="sb-stat-lbl">Actualizado</div></div></div>
   `;
+  // Streak badge in KPI strip
+  var streakKpi=document.getElementById('kpi-streak');
+  if(streakKpi){
+    streakKpi.querySelector('.kpi-val').textContent=streakLabel;
+    streakKpi.querySelector('.kpi-sub').textContent=streakSub;
+    var ico=streakKpi.querySelector('.kpi-ico');
+    if(ico) ico.textContent=streakEmoji;
+  }
 }
 
 function renderGym(){
@@ -3079,58 +4109,310 @@ Máx 400 palabras. Responde en español con negrita.`;
 }
 
 
-function renderWeight(){
-  const data=ld('weight');
-  const sum=document.getElementById('weight-summary');
-  if(data.length&&sum){
-    const lat=data[0],first=data[data.length-1];
-    const diff=(parseFloat(lat.kg)-parseFloat(first.kg)).toFixed(1);
-    const toGoal=(parseFloat(lat.kg)-66).toFixed(1);
-    const pct=Math.min(100,Math.max(0,((67.5-parseFloat(lat.kg))/(67.5-66))*100));
-    sum.innerHTML=`<div class="card" style="margin-bottom:10px;">
-      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
-        <div><div style="font-size:40px;font-weight:800;color:var(--accent);line-height:1;">${lat.kg}<span style="font-size:16px;color:var(--text3);font-weight:400"> kg</span></div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${fmtD(lat.date)} · ${lat.when||''}</div>
-        </div>
-        <div class="metric-grid">
-          <div class="mbadge"><div class="mbadge-val" style="color:${parseFloat(toGoal)>0?'var(--orange)':'var(--green)'};">${parseFloat(toGoal)>0?'+':''}${toGoal}</div><div class="mbadge-lbl">kg a meta</div></div>
-          <div class="mbadge"><div class="mbadge-val" style="color:${parseFloat(diff)<0?'var(--green)':'var(--orange)'};">${parseFloat(diff)>0?'+':''}${diff}</div><div class="mbadge-lbl">vs inicio</div></div>
-          ${lat.fat?`<div class="mbadge"><div class="mbadge-val">${lat.fat}%</div><div class="mbadge-lbl">% grasa</div></div>`:''}
-          ${lat.muscle?`<div class="mbadge"><div class="mbadge-val">${lat.muscle}%</div><div class="mbadge-lbl">% músculo</div></div>`:''}
-          ${lat.imc?`<div class="mbadge"><div class="mbadge-val">${lat.imc}</div><div class="mbadge-lbl">IMC</div></div>`:''}
-        </div>
-      </div>
-      <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Progreso hacia 66 kg</div>
-      <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:var(--accent);"></div></div>
-      <div class="prog-labels"><span>67.5 kg</span><span>${pct.toFixed(0)}%</span><span>66 kg ✓</span></div>
-    </div>`;
+// ── Weight v20 ──
+var _wtDays = 30;
+var _wtHideFat = false;
+var _wtHideMuscle = false;
+
+function setWeightPeriod(days, btn){
+  _wtDays = days;
+  ['30','90','180','all'].forEach(function(k){
+    var el = document.getElementById('wt-btn-'+k);
+    if(el){ el.classList.remove('active'); }
+  });
+  if(btn) btn.classList.add('active');
+  drawWeightChart();
+}
+
+function toggleWeightSeries(series){
+  if(series==='fat') _wtHideFat = !_wtHideFat;
+  else if(series==='muscle') _wtHideMuscle = !_wtHideMuscle;
+  var legFat = document.getElementById('wt-leg-fat');
+  var legMuscle = document.getElementById('wt-leg-muscle');
+  if(legFat) legFat.style.opacity = _wtHideFat ? '0.3' : '1';
+  if(legMuscle) legMuscle.style.opacity = _wtHideMuscle ? '0.3' : '1';
+  drawWeightChart();
+}
+
+function drawWeightChart(){
+  var canvas = document.getElementById('canvas-weight');
+  if(!canvas) return;
+  var all = ld('weight').slice().reverse(); // oldest first
+  if(!all.length) return;
+
+  // Filter by period
+  var cutoff = null;
+  if(_wtDays > 0){
+    cutoff = new Date(Date.now() - _wtDays*24*60*60*1000);
   }
-  // Weight chart
-  setTimeout(()=>{
-    if(data.length>=2){
-      const labels=data.slice(0,12).reverse().map(e=>fmtD(e.date));
-      const vals=data.slice(0,12).reverse().map(e=>parseFloat(e.kg)||0);
-      mkChart('chart-weight','line',labels,[{label:'Peso (kg)',data:vals,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:'#2563eb'}],{extra:{elements:{line:{borderWidth:2}}}});
+  var pts = cutoff ? all.filter(function(e){ return new Date(e.date) >= cutoff; }) : all;
+  if(pts.length < 1) pts = all.slice(-3); // fallback
+
+  // Get goal from profile
+  var prof = ldObj('profile');
+  var goalKg = parseFloat(prof.weightGoal || prof.weight_goal || 66);
+  var startKg = parseFloat(pts[0].kg);
+
+  // Canvas setup
+  var dpr = window.devicePixelRatio || 1;
+  var W = canvas.parentElement.clientWidth;
+  var H = canvas.parentElement.clientHeight || 280;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  var ml = 52, mr = 48, mt = 18, mb = 36;
+  var cW = W - ml - mr, cH = H - mt - mb;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Data arrays
+  var kgVals    = pts.map(function(e){ return parseFloat(e.kg)||0; });
+  var fatVals   = pts.map(function(e){ return parseFloat(e.fat)||null; });
+  var muscleVals= pts.map(function(e){ return parseFloat(e.muscle)||null; });
+  var labels    = pts.map(function(e){ return e.date; });
+  var n = pts.length;
+
+  // Y scale for weight (left axis)
+  var kgMin = Math.min.apply(null, kgVals.concat([goalKg]));
+  var kgMax = Math.max.apply(null, kgVals.concat([goalKg]));
+  var kgPad = Math.max((kgMax-kgMin)*0.15, 0.5);
+  kgMin = Math.floor((kgMin - kgPad)*2)/2;
+  kgMax = Math.ceil((kgMax + kgPad)*2)/2;
+
+  // Y scale for % (right axis) — only if data exists
+  var hasFat    = !_wtHideFat    && fatVals.some(function(v){ return v!==null; });
+  var hasMuscle = !_wtHideMuscle && muscleVals.some(function(v){ return v!==null; });
+  var pctMin = 0, pctMax = 100;
+  if(hasFat || hasMuscle){
+    var pctData = [];
+    if(hasFat)    fatVals.forEach(function(v){ if(v!==null) pctData.push(v); });
+    if(hasMuscle) muscleVals.forEach(function(v){ if(v!==null) pctData.push(v); });
+    pctMin = Math.floor(Math.min.apply(null,pctData) - 3);
+    pctMax = Math.ceil(Math.max.apply(null,pctData) + 3);
+  }
+
+  function xPos(i){ return ml + (n===1 ? cW/2 : i/(n-1)*cW); }
+  function yKg(v){ return mt + cH - (v-kgMin)/(kgMax-kgMin)*cH; }
+  function yPct(v){ return mt + cH - (v-pctMin)/(pctMax-pctMin)*cH; }
+
+  // ── Grid lines (weight axis) ──
+  var kgStep = (kgMax-kgMin) <= 2 ? 0.5 : (kgMax-kgMin) <= 5 ? 1 : 2;
+  ctx.strokeStyle = 'rgba(148,163,184,0.1)';
+  ctx.lineWidth = 1;
+  for(var v = Math.ceil(kgMin/kgStep)*kgStep; v <= kgMax+0.01; v += kgStep){
+    var y = yKg(v);
+    ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(ml+cW, y); ctx.stroke();
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '10px system-ui,sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(v.toFixed(1), ml-6, y+4);
+  }
+
+  // ── Right axis labels (%) ──
+  if(hasFat || hasMuscle){
+    var pctStep = (pctMax-pctMin) <= 10 ? 2 : 5;
+    for(var pv = Math.ceil(pctMin/pctStep)*pctStep; pv <= pctMax+0.01; pv += pctStep){
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'left';
+      ctx.font = '10px system-ui,sans-serif';
+      ctx.fillText(pv+'%', ml+cW+5, yPct(pv)+4);
     }
-  },100);
-  const list=document.getElementById('weight-list');
-  if(!data.length){list.innerHTML='<div class="empty"><div class="empty-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg></div>Sin registros de peso.</div>';return;}
-  list.innerHTML=data.map(e=>`
-    <div class="entry">
-      <div class="entry-header">
-        <div><div class="entry-date">${fmtD(e.date)} · ${e.when||''}</div>
-          <div class="entry-title">${e.kg} kg${e.fat?' · '+e.fat+'% grasa':''}</div>
-          ${(e.muscle||e.water||e.bmr)?`<div class="metric-grid" style="margin-top:4px;">
-            ${e.muscle?`<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">${e.muscle}%</div><div class="mbadge-lbl">músculo</div></div>`:''}
-            ${e.water?`<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">${e.water}%</div><div class="mbadge-lbl">agua</div></div>`:''}
-            ${e.imc?`<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">${e.imc}</div><div class="mbadge-lbl">IMC</div></div>`:''}
-            ${e.bmr?`<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">${e.bmr}</div><div class="mbadge-lbl">kcal basal</div></div>`:''}
-          </div>`:''}
-        </div>
-        <button class="btn btn-danger btn-sm" onclick="delEntry('weight','${e.id}',renderWeight)">🗑️</button>
-      </div>
-      ${e.notes?`<div style="font-size:11px;color:var(--text3);">📝 ${e.notes}</div>`:''}
-    </div>`).join('');
+  }
+
+  // ── GOAL: shaded band ±0.5 kg ──
+  var yGoalTop = yKg(goalKg + 0.5);
+  var yGoalBot = yKg(goalKg - 0.5);
+  ctx.fillStyle = 'rgba(132,204,22,0.07)';
+  ctx.fillRect(ml, yGoalTop, cW, yGoalBot - yGoalTop);
+
+  // ── GOAL: dashed line ──
+  var yGoal = yKg(goalKg);
+  ctx.strokeStyle = '#84cc16';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(ml, yGoal); ctx.lineTo(ml+cW, yGoal); ctx.stroke();
+  ctx.setLineDash([]);
+  // Goal label
+  ctx.fillStyle = '#84cc16';
+  ctx.font = 'bold 10px system-ui,sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Meta '+goalKg+'kg', ml+6, yGoal-5);
+
+  // ── % Grasa series ──
+  if(hasFat){
+    // Area
+    ctx.beginPath();
+    var firstFat = true;
+    pts.forEach(function(e,i){
+      if(fatVals[i]===null) return;
+      var x=xPos(i), y=yPct(fatVals[i]);
+      if(firstFat){ ctx.moveTo(x,y); firstFat=false; } else ctx.lineTo(x,y);
+    });
+    ctx.lineTo(xPos(n-1), mt+cH); ctx.lineTo(xPos(0), mt+cH); ctx.closePath();
+    ctx.fillStyle = 'rgba(245,158,11,0.08)'; ctx.fill();
+    // Line
+    ctx.beginPath(); firstFat=true;
+    pts.forEach(function(e,i){
+      if(fatVals[i]===null) return;
+      var x=xPos(i), y=yPct(fatVals[i]);
+      if(firstFat){ ctx.moveTo(x,y); firstFat=false; } else ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle='#f59e0b'; ctx.lineWidth=1.8; ctx.stroke();
+    // Dots
+    pts.forEach(function(e,i){
+      if(fatVals[i]===null) return;
+      ctx.beginPath(); ctx.arc(xPos(i),yPct(fatVals[i]),3,0,Math.PI*2);
+      ctx.fillStyle='#f59e0b'; ctx.fill();
+    });
+  }
+
+  // ── % Músculo series ──
+  if(hasMuscle){
+    ctx.beginPath();
+    var firstM = true;
+    pts.forEach(function(e,i){
+      if(muscleVals[i]===null) return;
+      var x=xPos(i), y=yPct(muscleVals[i]);
+      if(firstM){ ctx.moveTo(x,y); firstM=false; } else ctx.lineTo(x,y);
+    });
+    ctx.lineTo(xPos(n-1), mt+cH); ctx.lineTo(xPos(0), mt+cH); ctx.closePath();
+    ctx.fillStyle = 'rgba(16,185,129,0.08)'; ctx.fill();
+    ctx.beginPath(); firstM=true;
+    pts.forEach(function(e,i){
+      if(muscleVals[i]===null) return;
+      var x=xPos(i), y=yPct(muscleVals[i]);
+      if(firstM){ ctx.moveTo(x,y); firstM=false; } else ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle='#10b981'; ctx.lineWidth=1.8; ctx.stroke();
+    pts.forEach(function(e,i){
+      if(muscleVals[i]===null) return;
+      ctx.beginPath(); ctx.arc(xPos(i),yPct(muscleVals[i]),3,0,Math.PI*2);
+      ctx.fillStyle='#10b981'; ctx.fill();
+    });
+  }
+
+  // ── Peso principal ──
+  // Gradient fill
+  var grad = ctx.createLinearGradient(0, mt, 0, mt+cH);
+  grad.addColorStop(0, 'rgba(37,99,235,0.25)');
+  grad.addColorStop(1, 'rgba(37,99,235,0)');
+  ctx.beginPath();
+  kgVals.forEach(function(v,i){ i===0 ? ctx.moveTo(xPos(i),yKg(v)) : ctx.lineTo(xPos(i),yKg(v)); });
+  ctx.lineTo(xPos(n-1), mt+cH); ctx.lineTo(xPos(0), mt+cH); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+  // Line
+  ctx.beginPath();
+  kgVals.forEach(function(v,i){ i===0 ? ctx.moveTo(xPos(i),yKg(v)) : ctx.lineTo(xPos(i),yKg(v)); });
+  ctx.strokeStyle='#2563eb'; ctx.lineWidth=2.2; ctx.stroke();
+  // Dots + labels
+  kgVals.forEach(function(v,i){
+    var x=xPos(i), y=yKg(v);
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle='#2563eb'; ctx.fill();
+    ctx.strokeStyle='var(--surface)'; ctx.lineWidth=1.5; ctx.stroke();
+    // Show value on first and last, and every ~5 pts
+    if(i===0||i===n-1||(n>4&&i%Math.max(1,Math.floor(n/5))===0)){
+      ctx.fillStyle='#2563eb'; ctx.font='bold 10px system-ui,sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(v.toFixed(1), x, y-9);
+    }
+  });
+
+  // ── X axis labels ──
+  ctx.fillStyle='#94a3b8'; ctx.font='10px system-ui,sans-serif'; ctx.textAlign='center';
+  var step = Math.max(1, Math.floor(n/6));
+  pts.forEach(function(e,i){
+    if(i===0||i===n-1||i%step===0){
+      var d = e.date.slice(5); // MM-DD
+      ctx.fillText(d, xPos(i), mt+cH+18);
+    }
+  });
+
+  // ── Stats bar ──
+  var statsEl = document.getElementById('wt-stats');
+  if(statsEl){
+    var vMin=Math.min.apply(null,kgVals), vMax=Math.max.apply(null,kgVals);
+    var vAvg=kgVals.reduce(function(a,b){return a+b;},0)/kgVals.length;
+    var col='#2563eb';
+    statsEl.innerHTML=
+      '<div class="sms-item"><div class="sms-val" style="color:'+col+'">'+vMin.toFixed(1)+'</div><div class="sms-lbl">Mínimo</div></div>'+
+      '<div class="sms-item"><div class="sms-val" style="color:'+col+'">'+vAvg.toFixed(1)+'</div><div class="sms-lbl">Promedio</div></div>'+
+      '<div class="sms-item"><div class="sms-val" style="color:'+col+'">'+vMax.toFixed(1)+'</div><div class="sms-lbl">Máximo</div></div>'+
+      '<div class="sms-item"><div class="sms-val" style="color:#64748b;font-size:12px;">kg</div><div class="sms-lbl">Unidad</div></div>';
+  }
+}
+
+function renderWeight(){
+  var data = ld('weight');
+  var sum  = document.getElementById('weight-summary');
+
+  if(data.length && sum){
+    var lat   = data[0];
+    var first = data[data.length-1];
+    var prof  = ldObj('profile');
+    var goalKg  = parseFloat(prof.weightGoal || prof.weight_goal || 66);
+    var startKg = parseFloat(prof.weight || first.kg);
+    var diff    = (parseFloat(lat.kg) - parseFloat(first.kg)).toFixed(1);
+    var toGoal  = (parseFloat(lat.kg) - goalKg).toFixed(1);
+    var pct     = Math.min(100,Math.max(0,((startKg - parseFloat(lat.kg))/(startKg - goalKg))*100));
+
+    // IMC dinámico
+    var h = parseFloat(prof.height || 175)/100;
+    var imc = h>0 ? (parseFloat(lat.kg)/(h*h)).toFixed(1) : null;
+
+    sum.innerHTML = '<div class="card" style="margin-bottom:10px;">' +
+      '<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">' +
+        '<div>' +
+          '<div style="font-size:40px;font-weight:800;color:var(--accent);line-height:1;">'+lat.kg+'<span style="font-size:16px;color:var(--text3);font-weight:400"> kg</span></div>' +
+          '<div style="font-size:11px;color:var(--text3);margin-top:2px;">'+fmtD(lat.date)+(lat.when?' · '+lat.when:'')+'</div>' +
+        '</div>' +
+        '<div class="metric-grid">' +
+          '<div class="mbadge"><div class="mbadge-val" style="color:'+(parseFloat(toGoal)>0?'var(--orange)':'var(--green)')+';">'+(parseFloat(toGoal)>0?'+':'')+toGoal+'</div><div class="mbadge-lbl">kg a meta</div></div>' +
+          '<div class="mbadge"><div class="mbadge-val" style="color:'+(parseFloat(diff)<0?'var(--green)':'var(--orange)')+';">'+(parseFloat(diff)>0?'+':'')+diff+'</div><div class="mbadge-lbl">vs inicio</div></div>' +
+          (lat.fat   ? '<div class="mbadge"><div class="mbadge-val" style="color:#f59e0b;">'+lat.fat+'%</div><div class="mbadge-lbl">% grasa</div></div>' : '') +
+          (lat.muscle? '<div class="mbadge"><div class="mbadge-val" style="color:#10b981;">'+lat.muscle+'%</div><div class="mbadge-lbl">% músculo</div></div>' : '') +
+          (imc       ? '<div class="mbadge"><div class="mbadge-val">'+imc+'</div><div class="mbadge-lbl">IMC</div></div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Progreso hacia '+goalKg+' kg</div>' +
+      '<div class="prog-wrap"><div class="prog-bar" style="width:'+pct.toFixed(0)+'%;background:var(--accent);"></div></div>' +
+      '<div class="prog-labels"><span>'+startKg+' kg</span><span>'+pct.toFixed(0)+'%</span><span>'+goalKg+' kg ✓</span></div>' +
+    '</div>';
+  }
+
+  // Draw canvas chart
+  setTimeout(function(){ drawWeightChart(); }, 80);
+
+  // List
+  var list = document.getElementById('weight-list');
+  if(!data.length){
+    list.innerHTML='<div class="empty"><div class="empty-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg></div>Sin registros de peso.</div>';
+    return;
+  }
+  list.innerHTML = data.map(function(e){
+    return '<div class="entry">' +
+      '<div class="entry-header">' +
+        '<div>' +
+          '<div class="entry-date">'+fmtD(e.date)+(e.when?' · '+e.when:'')+'</div>' +
+          '<div class="entry-title">'+e.kg+' kg'+(e.fat?' · <span style="color:#f59e0b;">'+e.fat+'% grasa</span>':'')+
+            (e.muscle?' · <span style="color:#10b981;">'+e.muscle+'% músculo</span>':'')+
+          '</div>' +
+          ((e.water||e.imc||e.bmr)?
+            '<div class="metric-grid" style="margin-top:4px;">' +
+              (e.water ?'<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">'+e.water+'%</div><div class="mbadge-lbl">agua</div></div>':'') +
+              (e.imc   ?'<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">'+e.imc  +'</div><div class="mbadge-lbl">IMC</div></div>'  :'') +
+              (e.bmr   ?'<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">'+e.bmr  +'</div><div class="mbadge-lbl">kcal basal</div></div>':'') +
+            '</div>' : '') +
+        '</div>' +
+        '<button class="btn btn-danger btn-sm" onclick="delEntry(\'weight\',\''+e.id+'\',renderWeight)">🗑️</button>' +
+      '</div>' +
+      (e.notes?'<div style="font-size:11px;color:var(--text3);">📝 '+e.notes+'</div>':'') +
+    '</div>';
+  }).join('');
 }
 
 function renderRec(){
@@ -3171,6 +4453,8 @@ function renderRec(){
 }
 
 function renderGoals(){
+  populateCmpSelectors(); // init compare selectors with current data
+  renderCompare();
   const data=ld('goals');const el=document.getElementById('goals-list');
   if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">🎯</div>Sin metas. ¡Crea tu primer objetivo!</div>';return;}
   const catC={cycling:'tag-blue',running:'tag-green',triathlon:'tag-blue',gym:'tag-neutral',weight:'tag-orange',aspiration:'tag-neutral'};
@@ -3201,7 +4485,7 @@ function renderGoals(){
 }
 
 // ══ NAV & MODALS ══
-const PAGE_NAMES={dash:'Dashboard',gym:'Gym · Entrenamiento',running:'Running',cycling:'Ciclismo',weight:'Peso & Cuerpo',recovery:'Recuperación',goals:'Metas & IA',profile:'Perfil del Atleta',import:'Importar datos'};
+const PAGE_NAMES={dash:'Dashboard',plan:'Plan Semanal',gym:'Gym · Entrenamiento',running:'Running',cycling:'Ciclismo',weight:'Peso & Cuerpo',recovery:'Recuperación',goals:'Metas y Análisis IA',profile:'Perfil del Atleta',import:'Importar datos'};
 function go(name,btn){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');p.style.cssText='display:none';});
   document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
@@ -3211,7 +4495,7 @@ function go(name,btn){
   else{const b=document.querySelector(`.sb-item[onclick*="'${name}'"]`);if(b)b.classList.add('active');}
   document.getElementById('topnav-title').textContent=PAGE_NAMES[name]||name;
   if(name==='profile')renderGoogleCard();
-  const r={dash:renderDash,gym:()=>{renderGym();loadRT();},running:renderRun,cycling:renderBike,weight:renderWeight,recovery:renderRec,goals:renderGoals,profile:()=>{loadProfileToForm();renderProfSummary();updateProfileDisplay();}};
+  const r={dash:renderDash,plan:renderPlanTab,gym:()=>{renderGym();loadRT();},running:renderRun,cycling:renderBike,weight:renderWeight,recovery:renderRec,goals:renderGoals,profile:()=>{loadProfileToForm();renderProfSummary();updateProfileDisplay();}};
   if(r[name])r[name]();
 }
 function openM(t){
@@ -4395,7 +5679,7 @@ function parseFIT(file, el){
         }
       }
       
-      sv('bike',[entry].concat(ld('bike'))); renderBike(); renderDash();
+      sv('bike',sortByDate([entry].concat(ld('bike')))); renderBike(); renderDash();
 
       var msg='✅ <b>'+entry.route+'</b> (FIT)<br>';
       if(entry.dist)     msg+='📍 '+entry.dist+' km';
@@ -4650,7 +5934,7 @@ function parseGPX(file, type, el){
         fcavg:hrAvg,fcmax:hrMax,fcmin:hrMinB,cadavg:cadValidAvg||cadAvg,temp:tempAvg,
         cal:estCalB>0?estCalB:null,
         notes:'GPX: '+file.name+' · '+pts.length+' pts · Alt '+altMin+'–'+altMax+'m',gpx:gpxData,ts:Date.now()};
-        sv('bike',[entryB].concat(ld('bike'))); renderBike();
+        sv('bike',sortByDate([entryB].concat(ld('bike')))); renderBike();
       } else {
         var hrMin2 = validHr.length ? Math.min.apply(null,validHr.filter(function(h){return h>40;})) : null;
       // Estimate calories (Keytel formula using HR if available, else MET-based)
@@ -4659,7 +5943,7 @@ function parseGPX(file, type, el){
         fcavg:hrAvg,fcmax:hrMax,fcmin:hrMin2,cadavg:cadAvg,alt:altMax,
         cal:estCalR>0?estCalR:null,
         route:name,notes:'GPX: '+file.name+' · '+pts.length+' pts · Alt '+altMin+'–'+altMax+'m',gpx:gpxData,ts:Date.now()};
-        sv('run',[entryR].concat(ld('run'))); renderRun();
+        sv('run',sortByDate([entryR].concat(ld('run')))); renderRun();
       }
       renderDash();
       var msg='✅ <b>'+name+'</b> · '+dist.toFixed(2)+' km';
@@ -4684,8 +5968,8 @@ function saveGym(){
   const e={id:uid(),date:document.getElementById('g-date').value||today(),routine:routineKey,routineName:R[routineKey]?.name||'Personalizado',durH,durM,dur:durTotal,intensity:document.getElementById('g-int').value,exercises:getExData(),pain:document.getElementById('g-pain').value,painLevel:document.getElementById('g-plevel').value,notes:document.getElementById('g-notes').value,ts:Date.now()};
   const saveBtn2=document.querySelector('[onclick="saveGym()"]');
   const editId=saveBtn2?.getAttribute('data-edit-id')||'';
-  if(editId){e.id=editId;const d=ld('gym');const idx=d.findIndex(x=>x.id===editId);if(idx!==-1)d[idx]=e;else d.unshift(e);sv('gym',d);saveBtn2.removeAttribute('data-edit-id');}
-  else{sv('gym',[e,...ld('gym')]);}
+  if(editId){e.id=editId;const d=ld('gym');const idx=d.findIndex(x=>x.id===editId);if(idx!==-1)d[idx]=e;else d.unshift(e);sv('gym',sortByDate(d));saveBtn2.removeAttribute('data-edit-id');}
+  else{sv('gym',sortByDate([e,...ld('gym')]));}
   customExs=[];renderGym();renderDash();showToast(editId?'✅ Sesión actualizada':'✅ Sesión guardada');
 }
 
@@ -4709,8 +5993,8 @@ function saveRun(){
     fcSeries:parseSeries('r-fc-series'),
     cadSeries:parseSeries('r-cad-series'),
     route:document.getElementById('r-route').value,notes:document.getElementById('r-notes').value,ts:Date.now()};
-  const d=ld('run');if(eid){const i=d.findIndex(x=>x.id===eid);if(i!==-1)d[i]=e;}else d.unshift(e);
-  sv('run',d);resetRunModal();closeM('run');renderRun();renderDash();showToast(eid?'✅ Sesión actualizada':'✅ Sesión guardada');
+  const d=ld('run');if(eid){const i=d.findIndex(x=>x.id===eid);if(i!==-1)d[i]=e;else d.unshift(e);}else d.unshift(e);
+  sv('run',sortByDate(d));resetRunModal();closeM('run');renderRun();renderDash();showToast(eid?'✅ Sesión actualizada':'✅ Sesión guardada');
 }
 
 function saveBike(){
@@ -4731,8 +6015,8 @@ function saveBike(){
     fcSeries:parseSeries('b-fc-series'),
     cadSeries:parseSeries('b-cad-series'),
     route:document.getElementById('b-route').value,notes:document.getElementById('b-notes').value,ts:Date.now()};
-  const d=ld('bike');if(eid){const i=d.findIndex(x=>x.id===eid);if(i!==-1)d[i]=e;}else d.unshift(e);
-  sv('bike',d);resetBikeModal();closeM('bike');renderBike();renderDash();showToast(eid?'✅ Ruta actualizada':'✅ Ruta guardada');
+  const d=ld('bike');if(eid){const i=d.findIndex(x=>x.id===eid);if(i!==-1)d[i]=e;else d.unshift(e);}else d.unshift(e);
+  sv('bike',sortByDate(d));resetBikeModal();closeM('bike');renderBike();renderDash();showToast(eid?'✅ Ruta actualizada':'✅ Ruta guardada');
 }
 
 function saveWeight(){
@@ -4873,6 +6157,14 @@ async function aiGoalPlan(){
 
 
 
+
+// Sort array by date descending (newest first) — used after every save
+function sortByDate(arr){
+  return arr.slice().sort(function(a,b){
+    return new Date(b.date||0) - new Date(a.date||0);
+  });
+}
+
 // ═══ AUTO-UPDATE: inject real GPX/FIT data ═══
 function injectRealGPXData(){
   var RUN_KEY='iv_run', BIKE_KEY='iv_bike';
@@ -4915,6 +6207,19 @@ function injectRealGPXData(){
     console.log('✅ Ciclismo GPX inyectado: HR+Spd+Cad+Temp reales');
   }
   
+  // ── CICLISMO GPX: 2026-05-03 Ride ──
+  var ride0503Data={"date":"2026-05-03","route":"2026-05-03Ride","type":"GPX","dist":"38.17","time":108,"spd":"21.2","spdmax":"53.7","fcavg":131,"fcmax":161,"fcmin":81,"cadavg":78,"elev":526,"altmax":996,"altmin":710,"temp":23.7,"cal":1300,"gpx":{"lat":[7.09695,7.09683,7.09657,7.09587,7.09493,7.09418,7.09335,7.09207,7.09067,7.08938,7.08822,7.08735,7.08687,7.08682,7.08659,7.08636,7.08595,7.08533,7.08475,7.08432,7.084,7.08346,7.08298,7.08254,7.08219,7.08157,7.08114,7.08052,7.07987,7.07922,7.07852,7.07782,7.07724,7.07726,7.07746,7.07729,7.07675,7.0762,7.07546,7.07514,7.07509,7.07468,7.07416,7.07369,7.07334,7.07309,7.07288,7.07293,7.07237,7.07166,7.07099,7.07084,7.07095,7.07061,7.07027,7.07,7.06986,7.06975,7.06946,7.06878,7.06856,7.06809,7.06747,7.06694,7.06648,7.06621,7.06604,7.06593,7.06596,7.06588,7.06573,7.06563,7.06553,7.06525,7.06494,7.06462,7.06431,7.06409,7.06376,7.06354,7.06329,7.06311,7.0628,7.06204,7.06146,7.06141,7.0616,7.06141,7.0613,7.06128,7.06094,7.06049,7.06008,7.05969,7.05922,7.05884,7.05861,7.05843,7.05816,7.05797,7.05819,7.05812,7.0579,7.05764,7.05733,7.05701,7.0567,7.05633,7.05592,7.05542,7.05537,7.05533,7.05518,7.05494,7.05457,7.05418,7.05376,7.05354,7.05332,7.05292,7.05246,7.05215,7.05173,7.05129,7.05091,7.05051,7.0501,7.04967,7.04919,7.04888,7.04834,7.04767,7.04689,7.04613,7.04563,7.04527,7.04499,7.04484,7.04487,7.04481,7.04463,7.04428,7.04402,7.04376,7.04341,7.0429,7.04247,7.04194,7.04122,7.04067,7.04019,7.0395,7.03888,7.03831,7.0379,7.03728,7.03656,7.0359,7.0354,7.03525,7.03508,7.03469,7.0343,7.03381,7.03366,7.03337,7.03324,7.03285,7.0326,7.03244,7.03276,7.03324,7.03333,7.03368,7.03376,7.03419,7.03465,7.03506,7.03528,7.03555,7.03605,7.03646,7.03696,7.03748,7.03789,7.03842,7.03888,7.03934,7.04005,7.04058,7.04094,7.04152,7.04193,7.04232,7.04265,7.04303,7.04332,7.04357,7.04377,7.04398,7.04415,7.04441,7.04466,7.04478,7.04482,7.04484,7.04482,7.045,7.04525,7.04555,7.04601,7.04699,7.04782,7.04821,7.04848,7.04881,7.04903,7.04916,7.04946,7.04982,7.05013,7.05043,7.05075,7.05108,7.05148,7.05196,7.05224,7.05257,7.05298,7.05332,7.05358,7.05417,7.05462,7.05505,7.05534,7.05546,7.05614,7.05689,7.05767,7.05814,7.05793,7.05808,7.05815,7.05813,7.05834,7.05847,7.05847,7.05839,7.05845,7.05876,7.05941,7.06008,7.06062,7.06106,7.06151,7.06202,7.06261,7.0633,7.06374,7.06364,7.06371,7.06408,7.06434,7.06385,7.0635,7.06323,7.06272,7.06223,7.06182,7.06153,7.06143,7.06135,7.06126,7.0612,7.06113,7.06122,7.06146,7.06173,7.06205,7.06261,7.0626,7.06314,7.06399,7.06497,7.06576,7.06594,7.06586,7.06579,7.06572,7.06565,7.06554,7.06539,7.06522,7.06505,7.06493,7.06501,7.06512,7.06498,7.06463,7.06427,7.06393,7.06365,7.06338,7.06309,7.06281,7.06258,7.06251,7.06257,7.0627,7.06283,7.06297,7.0631,7.06324,7.06338,7.06348,7.06355,7.06362,7.06369,7.06378,7.06393,7.06424,7.06475,7.06517,7.06613,7.06742,7.0684,7.06919,7.06997,7.07083,7.07184,7.07302,7.07404,7.0749,7.07559,7.0763,7.07714,7.0781,7.07897,7.07972,7.08041,7.08104,7.08174,7.08245,7.08302,7.08349,7.08395,7.08436,7.08474,7.08498,7.08508,7.08506,7.08501,7.08496,7.08492,7.08488,7.08485,7.08481,7.08478,7.08474,7.0847,7.08466,7.08463,7.0846,7.08455,7.08451,7.08446,7.08443,7.08438,7.08434,7.08429,7.08424,7.0842,7.08417,7.08416,7.08415,7.08413,7.08405,7.08393,7.0838,7.08371,7.08367,7.08369,7.08363,7.08369,7.08392,7.08405,7.08416,7.08427,7.08439,7.08451,7.08462,7.08474,7.08485,7.08496,7.08509,7.08528,7.08547,7.08565,7.08581,7.086,7.08618,7.08637,7.08657,7.08679,7.08704,7.08728,7.08749,7.08768,7.08789,7.08808,7.08827,7.08848,7.08866,7.08881,7.08888,7.08896,7.08902,7.08909,7.08929,7.08955,7.08985,7.09016,7.09042,7.09067,7.0909,7.09109,7.09125,7.09139,7.09149,7.09158,7.09167,7.09178,7.09191,7.09202,7.09214,7.09227,7.09239,7.09249,7.09261,7.09273,7.09285,7.09296,7.09308,7.09321,7.09336,7.09348,7.09361,7.09373,7.09384,7.09394,7.09406,7.09417,7.09431,7.09445,7.0946,7.09475,7.0949,7.09506,7.09522,7.09537,7.09552,7.09567,7.09583,7.096,7.09621,7.09642,7.09664,7.09687,7.09712,7.09736,7.09761,7.09786,7.09809,7.09834,7.0986,7.09885,7.09911,7.09938,7.09961,7.09967,7.09994,7.10022,7.10053,7.10084,7.10118,7.10152,7.10187,7.102,7.10204,7.10211,7.10226,7.10259,7.10297,7.10328,7.10353,7.10379,7.10414,7.1048,7.10464,7.10414,7.10365,7.10316,7.10268,7.10217,7.1018,7.10141,7.10105,7.10065,7.10026,7.09989,7.09945,7.09891,7.09826,7.09788,7.09785,7.09773,7.09781,7.0979,7.09786,7.09776,7.09758,7.09736,7.0971,7.09676,7.09654,7.09675,7.097,7.09722,7.09716,7.09688],"lon":[-73.10238,-73.10253,-73.10251,-73.10203,-73.10145,-73.10036,-73.09933,-73.09872,-73.09887,-73.09873,-73.09835,-73.09837,-73.09845,-73.09918,-73.09993,-73.10038,-73.10061,-73.10085,-73.1007,-73.10102,-73.10131,-73.10125,-73.1011,-73.1009,-73.10045,-73.10069,-73.10116,-73.10116,-73.10104,-73.10098,-73.10107,-73.10121,-73.10106,-73.10035,-73.09961,-73.09904,-73.09961,-73.10003,-73.09987,-73.09907,-73.09849,-73.09855,-73.09893,-73.09844,-73.09784,-73.09717,-73.09642,-73.0957,-73.0953,-73.09504,-73.09484,-73.09427,-73.09367,-73.09323,-73.0929,-73.09246,-73.09196,-73.09133,-73.09048,-73.09031,-73.09026,-73.09012,-73.08998,-73.09018,-73.09019,-73.08983,-73.08944,-73.08906,-73.08868,-73.08832,-73.08797,-73.08763,-73.0873,-73.08716,-73.08712,-73.08706,-73.08697,-73.08731,-73.08803,-73.08864,-73.08927,-73.0897,-73.09029,-73.09005,-73.08995,-73.09067,-73.09154,-73.09214,-73.09279,-73.09228,-73.09179,-73.09122,-73.09066,-73.09011,-73.08954,-73.08906,-73.08871,-73.08838,-73.08812,-73.08831,-73.08857,-73.0889,-73.08915,-73.08935,-73.08951,-73.08973,-73.08999,-73.09017,-73.09027,-73.09051,-73.09098,-73.09149,-73.09213,-73.09283,-73.0935,-73.09411,-73.09465,-73.09517,-73.09571,-73.09627,-73.09685,-73.09765,-73.0983,-73.0989,-73.09953,-73.1002,-73.10089,-73.10158,-73.10226,-73.10304,-73.1037,-73.10438,-73.1049,-73.10518,-73.10558,-73.10637,-73.107,-73.10772,-73.10842,-73.10926,-73.11006,-73.1108,-73.11155,-73.11226,-73.11301,-73.11377,-73.11441,-73.11503,-73.11574,-73.11635,-73.11702,-73.11735,-73.11769,-73.11841,-73.11879,-73.11899,-73.11889,-73.11942,-73.11984,-73.1204,-73.12093,-73.12133,-73.12159,-73.12191,-73.12259,-73.12324,-73.12381,-73.12437,-73.12478,-73.125,-73.1245,-73.12375,-73.12304,-73.12241,-73.1219,-73.12164,-73.12134,-73.12089,-73.12026,-73.11966,-73.11919,-73.1189,-73.11896,-73.11899,-73.11872,-73.11819,-73.11767,-73.1174,-73.11707,-73.11652,-73.11592,-73.11553,-73.11501,-73.11457,-73.11406,-73.11356,-73.1131,-73.11265,-73.11212,-73.11156,-73.11099,-73.11046,-73.10989,-73.10927,-73.10865,-73.10806,-73.10747,-73.10692,-73.10633,-73.10565,-73.10524,-73.10486,-73.10425,-73.10385,-73.10346,-73.10309,-73.10268,-73.10222,-73.10178,-73.10129,-73.10079,-73.10028,-73.09974,-73.09918,-73.09858,-73.09797,-73.09723,-73.09664,-73.09615,-73.09562,-73.09492,-73.09408,-73.09337,-73.09249,-73.09125,-73.09037,-73.09025,-73.0898,-73.08928,-73.08857,-73.08808,-73.08787,-73.08795,-73.08786,-73.08778,-73.08786,-73.08791,-73.08784,-73.088,-73.08856,-73.08948,-73.09026,-73.09085,-73.09139,-73.09195,-73.09265,-73.09349,-73.09446,-73.09538,-73.09647,-73.09784,-73.09909,-73.1005,-73.10196,-73.10353,-73.10512,-73.10666,-73.108,-73.10911,-73.11015,-73.11126,-73.11251,-73.11383,-73.11505,-73.11621,-73.11728,-73.11824,-73.11915,-73.12008,-73.12082,-73.12179,-73.12284,-73.12389,-73.12501,-73.12612,-73.12713,-73.128,-73.12884,-73.12963,-73.13044,-73.13122,-73.13205,-73.13304,-73.1341,-73.13524,-73.13645,-73.13768,-73.13891,-73.14014,-73.14141,-73.14259,-73.14361,-73.14457,-73.14558,-73.1466,-73.14745,-73.14825,-73.14905,-73.14985,-73.15063,-73.15142,-73.15223,-73.15303,-73.15385,-73.15461,-73.15528,-73.1559,-73.15664,-73.15763,-73.15892,-73.16033,-73.16158,-73.16282,-73.16381,-73.16417,-73.16414,-73.16403,-73.16408,-73.16403,-73.16398,-73.16394,-73.16389,-73.16394,-73.16419,-73.16447,-73.16483,-73.16524,-73.16578,-73.16661,-73.16736,-73.16806,-73.16862,-73.1686,-73.1685,-73.16807,-73.16768,-73.1673,-73.16691,-73.16644,-73.16594,-73.16546,-73.16495,-73.16443,-73.16394,-73.16346,-73.16297,-73.1625,-73.16202,-73.16153,-73.16104,-73.16054,-73.16009,-73.1596,-73.15909,-73.1586,-73.15811,-73.15759,-73.15703,-73.15643,-73.15583,-73.15529,-73.15474,-73.15422,-73.15368,-73.15309,-73.1525,-73.15188,-73.15121,-73.15056,-73.14994,-73.14933,-73.14879,-73.14826,-73.14776,-73.14729,-73.14682,-73.14634,-73.14586,-73.14538,-73.1449,-73.14441,-73.14393,-73.14344,-73.14295,-73.14246,-73.14195,-73.14144,-73.14093,-73.14049,-73.14003,-73.13952,-73.13901,-73.13852,-73.138,-73.13746,-73.13691,-73.13641,-73.13595,-73.1355,-73.13505,-73.13462,-73.13418,-73.13375,-73.13334,-73.13289,-73.13244,-73.13202,-73.13158,-73.13115,-73.1307,-73.13029,-73.12987,-73.12945,-73.12905,-73.12867,-73.12827,-73.12787,-73.12744,-73.12702,-73.1266,-73.12618,-73.12581,-73.12542,-73.12503,-73.12464,-73.12426,-73.12387,-73.1235,-73.12315,-73.1228,-73.12248,-73.12218,-73.12189,-73.12161,-73.12134,-73.12105,-73.12076,-73.12047,-73.12018,-73.11992,-73.11963,-73.11936,-73.11912,-73.11887,-73.11862,-73.11838,-73.11814,-73.11788,-73.11761,-73.11734,-73.11706,-73.11679,-73.11651,-73.11626,-73.11603,-73.1158,-73.11558,-73.11537,-73.11516,-73.11496,-73.11474,-73.11454,-73.11436,-73.11419,-73.114,-73.11381,-73.1136,-73.11339,-73.11318,-73.11291,-73.11292,-73.11296,-73.113,-73.11303,-73.11308,-73.11312,-73.11316,-73.11287,-73.11253,-73.11219,-73.11183,-73.11178,-73.11184,-73.11168,-73.11136,-73.11092,-73.11038,-73.10988,-73.10939,-73.109,-73.10862,-73.10825,-73.10788,-73.10753,-73.10723,-73.10708,-73.10702,-73.10696,-73.10691,-73.10685,-73.10679,-73.10669,-73.10655,-73.10609,-73.1056,-73.10521,-73.10483,-73.1045,-73.10413,-73.10376,-73.1034,-73.10309,-73.10286,-73.10273,-73.10257,-73.10242,-73.10226,-73.10206,-73.10189,-73.1017],"ele":[996.4,994.6,992.0,985.2,980.4,965.8,951.0,941.2,934.4,925.0,918.4,913.6,912.0,909.4,909.2,911.8,908.4,910.8,913.4,916.2,916.2,916.4,917.2,918.0,917.4,916.4,918.0,917.8,917.2,917.0,915.6,915.4,914.8,913.2,912.6,911.8,911.0,912.0,910.4,908.8,908.4,909.0,909.4,910.4,910.2,910.2,910.0,909.8,910.0,909.6,909.6,910.2,910.6,912.4,914.2,914.8,915.4,914.2,910.0,908.6,909.2,908.4,908.0,909.2,910.8,912.4,914.6,916.8,918.8,920.8,923.0,924.8,927.0,929.4,931.6,934.0,936.0,935.2,931.8,929.6,925.8,923.0,919.8,917.0,915.4,911.0,906.6,911.0,905.6,902.8,903.0,901.4,900.2,899.0,898.6,900.8,903.6,906.0,908.4,912.2,915.4,917.0,919.0,921.2,922.4,923.8,926.4,929.8,931.2,929.8,931.8,932.6,931.8,930.8,930.0,929.8,930.8,933.6,933.6,932.8,931.4,928.6,928.6,929.4,929.4,928.4,927.8,927.0,926.0,923.2,920.8,915.4,914.8,920.4,922.2,919.8,921.2,920.0,919.0,917.6,917.2,916.6,916.2,915.0,913.8,912.6,912.4,909.6,905.8,905.0,904.6,905.6,906.0,903.4,907.4,906.2,904.6,900.6,901.8,903.0,904.2,905.0,904.8,903.8,898.4,898.0,899.8,898.4,902.8,903.2,900.8,899.2,898.0,898.4,903.0,904.4,904.8,904.4,902.8,901.4,900.4,903.2,905.2,906.0,907.2,902.8,904.2,906.6,904.0,903.8,904.8,905.6,908.0,910.4,911.6,911.8,912.4,913.4,914.2,914.6,915.2,915.6,916.0,916.2,917.0,918.0,918.8,919.6,919.4,919.0,921.0,913.4,914.0,917.8,919.8,920.8,923.2,924.8,925.2,925.8,926.4,926.8,927.6,928.2,928.0,927.2,927.6,930.2,931.0,931.8,931.8,928.2,928.4,928.2,930.0,927.6,929.0,923.2,918.6,913.2,909.0,907.6,908.2,910.8,912.0,909.8,907.8,906.2,905.6,901.8,895.8,896.6,898.2,899.8,900.4,898.4,895.0,889.6,891.4,886.0,876.4,868.6,862.2,855.2,847.4,840.6,834.0,834.2,833.2,832.0,829.0,822.6,816.8,813.6,811.2,810.0,809.0,808.2,807.2,806.0,804.2,798.4,790.8,781.4,777.4,778.4,779.0,779.6,780.2,780.4,780.4,779.6,777.4,774.4,771.2,767.8,764.4,760.8,756.6,753.0,752.0,752.6,752.4,750.2,749.2,749.6,750.0,750.6,750.8,751.2,751.0,750.4,750.0,750.2,752.0,754.0,755.4,754.6,750.2,743.6,736.6,733.0,727.6,721.2,718.6,720.4,721.4,721.2,719.6,717.2,715.0,714.8,717.8,720.0,720.0,718.0,715.2,714.2,712.8,712.2,712.2,711.0,712.0,712.8,713.6,714.6,715.6,717.4,719.2,720.8,722.2,723.6,725.0,726.4,727.6,729.0,730.4,731.6,732.8,734.2,735.6,736.8,738.0,739.4,740.8,742.0,742.8,743.4,743.8,744.8,746.2,747.8,749.6,750.8,752.2,753.4,754.0,755.0,755.8,757.4,758.6,759.8,761.2,763.0,764.0,765.4,767.0,768.6,770.0,771.6,773.0,774.2,775.8,777.4,779.4,780.4,781.8,783.0,784.6,785.6,786.6,787.8,788.8,789.6,790.6,791.6,792.4,793.6,795.0,797.0,799.4,801.8,804.8,807.2,808.8,810.2,811.2,812.8,814.0,814.4,815.4,816.2,817.6,819.2,820.8,822.4,824.0,825.2,826.8,828.4,829.8,831.4,833.2,835.0,836.8,838.8,841.8,844.6,847.4,849.8,852.2,854.6,856.8,858.8,861.0,863.0,865.2,867.6,870.4,872.2,874.0,876.0,878.0,880.0,882.0,884.2,886.2,888.2,890.4,892.6,894.6,896.8,898.8,900.8,902.8,904.8,906.4,908.0,909.6,911.8,914.0,916.2,918.2,920.0,922.2,924.4,927.0,929.6,931.8,930.4,932.0,934.2,936.2,937.6,938.8,940.2,942.0,942.6,942.4,943.2,943.4,944.2,946.2,949.0,950.0,949.4,948.0,945.2,947.8,947.6,947.8,947.6,947.6,948.4,951.8,954.8,957.8,960.2,962.6,964.8,965.2,964.2,963.2,962.4,964.6,968.2,969.2,971.4,974.2,976.2,978.4,982.4,983.6,981.8,978.8,978.4,983.4,984.8,985.0,984.6],"hr":[84,100,98,104,115,110,111,125,132,135,132,133,82,106,118,126,116,126,129,135,141,136,138,136,135,133,132,132,129,128,126,124,122,124,123,120,119,123,126,123,120,119,124,130,131,131,132,132,130,126,125,126,127,132,133,135,136,136,131,129,118,120,121,119,121,128,133,133,136,145,148,147,147,149,153,157,161,151,149,145,132,125,122,116,101,109,112,124,127,123,118,118,108,109,116,118,127,129,135,136,139,134,138,139,138,150,146,147,151,156,152,147,143,136,135,127,126,132,135,134,131,122,120,119,123,122,125,130,128,120,113,111,109,112,116,113,112,107,128,128,126,125,120,120,122,125,125,121,120,117,127,142,134,131,133,132,133,126,120,117,121,125,128,123,119,107,114,116,120,129,130,130,125,122,122,140,140,137,137,136,136,148,153,146,133,133,130,130,131,128,129,131,132,138,142,142,138,137,136,136,135,133,131,130,129,130,129,131,132,128,131,132,122,120,123,129,132,137,137,136,134,134,133,131,131,130,129,130,136,138,139,142,138,137,136,136,134,132,127,122,123,125,127,129,130,133,129,126,125,125,120,113,114,117,122,128,125,123,117,122,122,123,125,127,133,136,138,139,137,137,138,134,122,122,121,119,122,123,127,126,126,123,120,109,114,119,120,123,123,123,129,126,126,132,133,133,132,133,134,136,136,139,138,140,139,139,137,137,135,134,134,134,132,131,130,131,139,143,140,136,130,119,111,105,104,102,111,115,121,122,125,124,127,129,134,138,133,124,122,122,122,118,117,119,124,122,122,126,129,131,134,136,136,134,134,133,135,134,134,134,135,134,133,133,133,135,137,136,132,131,133,133,134,136,136,136,137,139,136,134,134,131,129,133,132,131,130,131,133,133,135,134,132,132,132,134,135,136,135,131,127,127,125,125,124,125,122,125,125,127,130,131,141,143,144,148,146,144,142,139,133,131,127,127,131,134,134,132,129,129,130,132,131,133,134,134,140,146,150,152,152,154,152,151,151,150,150,150,152,152,149,148,146,144,146,145,145,146,147,146,146,147,147,149,149,148,146,145,142,142,144,145,145,144,146,146,149,152,153,149,142,140,141,141,141,138,137,137,129,124,123,125,125,129,134,134,123,113,112,122,125,125,129,122,123,130,141,148,149,149,145,145,134,121,117,125,132,134,138,139,144,140,149,148,130,124,131,143,140,135],"cad":[0,0,0,0,0,0,0,0,0,0,0,0,22,0,81,0,0,79,75,69,52,74,77,79,83,85,72,83,54,85,39,86,79,90,83,76,88,86,0,0,0,69,77,77,82,82,82,82,77,80,78,71,70,80,75,80,80,75,0,43,23,76,88,78,81,75,75,73,75,74,74,77,81,76,78,81,78,72,0,0,0,0,0,0,0,0,53,82,0,0,85,0,0,79,87,71,78,73,73,79,74,74,76,73,82,80,89,95,83,55,84,70,0,92,93,85,86,86,77,0,0,0,80,80,81,87,0,89,0,0,0,0,95,80,66,45,78,0,78,84,81,0,0,73,86,82,0,0,0,45,82,80,0,0,77,0,0,0,79,76,74,72,72,0,0,82,75,0,79,0,0,0,0,82,95,84,64,0,0,90,0,74,74,79,78,0,87,88,0,85,78,78,73,71,71,77,69,62,74,78,83,86,81,84,79,75,77,78,84,91,80,0,69,85,77,86,79,84,75,78,76,81,80,80,84,45,85,75,76,76,81,91,48,96,117,24,59,0,0,0,0,46,33,40,41,0,0,0,31,0,0,64,67,76,80,0,0,0,79,0,0,79,83,90,93,92,92,83,71,78,85,0,54,75,83,75,72,70,72,69,63,77,0,0,0,82,76,73,80,80,80,78,92,86,91,95,96,97,95,97,100,89,89,83,82,92,84,87,88,85,86,89,89,90,81,84,84,92,65,85,0,0,0,0,0,102,91,97,95,78,87,78,81,92,91,86,71,81,100,66,45,0,87,82,81,78,63,81,78,80,81,78,83,85,86,84,83,86,87,87,88,86,88,86,87,90,85,85,90,85,86,86,85,84,84,85,85,88,87,80,0,78,78,80,83,79,79,80,79,79,81,81,80,80,81,81,80,0,69,76,80,76,78,75,77,79,0,82,78,77,76,88,83,77,85,79,82,78,78,86,80,85,77,77,76,77,80,77,74,76,80,76,77,78,78,82,82,82,80,76,81,76,77,78,79,76,77,78,78,73,78,64,70,71,72,69,72,74,79,77,78,77,75,77,76,75,80,75,80,80,82,78,76,74,78,79,86,85,80,0,65,76,78,72,74,74,75,0,69,77,81,73,75,73,0,0,0,0,73,91,65,68,87,83,82,81,84,82,82,82,0,53,0,0,79,78,84,79,82,81,87,84,0,0,0,96,67,59,0,0],"temp":[24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,22.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,23.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,24.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,26.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0,25.0],"spd":[4.8,5.8,28.2,36.8,43.9,43.9,47.2,47.0,43.3,40.7,29.0,2.6,24.2,26.0,16.8,8.9,22.2,20.0,17.8,14.4,18.1,16.8,16.1,18.9,22.2,21.2,20.7,22.0,21.8,23.5,23.8,20.0,23.5,25.4,19.7,26.1,23.0,25.2,28.6,19.3,13.8,21.4,22.6,23.0,23.7,25.8,23.9,22.9,25.2,23.3,19.5,20.2,18.5,15.7,17.1,17.2,21.2,29.8,23.4,7.5,16.3,21.2,18.9,15.3,14.9,14.1,13.1,12.6,12.2,12.6,11.7,11.4,10.4,10.4,10.9,10.8,13.4,26.3,21.5,22.5,15.4,22.1,26.6,19.6,23.9,29.5,20.8,21.8,16.9,19.8,24.1,23.0,22.4,24.5,20.3,13.9,12.5,12.5,8.9,11.3,11.2,11.1,10.9,11.6,12.9,13.5,13.7,14.1,18.5,15.6,16.9,21.8,24.5,25.4,24.0,22.7,18.7,19.3,22.8,24.6,28.4,25.7,24.7,24.4,25.9,26.6,27.0,27.6,27.8,28.3,31.7,31.2,27.0,21.3,28.8,22.9,24.4,23.2,27.9,27.2,27.1,26.3,25.1,27.4,30.4,25.6,27.1,33.6,27.3,27.4,25.5,23.5,30.5,18.6,21.7,24.2,28.2,21.7,19.2,18.4,18.6,15.6,19.5,23.1,23.6,19.4,22.6,15.9,9.0,19.7,29.5,23.7,23.9,17.1,16.7,18.3,20.2,22.1,21.8,22.8,16.7,16.8,17.4,16.3,24.9,23.1,17.8,26.1,25.4,23.2,23.3,22.0,19.5,20.2,20.8,18.0,17.1,18.8,19.8,19.7,19.6,20.6,20.9,20.6,19.5,19.5,19.2,21.2,24.6,20.5,35.0,34.3,18.6,15.7,16.5,15.4,15.8,17.7,20.2,19.5,19.6,20.8,21.6,23.9,25.8,26.2,22.4,21.2,20.9,24.7,34.1,27.9,32.5,42.2,29.4,23.0,29.1,31.2,28.3,17.7,5.1,3.5,3.1,7.5,5.1,1.4,2.0,3.6,21.2,37.4,34.2,26.6,23.1,23.9,28.7,34.1,39.5,33.8,36.2,45.4,43.2,47.5,51.0,53.3,53.4,53.7,47.3,39.2,35.8,36.9,41.5,43.8,40.4,38.5,35.5,32.8,31.4,32.6,30.8,32.1,39.2,44.9,49.4,45.2,34.0,28.9,27.9,26.3,26.9,26.1,27.9,33.3,35.5,38.0,40.1,40.9,41.0,42.4,43.7,40.7,35.0,33.0,34.8,35.0,29.2,26.6,26.6,26.8,26.2,26.6,27.2,26.9,27.5,25.4,22.3,20.7,24.6,32.9,43.0,47.8,44.7,43.4,45.8,44.7,32.7,26.6,26.1,28.7,33.7,39.4,34.1,28.7,24.5,25.4,30.5,34.8,34.1,37.2,33.9,31.3,29.8,23.7,19.3,21.2,20.1,18.6,18.1,17.5,16.9,15.9,17.0,17.3,16.3,15.9,16.3,15.6,15.9,16.3,16.3,16.6,14.9,16.3,17.0,16.3,16.3,17.2,18.6,19.9,19.9,18.0,18.3,17.2,17.9,19.5,19.5,20.7,22.5,22.0,20.7,20.2,17.9,17.7,16.7,17.3,16.2,16.3,16.3,16.4,16.4,16.6,16.4,16.6,16.6,16.8,18.0,18.0,17.9,15.5,16.5,17.9,18.0,17.5,18.7,19.7,19.9,18.0,16.5,16.5,16.2,15.6,16.2,15.4,14.5,15.1,15.1,14.0,14.8,15.7,17.2,16.9,17.3,16.4,15.6,14.7,14.7,14.3,15.0,14.3,14.2,14.2,12.8,13.6,13.4,13.5,13.3,13.5,12.7,12.3,12.3,11.3,10.6,10.4,10.2,10.2,10.4,10.5,10.4,10.3,9.2,10.4,9.7,9.2,9.5,9.7,9.4,9.4,10.1,10.4,10.2,10.5,10.2,10.7,10.0,10.3,10.3,10.3,10.4,10.9,10.4,11.1,10.6,9.7,10.1,10.7,10.4,11.1,11.4,10.4,9.2,9.0,9.4,10.4,10.4,11.5,11.4,11.8,10.5,11.3,11.5,12.9,11.1,12.8,11.6,13.5,17.0,21.4,27.5,17.1,21.1,20.6,20.4,20.2,20.6,15.8,13.9,12.2,13.5,13.1,12.5,14.8,18.3,22.2,19.8,16.3,13.5,12.9,11.3,12.3,12.7,13.3,12.6,11.5,12.1,4.7,8.6,9.9,9.9,6.0,11.3,null],"ts":[0,16,34,46,58,70,82,94,106,118,130,142,218,230,242,254,275,287,299,311,323,335,347,359,371,383,395,407,419,431,443,455,467,479,491,503,515,527,539,551,563,575,587,599,611,623,635,647,659,671,683,695,707,719,731,743,755,767,779,791,803,815,827,839,851,863,875,887,899,911,923,935,947,959,971,983,995,1007,1019,1031,1043,1055,1067,1079,1091,1103,1115,1127,1139,1151,1163,1175,1187,1199,1211,1223,1235,1247,1259,1271,1283,1295,1307,1319,1331,1343,1355,1367,1379,1391,1403,1415,1427,1439,1451,1463,1475,1487,1499,1511,1523,1535,1547,1559,1571,1583,1595,1607,1619,1631,1643,1655,1667,1679,1691,1703,1715,1727,1739,1751,1763,1775,1787,1799,1811,1823,1835,1847,1859,1871,1883,1895,1907,1919,1931,1943,1955,1967,1979,1991,2003,2015,2027,2039,2051,2063,2075,2087,2099,2111,2123,2135,2147,2159,2171,2183,2195,2207,2219,2231,2243,2255,2267,2279,2291,2303,2315,2327,2339,2351,2363,2375,2387,2399,2411,2423,2435,2447,2459,2471,2483,2495,2507,2519,2531,2543,2555,2567,2579,2591,2603,2615,2627,2639,2651,2663,2675,2687,2699,2711,2723,2735,2747,2759,2771,2783,2795,2807,2819,2831,2843,2855,2867,2879,2891,2903,2915,2927,2939,2951,2963,2983,2995,3007,3019,3031,3045,3066,3085,3097,3109,3121,3133,3145,3157,3169,3181,3193,3205,3217,3229,3241,3253,3265,3277,3289,3301,3313,3325,3337,3349,3361,3373,3385,3397,3409,3421,3433,3445,3457,3469,3481,3493,3505,3517,3529,3541,3553,3565,3577,3589,3601,3613,3625,3637,3649,3661,3673,3685,3697,3709,3721,3733,3745,3757,3769,3781,3793,3805,3817,3829,3841,3853,3865,3877,3889,3901,3913,3925,3937,3949,3961,3973,3985,3997,4009,4021,4033,4045,4057,4069,4081,4093,4105,4117,4129,4141,4153,4165,4177,4189,4201,4213,4225,4237,4249,4261,4273,4285,4297,4309,4321,4333,4345,4357,4369,4381,4393,4405,4417,4429,4441,4453,4465,4477,4489,4501,4513,4525,4537,4549,4561,4573,4585,4597,4609,4621,4633,4645,4657,4669,4681,4693,4705,4717,4729,4741,4753,4765,4777,4789,4801,4813,4825,4837,4849,4861,4873,4885,4897,4909,4921,4933,4945,4957,4969,4981,4993,5005,5017,5029,5041,5053,5065,5077,5089,5101,5113,5125,5137,5149,5161,5173,5185,5197,5209,5221,5233,5245,5257,5269,5281,5293,5305,5317,5329,5341,5353,5365,5377,5389,5401,5413,5425,5437,5449,5461,5473,5485,5497,5509,5521,5533,5545,5557,5569,5581,5593,5605,5617,5629,5641,5653,5665,5677,5689,5701,5713,5725,5737,5749,5761,5773,5785,5797,5809,5821,5833,5845,5857,5869,5881,5893,5905,5917,5929,5941,5953,5965,5977,5989,6001,6013,6025,6037,6049,6061,6073,6085,6097,6109,6121,6133,6145,6157,6169,6181,6193,6205,6217,6229,6241,6253,6265,6277,6289,6301,6313,6325,6337,6349,6361,6373,6385,6408,6420,6432,6444,6456,6468]},"_gpxInjected":true};
+  var ri2=bikes.findIndex(function(e){
+    return e.date==='2026-05-03'||(e.route&&e.route.indexOf('05-03')>-1);
+  });
+  if(ri2>=0){
+    Object.assign(bikes[ri2],{dist:ride0503Data.dist,time:ride0503Data.time,spd:ride0503Data.spd,spdmax:ride0503Data.spdmax,
+      fcavg:ride0503Data.fcavg,fcmax:ride0503Data.fcmax,fcmin:ride0503Data.fcmin,
+      cadavg:ride0503Data.cadavg,elev:ride0503Data.elev,altmax:ride0503Data.altmax,
+      temp:ride0503Data.temp,cal:ride0503Data.cal,gpx:ride0503Data.gpx,_gpxInjected:true});
+    sv(BIKE_KEY,sortByDate(bikes)); console.log('✅ GPX 03-May inyectado');
+  }
+
   // ── CICLISMO FIT: Magene 2026-04-19 ──
   var fitData={"date":"2026-04-19","type":"FIT","route":"MAGENE_C606_2026-04-19","dist":"40.82","time":106,"timeActive":104,"spd":"23.5","spdmax":"57.8","fcavg":139,"fcmax":166,"fcmin":88,"cadavg":80,"altmax":1005,"cal":1394,"elev":0,"gpx":{"lat":[],"lon":[],"hr":[109,113,100,101,95,104,112,110,99,103,99,100,102,112,105,107,115,116,116,118,122,117,110,100,95,88,92,108,112,108,109,115,117,123,127,131,132,136,141,142,145,146,144,139,127,125,125,126,130,129,130,128,127,127,120,116,111,108,108,110,114,117,124,134,140,141,146,151,151,144,133,125,117,124,126,128,131,134,144,146,144,135,133,128,129,129,124,118,126,128,128,131,133,125,127,131,131,131,128,127,129,129,122,114,111,114,120,126,132,134,135,140,141,139,138,140,141,142,144,143,142,142,143,143,142,141,141,140,140,139,141,141,144,146,149,148,140,128,120,111,110,107,120,127,129,127,128,130,130,134,139,138,140,136,133,136,139,136,131,132,136,135,137,139,141,144,144,146,145,147,146,147,147,147,149,148,150,151,152,150,149,148,148,149,151,153,150,148,147,147,144,144,143,143,145,145,146,148,149,147,147,145,148,148,148,148,146,145,143,143,140,142,141,141,140,139,136,137,138,140,142,145,150,154,154,152,149,144,140,145,152,153,151,152,152,147,146,144,145,146,145,148,147,146,144,140,139,140,139,136,133,136,137,138,142,145,145,142,133,133,127,124,127,125,134,140,139,137,139,142,144,147,150,148,151,150,149,145,140,138,137,136,136,140,143,146,152,157,157,156,155,154,152,150,149,145,139,138,134,126,124,131,134,140,145,151,155,151,149,144,142,144,150,154,148,147,147,148,150,151,150,150,150,153,153,151,148,147,150,148,149,149,148,145,145,144,144,144,144,145,145,144,141,142,138,138,139,139,138,140,141,143,141,144,147,149,151,151,151,152,154,158,162,166,164,161,159,155,150,145,144,142,140,142,147,150,155,155,155,154,152,148,147,144,139,136,136,138,137,140,139,140,140,140,141,141,140,142,144,144,144,148,150,150,152,154,155,157,158,158,159,158,157,159,161,160,158,158,156,158,158,155,155,156,156,155,156,157,157,154,152,151,150,150,152,153,154,155,157,159,160,160,160,160,154,152,151,151,149,146,145,143,143,139,136,132,132,136,139,140,135,127,121,118,113,116,118,127,132,131,130,126,130,139,144,151,152,149,146,144,145,145,142,138,136,134,128,124,136,151,156,154,153,152,149,145,140,131,129,125,130,134,133,127,124,120,126,139,142,148,150,149,151,156,155,146,122,121,136,144,141,138,126],"cad":[43,21,20,null,null,72,69,null,null,77,null,63,54,null,null,74,63,null,89,85,87,null,null,null,null,null,64,56,41,null,62,null,79,80,78,80,80,79,75,81,77,78,81,null,68,71,70,80,79,82,79,null,81,null,null,null,null,null,null,45,87,82,79,70,67,65,73,71,66,null,null,null,45,73,64,72,86,73,74,76,null,null,65,null,83,89,null,55,60,69,68,72,85,null,85,83,75,72,66,65,62,73,null,null,22,69,74,73,71,71,75,80,86,83,86,87,87,91,91,89,77,78,84,76,76,80,81,80,80,81,85,81,81,80,76,85,null,null,null,null,null,36,80,71,68,80,92,91,92,85,81,83,79,57,90,93,88,82,82,75,78,73,76,79,80,75,77,74,72,74,72,77,76,78,79,78,80,81,83,85,90,91,87,81,83,83,80,80,86,87,86,83,84,80,76,79,75,78,79,76,79,82,82,80,84,90,88,89,88,88,87,90,89,95,91,91,89,91,86,83,79,80,80,81,85,76,79,72,91,84,84,88,94,86,null,91,98,88,81,79,94,97,99,85,86,84,85,85,83,53,89,90,96,101,98,95,101,null,84,87,null,78,82,68,96,88,null,88,89,78,80,82,83,86,84,83,90,90,89,92,97,85,81,88,92,87,85,78,74,72,74,73,79,68,83,null,68,100,null,null,null,84,84,78,70,79,78,81,null,95,91,94,82,83,89,82,79,80,97,89,88,84,88,87,89,91,88,89,88,88,89,86,88,95,94,96,97,92,88,82,91,83,88,null,88,90,54,84,86,83,77,80,75,82,83,83,93,93,91,91,97,100,104,108,102,92,86,89,85,85,86,80,74,82,81,82,81,75,76,80,76,80,82,null,84,88,83,82,79,81,82,84,82,83,72,78,72,73,79,80,82,78,76,78,78,79,76,81,79,77,81,76,77,83,83,78,69,76,75,79,66,74,78,80,84,76,78,80,77,72,73,77,84,85,86,84,84,80,82,92,79,70,72,70,28,74,77,76,82,85,85,83,89,91,84,null,83,76,75,null,null,26,32,null,null,null,85,76,81,null,95,null,80,83,82,71,76,75,75,76,78,79,77,null,90,82,null,52,78,84,83,86,84,81,84,79,87,32,null,77,73,59,78,null,null,67,84,81,79,73,76,80,81,78,76,null,null,84,74,71,32,null,null],"spd":[null,7.5,9.1,12.8,10.5,11.3,19.9,33.1,24.2,28.9,25.5,22.5,19.8,26.5,28.2,20.5,19.2,31.9,28.7,28.7,34.7,35.2,46.1,25.3,43.9,41.0,24.6,14.5,8.5,5.0,15.8,15.0,16.7,15.6,15.6,16.2,16.3,15.2,15.1,16.3,17.9,22.4,27.8,30.1,29.8,30.0,29.4,32.7,25.7,27.7,29.7,27.8,31.7,45.3,50.5,55.0,47.6,54.7,56.7,45.1,34.0,23.2,15.5,13.6,13.6,13.9,13.3,14.4,27.1,32.8,42.5,44.2,30.4,23.1,21.7,19.2,15.8,12.8,12.5,13.9,25.3,34.9,38.7,44.0,48.1,51.0,47.6,47.8,40.2,39.9,37.6,38.7,46.6,45.8,44.7,42.6,39.1,35.2,34.7,33.3,32.0,40.5,43.6,45.1,49.0,38.9,33.1,31.3,29.8,30.6,32.1,34.5,40.1,44.5,46.5,46.1,45.8,46.9,47.7,37.9,34.8,35.5,37.7,33.6,30.5,30.0,30.1,29.6,30.0,30.5,31.2,27.0,23.7,25.1,29.3,40.1,44.4,46.0,44.1,45.5,47.7,40.6,31.7,28.8,29.4,34.9,39.4,37.9,28.6,22.4,22.1,28.1,32.9,35.8,38.4,38.9,37.4,33.7,26.0,24.6,23.4,22.1,20.7,17.3,17.1,19.0,19.2,18.5,18.5,18.2,18.5,19.3,19.2,20.0,20.0,19.0,19.8,20.5,21.4,22.1,22.7,23.1,21.5,19.5,20.5,21.0,20.0,20.4,21.9,22.3,21.7,20.9,21.1,20.1,18.8,20.1,18.5,17.9,17.8,17.4,17.7,18.7,18.5,17.8,15.4,16.7,16.4,16.7,16.4,16.7,17.9,18.4,18.4,19.0,18.5,16.9,18.5,18.4,17.4,16.5,14.6,14.9,14.8,12.4,10.8,13.0,17.8,28.4,18.8,15.2,15.7,18.5,19.3,20.3,27.8,34.6,47.9,50.7,46.1,41.8,42.8,44.7,44.8,45.5,45.4,44.1,44.9,46.0,43.3,41.2,39.9,40.7,43.9,45.1,44.1,43.3,47.0,44.3,44.7,46.7,44.6,41.8,43.2,38.4,29.8,33.4,38.7,33.5,26.4,21.6,20.6,20.7,21.0,22.2,20.3,21.3,25.1,27.4,26.9,27.8,29.0,24.5,22.0,19.8,14.6,13.8,13.3,10.7,9.4,10.1,9.5,9.0,10.0,10.0,10.9,14.3,27.9,43.0,45.5,48.2,42.9,37.3,35.4,31.9,26.4,27.2,32.3,36.2,34.6,41.8,37.9,33.8,23.8,32.3,32.0,26.4,22.8,20.3,18.2,18.4,17.6,17.1,18.2,17.8,18.5,18.6,17.9,18.4,18.2,17.9,18.4,17.4,18.3,19.6,21.8,21.7,21.3,18.7,19.3,18.6,20.7,19.3,19.4,19.4,20.0,20.3,18.2,19.1,19.1,18.7,17.2,17.5,17.3,18.4,18.4,19.1,18.6,18.9,18.4,18.8,20.0,22.8,24.3,24.5,22.8,21.2,19.7,20.1,19.0,19.5,19.4,17.6,16.5,16.7,15.6,15.3,15.2,13.1,14.8,14.7,13.9,14.2,14.5,16.4,16.0,16.0,16.7,15.2,14.8,13.7,14.1,14.7,14.1,14.4,12.0,14.7,12.7,13.6,11.8,12.2,12.7,11.5,10.5,10.3,10.7,9.9,9.7,10.6,10.4,10.6,10.5,9.9,10.5,10.6,11.0,10.7,9.4,9.6,9.7,10.5,9.2,9.8,10.1,10.9,11.4,10.1,9.8,11.0,8.4,9.8,9.7,10.5,11.4,11.3,10.8,10.6,11.3,10.4,9.9,11.4,10.2,7.6,9.5,9.1,14.4,8.5,9.3,9.2,9.2,11.2,11.4,10.1,14.7,13.3,12.7,11.9,11.4,11.7,13.6,15.4,21.7,20.5,23.9,30.2,40.7,21.1,20.6,14.1,14.4,19.4,21.8,22.9,17.9,17.4,15.6,16.4,15.6,17.1,15.5,17.1,17.1,18.3,20.0,21.9,25.9,23.3,21.6,10.2,13.9,12.2,12.5,12.3,12.0,11.9,12.3,9.4,12.4,13.6,16.2,16.0,15.8,11.3,19.2,20.7,22.5,17.5,15.7,15.8,11.0,11.3,9.2,10.0,10.2,9.0,11.9,10.3,10.0,11.5,12.3,10.4,4.0,9.1,8.7],"ele":[null,1004.8,1004.8,1004.4,1002.4,1002.8,1002.6,996.0,990.0,985.8,984.2,984.2,985.2,984.0,981.0,982.2,983.6,981.6,978.8,978.8,976.6,972.6,963.6,954.4,941.0,928.6,926.0,929.8,931.6,931.8,932.2,932.4,933.0,934.4,936.2,938.0,939.2,941.4,943.6,945.6,946.6,946.6,945.4,941.2,939.6,939.0,938.6,936.4,938.4,938.4,937.8,937.4,936.4,931.4,920.2,912.4,903.0,892.2,880.8,871.6,872.0,874.8,877.8,881.2,884.2,886.6,889.0,891.6,891.0,887.6,881.8,875.8,877.0,879.2,880.8,882.2,883.8,886.4,890.2,892.4,890.6,884.0,878.8,873.0,866.6,859.6,853.6,847.6,846.0,845.4,844.0,842.0,835.4,828.8,825.2,822.6,821.2,820.4,819.4,818.0,817.2,813.4,806.2,798.8,791.2,789.6,790.6,791.2,791.8,792.4,792.2,791.0,788.6,784.8,780.6,776.8,773.0,768.2,764.4,764.0,764.6,763.6,761.4,761.0,761.6,762.2,762.8,763.2,763.0,762.6,762.0,763.2,765.6,767.4,767.4,763.0,756.2,750.0,746.0,740.8,734.4,731.0,732.8,734.0,733.6,731.6,728.8,727.4,728.8,731.4,732.8,732.2,730.0,728.0,726.4,724.6,724.4,723.8,723.8,725.2,726.2,727.0,728.6,730.4,732.0,733.8,735.4,737.0,738.6,740.0,741.4,743.0,744.6,746.0,747.8,749.2,750.8,752.4,754.0,755.0,755.4,756.2,757.6,759.2,761.4,762.8,764.2,765.4,765.8,766.8,767.8,769.4,770.6,772.0,773.8,775.2,776.8,778.6,780.2,781.6,783.4,784.8,786.6,788.2,790.0,791.2,792.4,793.6,794.8,796.2,797.2,798.2,799.6,800.4,801.4,802.2,803.0,804.0,805.4,807.2,809.4,811.6,814.0,816.8,818.8,820.2,820.4,817.0,817.8,821.8,824.8,825.4,825.4,827.4,822.6,819.8,813.0,805.4,802.2,800.2,798.0,795.2,792.0,788.2,784.0,780.0,776.0,772.2,768.6,767.2,765.2,762.8,759.4,755.6,753.8,752.0,748.2,744.8,740.8,737.2,732.8,729.6,725.4,723.8,725.4,726.0,719.8,721.0,722.4,725.4,727.4,729.4,731.0,731.6,732.6,733.6,733.8,733.2,733.2,732.8,732.0,733.2,734.8,736.6,738.8,742.0,745.2,748.4,751.0,753.2,755.0,756.4,758.2,759.8,761.2,761.8,759.4,753.4,744.6,736.2,731.6,730.8,730.2,730.4,732.6,733.4,731.2,729.0,726.0,722.0,720.2,720.2,725.6,725.0,722.6,724.0,725.8,727.8,729.8,731.4,732.8,734.4,735.8,737.2,738.6,740.4,741.6,743.2,744.6,746.0,747.4,748.8,750.2,751.6,752.4,753.0,753.6,755.0,756.8,758.8,759.8,761.2,762.6,763.2,763.8,764.6,766.0,767.4,768.2,769.6,771.6,772.6,774.0,775.6,777.2,778.8,780.8,782.2,783.8,785.4,787.6,789.2,790.8,792.8,794.4,795.8,797.2,798.2,799.0,800.0,801.0,802.4,803.8,805.6,808.0,810.4,813.0,815.6,817.4,818.6,820.0,821.2,822.8,823.2,824.0,824.8,825.8,827.4,828.8,830.4,832.0,833.2,834.6,836.2,837.6,839.0,840.6,842.4,844.2,845.8,847.6,850.4,852.8,855.0,857.4,859.4,861.6,864.2,866.4,868.4,870.8,872.8,875.0,877.8,880.4,882.4,884.4,886.4,888.6,891.0,893.0,895.2,897.4,899.6,901.8,904.0,906.2,908.2,910.2,912.0,914.0,915.6,917.4,919.2,921.2,923.8,926.0,928.2,930.6,932.6,935.2,937.2,939.4,941.8,940.2,942.4,944.6,946.6,947.8,949.2,950.4,952.4,952.6,952.8,953.6,954.0,955.0,957.6,959.4,960.0,958.8,957.2,953.4,947.8,942.8,938.2,938.4,940.8,942.0,941.0,941.0,939.6,942.0,944.4,946.6,949.4,951.2,951.8,952.6,953.8,955.2,956.6,957.2,956.8,955.6,955.4,953.6,952.4,956.0,960.8,963.0,964.0,965.2,966.8,968.2,969.6,970.0,969.8,969.8,970.4,972.6,974.6,974.4,973.4,972.6,972.2,975.2,978.0,980.4,983.0,985.0,986.2,988.8,992.0,992.8,991.0,988.2,987.2,991.6,993.8,994.4,994.2,993.8],"ts":[0,14,42,54,66,78,90,102,114,126,138,150,162,174,186,198,210,222,234,246,258,270,282,294,306,318,330,342,354,366,378,390,402,414,426,438,450,462,474,486,498,510,522,534,546,558,570,582,594,606,618,630,642,654,666,678,690,702,714,726,738,750,762,774,786,798,810,822,834,846,858,870,882,894,906,918,930,942,954,966,978,990,1002,1014,1026,1038,1050,1062,1074,1086,1098,1110,1122,1134,1146,1158,1170,1182,1194,1206,1218,1230,1242,1254,1266,1278,1290,1302,1314,1326,1338,1350,1362,1374,1386,1398,1410,1422,1434,1446,1458,1470,1482,1494,1506,1518,1530,1542,1554,1566,1578,1590,1602,1614,1626,1638,1650,1662,1674,1686,1698,1710,1722,1734,1746,1758,1770,1782,1794,1806,1818,1830,1842,1854,1866,1878,1890,1902,1914,1926,1938,1950,1962,1974,1986,1998,2010,2022,2034,2046,2058,2070,2082,2094,2106,2118,2130,2142,2154,2166,2178,2190,2202,2214,2226,2238,2250,2262,2274,2286,2298,2310,2322,2334,2346,2358,2370,2382,2394,2406,2418,2430,2442,2454,2466,2478,2490,2502,2514,2526,2538,2550,2562,2574,2586,2598,2610,2622,2634,2646,2658,2670,2682,2694,2706,2718,2730,2742,2754,2766,2778,2790,2802,2814,2826,2838,2850,2862,2874,2886,2898,2910,2922,2934,2946,2958,2970,2982,2994,3006,3018,3030,3042,3054,3066,3078,3090,3102,3114,3126,3138,3150,3162,3174,3186,3198,3210,3222,3234,3246,3258,3270,3282,3294,3306,3318,3330,3342,3354,3366,3378,3390,3402,3414,3426,3438,3450,3462,3474,3486,3498,3510,3522,3534,3546,3558,3570,3582,3594,3606,3618,3630,3642,3654,3666,3678,3690,3702,3714,3726,3738,3750,3762,3774,3786,3798,3810,3822,3834,3846,3858,3870,3882,3894,3906,3918,3930,3942,3954,3966,3978,3990,4002,4014,4026,4038,4050,4062,4074,4086,4098,4110,4122,4134,4146,4158,4170,4182,4194,4206,4218,4230,4242,4254,4266,4278,4290,4302,4314,4326,4338,4350,4362,4374,4386,4398,4410,4422,4434,4446,4458,4470,4482,4494,4506,4518,4530,4542,4554,4566,4578,4590,4602,4614,4626,4638,4650,4662,4674,4686,4698,4710,4722,4734,4746,4758,4770,4782,4794,4806,4818,4830,4842,4854,4866,4878,4890,4902,4914,4926,4938,4950,4962,4974,4986,4998,5010,5022,5034,5046,5058,5070,5082,5094,5106,5118,5130,5142,5154,5166,5178,5190,5202,5214,5226,5238,5250,5262,5274,5286,5298,5310,5322,5334,5346,5358,5370,5382,5394,5406,5418,5430,5442,5454,5466,5478,5490,5502,5514,5526,5538,5550,5562,5574,5586,5598,5610,5622,5634,5646,5658,5670,5682,5694,5706,5718,5730,5742,5754,5766,5778,5790,5802,5814,5826,5838,5850,5862,5874,5886,5898,5910,5922,5934,5946,5958,5970,5982,5994,6006,6018,6030,6042,6054,6066,6078,6090,6102,6114,6126,6138,6150,6162,6174,6186,6198,6240,6252,6264,6276,6288,6300,6312],"temp":[]},"powerSeries":[null,16,37,0,0,90,58,0,0,0,25,74,147,0,0,124,159,48,24,144,37,0,0,0,0,0,21,214,97,4,57,51,95,118,143,161,110,179,177,141,103,60,37,0,63,115,103,10,238,108,107,81,93,72,0,224,0,0,52,0,247,218,200,254,223,205,167,190,62,0,0,21,248,205,160,136,131,170,269,191,0,0,0,7,94,130,132,117,259,265,178,139,0,22,205,200,219,161,139,102,97,32,0,0,38,250,250,194,175,186,164,121,144,161,185,219,202,183,244,270,249,147,115,184,191,175,189,163,124,121,115,186,217,233,128,0,0,65,159,104,73,136,300,205,90,68,98,188,222,225,166,67,38,34,187,175,275,162,101,172,141,122,149,155,147,158,142,145,145,138,141,154,133,160,157,139,147,171,161,132,94,128,161,149,189,139,140,141,91,120,124,166,132,143,172,133,154,150,146,136,157,144,178,145,144,108,122,104,122,114,109,116,136,107,97,96,101,109,136,154,162,170,183,179,139,107,66,0,120,290,244,68,34,200,0,9,0,90,281,225,219,221,224,186,173,172,161,244,176,252,179,175,169,190,296,274,216,205,157,216,160,168,96,178,247,243,0,297,199,263,170,185,152,110,112,122,92,79,104,87,65,156,173,187,152,218,241,183,164,158,122,107,113,132,101,84,0,0,0,0,111,217,185,179,234,179,0,113,1,64,205,164,404,116,21,192,164,192,184,141,133,127,142,131,142,153,120,144,140,132,145,132,131,144,125,99,97,137,149,167,127,145,130,79,99,103,139,135,107,132,167,99,144,149,154,155,153,149,134,156,210,171,200,188,159,145,152,104,104,112,107,128,124,148,190,176,203,174,150,113,108,95,146,49,85,82,101,133,122,122,125,110,115,134,102,134,114,146,122,130,144,204,162,165,177,142,159,180,146,159,161,137,175,173,198,135,143,142,148,163,154,151,157,165,162,157,149,159,123,150,136,135,129,122,157,168,172,153,148,167,176,114,166,150,0,162,151,146,87,108,110,132,32,41,76,26,85,184,148,65,0,0,0,0,0,0,68,176,89,0,66,0,191,201,160,262,164,61,79,130,134,155,88,30,0,73,0,0,299,300,170,72,106,109,120,82,43,19,18,100,173,140,32,0,21,17,208,212,138,213,130,86,193,199,103,0,0,0,366,135,14,0,0],"virtualPower":true,"_gpxInjected":true};
   var fi=bikes.findIndex(function(e){
