@@ -3154,14 +3154,12 @@ var DRIVE_FILE_NAME = 'idg_training_backup.json';
 var _gisInited = false, _gapiInited = false, _tokenClient = null;
 
 function initGoogleDrive(){
-  // Always read fresh from localStorage in case profile was just saved
-  var savedProf = ldObj('profile');
-  var clientId = savedProf.gclientId || (profile && profile.gclientId)
-    || document.getElementById('prof-gclient')?.value || '';
-  clientId = clientId.trim();
-  if(!clientId){ showToast('Agrega y guarda tu Google Client ID en Perfil'); return; }
-  // Sync to memory profile
-  profile.gclientId = clientId;
+  var gcEl = document.getElementById('prof-gclient');
+  var clientId = (gcEl && gcEl.value) ? gcEl.value.trim() : (ldObj('profile').gclientId||'');
+  if(!clientId){ showToast('Agrega tu Google Client ID en Perfil'); return; }
+  _startGoogleOAuth(clientId);
+}
+function _startGoogleOAuth(clientId){
   // Load GAPI
   if(!window.gapi){
     var s=document.createElement('script'); s.src='https://apis.google.com/js/api.js';
@@ -3189,13 +3187,25 @@ function maybeEnableDriveBtn(){
   }
 }
 function googleSignIn(){
-  // Save current field value immediately so it's available
+  // Read client ID from field directly — most reliable source
   var gcEl = document.getElementById('prof-gclient');
-  if(gcEl && gcEl.value.trim()){
-    profile.gclientId = gcEl.value.trim();
-    sv('profile', profile);
+  var clientId = (gcEl && gcEl.value) ? gcEl.value.trim() : '';
+  // Fallback to localStorage
+  if(!clientId){
+    var saved = ldObj('profile');
+    clientId = saved.gclientId || '';
   }
-  initGoogleDrive();
+  if(!clientId){
+    showToast('Escribe tu Google Client ID en el campo y guarda el perfil');
+    return;
+  }
+  // Persist it
+  profile.gclientId = clientId;
+  var saved2 = ldObj('profile');
+  saved2.gclientId = clientId;
+  sv('profile', saved2);
+  // Launch OAuth
+  _startGoogleOAuth(clientId);
   setTimeout(function(){
     if(!_tokenClient){ showToast('Iniciando Google...'); return; }
     _tokenClient.callback=function(resp){
@@ -3216,49 +3226,54 @@ function googleSignIn(){
 
 // ── Export all data to Drive ──
 async function syncToDrive(){
-  if(!gapi.client.getToken()){ showToast('Primero conecta con Google'); return; }
+  var tok=googToken||googGetToken();if(!tok){googleSignIn();return;}
   showToast('⬆️ Guardando en Drive...');
   var keys=['iv_gym','iv_run','iv_bike','iv_wgt','iv_rec','iv_goals','iv_profile','iv_plan'];
-  var backup={ts:Date.now(), v:20, data:{}};
-  keys.forEach(function(k){ try{ backup.data[k]=JSON.parse(localStorage.getItem(k)||'null'); }catch(e){} });
+  var backup={ts:Date.now(),v:21,data:{}};
+  keys.forEach(function(k){try{backup.data[k]=JSON.parse(localStorage.getItem(k)||'null');}catch(e){}});
   var json=JSON.stringify(backup);
   try{
-    // Check if file exists
-    var list=await gapi.client.drive.files.list({spaces:'appDataFolder',q:"name='"+DRIVE_FILE_NAME+"'",fields:'files(id,name)'});
-    var files=list.result.files;
-    var fileId=files&&files.length?files[0].id:null;
-    var meta={name:DRIVE_FILE_NAME,parents:fileId?undefined:['appDataFolder']};
+    // Find existing file
+    var listR=await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%27'+encodeURIComponent(DRIVE_FILE_NAME)+'%27+and+trashed%3Dfalse&spaces=drive&fields=files(id,name)',{headers:{Authorization:'Bearer '+tok}});
+    var listD=await listR.json();
+    var fileId=listD.files&&listD.files.length?listD.files[0].id:null;
     var form=new FormData();
-    form.append('metadata',new Blob([JSON.stringify(fileId?{name:DRIVE_FILE_NAME}:meta)],{type:'application/json'}));
+    form.append('metadata',new Blob([JSON.stringify(fileId?{name:DRIVE_FILE_NAME}:{name:DRIVE_FILE_NAME})],{type:'application/json'}));
     form.append('file',new Blob([json],{type:'application/json'}));
-    var resp=await fetch(fileId
+    var url=fileId
       ?'https://www.googleapis.com/upload/drive/v3/files/'+fileId+'?uploadType=multipart'
-      :'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-      {method:fileId?'PATCH':'POST',headers:{Authorization:'Bearer '+gapi.client.getToken().access_token},body:form});
-    if(resp.ok){ showToast('✅ Guardado en Drive correctamente'); }
-    else { var e=await resp.json(); showToast('❌ Drive: '+(e.error&&e.error.message||resp.status)); }
-  }catch(e){ showToast('❌ Error: '+e.message); }
+      :'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    var method=fileId?'PATCH':'POST';
+    var resp=await fetch(url,{method:method,headers:{Authorization:'Bearer '+tok},body:form});
+    if(resp.ok){
+      var now=new Date().toLocaleString('es-CO');
+      try{localStorage.setItem('iv_gls',now);}catch(e){}
+      var lsEl=document.getElementById('goog-last-sync');if(lsEl)lsEl.textContent=now;
+      showToast('✅ Guardado en Drive');
+    } else {
+      var eD=await resp.json();showToast('❌ Drive: '+(eD.error&&eD.error.message||resp.status));
+    }
+  }catch(e){showToast('❌ Error: '+e.message);}
 }
 
 // ── Import from Drive ──
 async function syncFromDrive(){
-  if(!gapi.client.getToken()){ showToast('Primero conecta con Google'); return; }
-  showToast('⬇️ Cargando desde Drive...');
+  var tok=googToken||googGetToken();if(!tok){googleSignIn();return;}
+  showToast('⬇️ Buscando en Drive...');
   try{
-    var list=await gapi.client.drive.files.list({spaces:'appDataFolder',q:"name='"+DRIVE_FILE_NAME+"'",fields:'files(id,name,modifiedTime)'});
-    var files=list.result.files;
-    if(!files||!files.length){ showToast('Sin backup en Drive'); return; }
-    var fileId=files[0].id;
-    var resp=await fetch('https://www.googleapis.com/drive/v3/files/'+fileId+'?alt=media',
-      {headers:{Authorization:'Bearer '+gapi.client.getToken().access_token}});
+    var listR=await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%27'+encodeURIComponent(DRIVE_FILE_NAME)+'%27+and+trashed%3Dfalse&spaces=drive&fields=files(id,name,modifiedTime)',{headers:{Authorization:'Bearer '+tok}});
+    var listD=await listR.json();
+    if(!listD.files||!listD.files.length){showToast('Sin backup en Drive');return;}
+    var fileId=listD.files[0].id;
+    var resp=await fetch('https://www.googleapis.com/drive/v3/files/'+fileId+'?alt=media',{headers:{Authorization:'Bearer '+tok}});
     var backup=await resp.json();
-    var d=new Date(backup.ts); var dStr=d.toLocaleDateString('es-CO')+' '+d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
-    if(!confirm('Restaurar backup del '+dStr+'? Se sobreescribirán los datos locales.')){ return; }
-    Object.keys(backup.data).forEach(function(k){ if(backup.data[k]!==null) localStorage.setItem(k,JSON.stringify(backup.data[k])); });
-    showToast('✅ Datos restaurados desde Drive');
-    // Reload
-    setTimeout(function(){ window.location.reload(); },1000);
-  }catch(e){ showToast('❌ Error: '+e.message); }
+    var d=new Date(backup.ts);
+    var dStr=d.toLocaleDateString('es-CO')+' '+d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+    if(!confirm('Restaurar backup del '+dStr+'?\nSe sobreescribirán los datos locales.')){return;}
+    Object.keys(backup.data).forEach(function(k){if(backup.data[k]!==null)localStorage.setItem(k,JSON.stringify(backup.data[k]));});
+    showToast('✅ Restaurado desde Drive');
+    setTimeout(function(){window.location.reload();},1200);
+  }catch(e){showToast('❌ Error: '+e.message);}
 }
 
 function syncGoogleFit(){ showToast('Huawei Health: usa foto 📸 para importar datos'); }
@@ -4771,7 +4786,7 @@ function showToast(msg){try{var t=document.createElement('div');t.style.cssText=
 
 
 // ══ GOOGLE DRIVE + FITNESS ══
-const GOOG_CLIENT_ID=(typeof profile!=='undefined'&&profile.googleClientId)||'';
+var GOOG_CLIENT_ID='';
 const GOOG_SCOPES='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/fitness.activity.read https://www.googleapis.com/auth/fitness.body.read https://www.googleapis.com/auth/userinfo.profile';
 const DRIVE_API='https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD='https://www.googleapis.com/upload/drive/v3';
@@ -4793,6 +4808,10 @@ function initOD(){
   else googUpdateUI(false);
 }
 function googLogin(){
+  // Get client ID fresh every time
+  var gcEl=document.getElementById('prof-gclient');
+  GOOG_CLIENT_ID=(gcEl&&gcEl.value.trim())||(ldObj('profile').gclientId||'');
+  if(!GOOG_CLIENT_ID){showToast('Escribe tu Google Client ID en Credenciales (Perfil)');return;}
   const redir=encodeURIComponent(location.href.split('?')[0].split('#')[0]);
   const url='https://accounts.google.com/o/oauth2/v2/auth?client_id='+GOOG_CLIENT_ID+'&redirect_uri='+redir+'&response_type=token&scope='+encodeURIComponent(GOOG_SCOPES)+'&prompt=consent';
   const pop=window.open(url,'googauth','width=520,height=640,left=200,top=100');
@@ -4956,10 +4975,18 @@ function importBackup(){
 // ══ GOOGLE CARD RENDERER ══
 function renderGoogleCard(){
   var container=document.getElementById('google-drive-card-container');
-  if(!container||container.innerHTML)return;
-  container.innerHTML='';
-  // Update state after render
-  googUpdateUI(googToken?true:false);
+  if(!container)return;
+  var gcEl=document.getElementById('prof-gclient');
+  var hasId=(gcEl&&gcEl.value.trim())||(ldObj('profile').gclientId||'');
+  var connected=!!(googToken||googGetToken());
+  if(connected){
+    container.innerHTML='<div style="font-size:11px;color:#22c55e;padding:8px 10px;background:rgba(34,197,94,.08);border-radius:8px;border:1px solid rgba(34,197,94,.2);margin-bottom:8px;">✅ Conectado como '+googUser+'</div>';
+  } else if(hasId){
+    container.innerHTML='<div style="font-size:11px;color:var(--accent);padding:8px 10px;background:rgba(132,204,22,.08);border-radius:8px;border:1px solid rgba(132,204,22,.2);margin-bottom:8px;">✓ Client ID listo — haz clic en Conectar</div>';
+  } else {
+    container.innerHTML='<div style="font-size:11px;color:var(--orange);margin-bottom:8px;">⚠️ Escribe tu Client ID en Credenciales abajo y pulsa Conectar. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--accent);">Obtener →</a></div>';
+  }
+  googUpdateUI(connected);
 }
 
 function fmtDur(el){
@@ -5969,28 +5996,16 @@ var _googleUser = null;
 var _googleToken = null;
 
 function googleSignIn(){
-  var CLIENT_ID = profile.googleClientId || '';
-  if(!CLIENT_ID){
-    // Show instructions inline
-    var statusEl = document.getElementById('google-status');
-    if(statusEl){
-      statusEl.style.display='block';
-      statusEl.style.color='var(--warning)';
-      statusEl.innerHTML='⚠️ Ingresa tu <b>Google Client ID</b> en el campo de arriba y guarda el perfil primero. '+
-        '<a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--accent);">Obtener →</a>';
-    }
-    showToast('⚠️ Configura Google Client ID en Perfil primero');
-    return;
+  // Save client ID from field first
+  var gcEl=document.getElementById('prof-gclient');
+  if(gcEl&&gcEl.value.trim()){
+    var p=ldObj('profile');
+    p.gclientId=gcEl.value.trim();
+    sv('profile',p);
+    profile.gclientId=gcEl.value.trim();
   }
-  if(typeof google === 'undefined' || !google.accounts){
-    // Load GSI script dynamically
-    var s = document.createElement('script');
-    s.src = 'https://accounts.google.com/gsi/client';
-    s.onload = function(){ _initGoogleSignIn(CLIENT_ID); };
-    document.head.appendChild(s);
-  } else {
-    _initGoogleSignIn(CLIENT_ID);
-  }
+  // Use the popup OAuth system
+  googLogin();
 }
 
 function _initGoogleSignIn(clientId){
