@@ -1,4 +1,4 @@
-><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -476,6 +476,23 @@ textarea{resize:vertical;min-height:68px;}
 .par-apply:hover{background:var(--accent-dk);}
 .par-regen{padding:11px 16px;border-radius:10px;background:transparent;border:1.5px solid var(--border);color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;}
 .par-regen:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ═══ WEIGHT v21 ═══ */
+.wt-comp-band{display:flex;height:22px;border-radius:6px;overflow:hidden;margin-bottom:10px;}
+.wt-comp-seg{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:rgba(255,255,255,.92);}
+.wt-comp-legend{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:0;}
+.wt-comp-leg{display:flex;align-items:center;gap:7px;}
+.wt-comp-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.wt-comp-info{display:flex;flex-direction:column;gap:1px;}
+.wt-comp-name{font-size:9px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.wt-comp-pct{font-size:13px;font-weight:800;color:var(--text1);line-height:1.1;}
+.wt-comp-kg{font-size:9px;color:var(--text3);}
+.wt-section-div{height:1px;background:var(--border-light);margin:14px 0;}
+.wt-section-lbl{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+.wt-metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;}
+.wt-metric{background:var(--surface2);border:1px solid var(--border-light);border-radius:10px;padding:10px 12px;text-align:center;}
+.wt-metric-val{font-size:16px;font-weight:800;line-height:1;}
+.wt-metric-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-top:3px;}
 </style>
 <script>
 /* Inline Chart Engine — Safari/iOS/Android safe, ES5 */
@@ -901,10 +918,12 @@ window.addEventListener('unhandledrejection', function(e){
 <div id="p-weight" class="page">
   <!-- Toolbar -->
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-    <label class="btn btn-ai" style="cursor:pointer;">📸 Foto balanza → IA<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeImg(this,'weight','weight-air')"></label>
+    <label class="btn btn-ai" style="cursor:pointer;">📸 Foto Huawei Health → IA<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="analyzeWeightImg(this)"></label>
     <button class="btn btn-primary" onclick="openM('weight')">+ Registrar manual</button>
+    <button class="btn btn-ghost" onclick="aiWeightAnalysis()">🤖 Analizar tendencia</button>
   </div>
   <div id="weight-air" style="margin-bottom:10px;"></div>
+  <div id="weight-ai-analysis" style="margin-bottom:10px;"></div>
 
   <!-- Summary KPIs -->
   <div id="weight-summary" style="margin-bottom:12px;"></div>
@@ -1211,11 +1230,15 @@ window.addEventListener('unhandledrejection', function(e){
           <div id="google-status" style="font-size:11px;color:var(--text3);text-align:center;display:none;"></div>
           <button class="btn btn-ghost btn-sm" id="btn-drive-sync" onclick="syncToDrive()" style="width:100%;justify-content:center;" disabled>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-            Sincronizar con Drive
+            ⬆️ Guardar en Drive
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="syncFromDrive()" style="width:100%;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            ⬇️ Restaurar desde Drive
           </button>
           <button class="btn btn-ghost btn-sm" id="btn-fit-sync" onclick="syncGoogleFit()" style="width:100%;justify-content:center;" disabled>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-            Sync Google Fit
+            📸 Huawei Health → foto
           </button>
         </div>
       </div>
@@ -1460,6 +1483,11 @@ window.addEventListener('unhandledrejection', function(e){
     <div class="fg"><label class="fl">IMC</label><input type="number" id="w-imc" step="0.1" placeholder="23.4"></div>
     <div class="fg"><label class="fl">Masa ósea (kg)</label><input type="number" id="w-bone" step="0.1" placeholder="3.2"></div>
     <div class="fg"><label class="fl">Met. basal (kcal)</label><input type="number" id="w-bmr" placeholder="1820"></div>
+  </div>
+  <div class="fg3">
+    <div class="fg"><label class="fl">Grasa visceral</label><input type="number" id="w-visceral" step="0.1" placeholder="10.0"></div>
+    <div class="fg"><label class="fl">% Proteínas</label><input type="number" id="w-protein" step="0.1" placeholder="18.9"></div>
+    <div class="fg"><label class="fl">Masa muscular (kg)</label><input type="number" id="w-musclemass" step="0.1" placeholder="49.8"></div>
   </div>
   <div class="fg2">
     <div class="fg"><label class="fl">Momento</label><select id="w-when"><option>Ayunas AM</option><option>Medio día</option><option>Noche</option></select></div>
@@ -2242,7 +2270,7 @@ function editWeight(id){
   const e=ld('weight').find(x=>x.id===id);if(!e)return;
   document.getElementById('w-eid').value=e.id;
   const flds={'w-date':e.date,'w-kg':e.kg,'w-fat':e.fat,'w-muscle':e.muscle,
-    'w-water':e.water,'w-imc':e.imc,'w-bone':e.bone,'w-bmr':e.bmr,'w-notes':e.notes};
+    'w-water':e.water,'w-imc':e.imc,'w-bone':e.bone,'w-bmr':e.bmr,'w-visceral':e.visceral||'','w-protein':e.protein||'','w-musclemass':e.musclemass||'','w-notes':e.notes};
   Object.entries(flds).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val||'';});
   const wh=document.getElementById('w-when');if(wh&&e.when)wh.value=e.when;
   document.getElementById('m-weight').classList.add('open');
@@ -3118,6 +3146,122 @@ function planApplyIA(){
 
 // ── Register ──
 function renderPlanTab(){ _planWeekOffset=0; _planSelectedDay=planToday(); _pbDays={}; _pbSports={}; renderPlan(); }
+
+// ══════════════════════════════════════
+// GOOGLE DRIVE SYNC
+// ══════════════════════════════════════
+var DRIVE_FILE_NAME = 'idg_training_backup.json';
+var _gisInited = false, _gapiInited = false, _tokenClient = null;
+
+function initGoogleDrive(){
+  // Always read fresh from localStorage in case profile was just saved
+  var savedProf = ldObj('profile');
+  var clientId = savedProf.gclientId || (profile && profile.gclientId)
+    || document.getElementById('prof-gclient')?.value || '';
+  clientId = clientId.trim();
+  if(!clientId){ showToast('Agrega y guarda tu Google Client ID en Perfil'); return; }
+  // Sync to memory profile
+  profile.gclientId = clientId;
+  // Load GAPI
+  if(!window.gapi){
+    var s=document.createElement('script'); s.src='https://apis.google.com/js/api.js';
+    s.onload=function(){ gapi.load('client',function(){ gapi.client.init({discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']}).then(function(){ _gapiInited=true; maybeEnableDriveBtn(); }); }); };
+    document.head.appendChild(s);
+  }
+  if(!window.google || !window.google.accounts){
+    var s2=document.createElement('script'); s2.src='https://accounts.google.com/gsi/client';
+    s2.onload=function(){
+      _tokenClient=google.accounts.oauth2.initTokenClient({
+        client_id:clientId, scope:'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file',
+        callback:''
+      });
+      _gisInited=true; maybeEnableDriveBtn();
+    };
+    document.head.appendChild(s2);
+  }
+}
+function maybeEnableDriveBtn(){
+  if(_gapiInited && _gisInited){
+    var b=document.getElementById('btn-drive-sync');
+    if(b) b.disabled=false;
+    var b2=document.getElementById('btn-google-signin');
+    if(b2) b2.disabled=false;
+  }
+}
+function googleSignIn(){
+  // Save current field value immediately so it's available
+  var gcEl = document.getElementById('prof-gclient');
+  if(gcEl && gcEl.value.trim()){
+    profile.gclientId = gcEl.value.trim();
+    sv('profile', profile);
+  }
+  initGoogleDrive();
+  setTimeout(function(){
+    if(!_tokenClient){ showToast('Iniciando Google...'); return; }
+    _tokenClient.callback=function(resp){
+      if(resp.error){ showToast('❌ Error Google: '+resp.error); return; }
+      document.getElementById('google-status').style.display='block';
+      document.getElementById('google-status').textContent='✅ Conectado con Google';
+      var b=document.getElementById('btn-drive-sync'); if(b) b.disabled=false;
+      var b2=document.getElementById('btn-fit-sync'); if(b2) b2.disabled=false;
+      showToast('✅ Google conectado');
+    };
+    if(gapi.client.getToken()===null){
+      _tokenClient.requestAccessToken({prompt:'consent'});
+    } else {
+      _tokenClient.requestAccessToken({prompt:''});
+    }
+  }, 1500);
+}
+
+// ── Export all data to Drive ──
+async function syncToDrive(){
+  if(!gapi.client.getToken()){ showToast('Primero conecta con Google'); return; }
+  showToast('⬆️ Guardando en Drive...');
+  var keys=['iv_gym','iv_run','iv_bike','iv_wgt','iv_rec','iv_goals','iv_profile','iv_plan'];
+  var backup={ts:Date.now(), v:20, data:{}};
+  keys.forEach(function(k){ try{ backup.data[k]=JSON.parse(localStorage.getItem(k)||'null'); }catch(e){} });
+  var json=JSON.stringify(backup);
+  try{
+    // Check if file exists
+    var list=await gapi.client.drive.files.list({spaces:'appDataFolder',q:"name='"+DRIVE_FILE_NAME+"'",fields:'files(id,name)'});
+    var files=list.result.files;
+    var fileId=files&&files.length?files[0].id:null;
+    var meta={name:DRIVE_FILE_NAME,parents:fileId?undefined:['appDataFolder']};
+    var form=new FormData();
+    form.append('metadata',new Blob([JSON.stringify(fileId?{name:DRIVE_FILE_NAME}:meta)],{type:'application/json'}));
+    form.append('file',new Blob([json],{type:'application/json'}));
+    var resp=await fetch(fileId
+      ?'https://www.googleapis.com/upload/drive/v3/files/'+fileId+'?uploadType=multipart'
+      :'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      {method:fileId?'PATCH':'POST',headers:{Authorization:'Bearer '+gapi.client.getToken().access_token},body:form});
+    if(resp.ok){ showToast('✅ Guardado en Drive correctamente'); }
+    else { var e=await resp.json(); showToast('❌ Drive: '+(e.error&&e.error.message||resp.status)); }
+  }catch(e){ showToast('❌ Error: '+e.message); }
+}
+
+// ── Import from Drive ──
+async function syncFromDrive(){
+  if(!gapi.client.getToken()){ showToast('Primero conecta con Google'); return; }
+  showToast('⬇️ Cargando desde Drive...');
+  try{
+    var list=await gapi.client.drive.files.list({spaces:'appDataFolder',q:"name='"+DRIVE_FILE_NAME+"'",fields:'files(id,name,modifiedTime)'});
+    var files=list.result.files;
+    if(!files||!files.length){ showToast('Sin backup en Drive'); return; }
+    var fileId=files[0].id;
+    var resp=await fetch('https://www.googleapis.com/drive/v3/files/'+fileId+'?alt=media',
+      {headers:{Authorization:'Bearer '+gapi.client.getToken().access_token}});
+    var backup=await resp.json();
+    var d=new Date(backup.ts); var dStr=d.toLocaleDateString('es-CO')+' '+d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+    if(!confirm('Restaurar backup del '+dStr+'? Se sobreescribirán los datos locales.')){ return; }
+    Object.keys(backup.data).forEach(function(k){ if(backup.data[k]!==null) localStorage.setItem(k,JSON.stringify(backup.data[k])); });
+    showToast('✅ Datos restaurados desde Drive');
+    // Reload
+    setTimeout(function(){ window.location.reload(); },1000);
+  }catch(e){ showToast('❌ Error: '+e.message); }
+}
+
+function syncGoogleFit(){ showToast('Huawei Health: usa foto 📸 para importar datos'); }
 
 function renderDash(){
   const gym=ld('gym'),run=ld('run'),bike=ld('bike'),weight=ld('weight'),goals=ld('goals'),rec=ld('rec');
@@ -4109,6 +4253,69 @@ Máx 400 palabras. Responde en español con negrita.`;
 }
 
 
+// ── Weight: foto Huawei Health → IA extrae datos y pre-rellena modal ──
+async function analyzeWeightImg(input){
+  const file = input.files[0]; if(!file) return;
+  const el = document.getElementById('weight-air');
+  setAI(el,'🤖 Leyendo datos de Huawei Health...','loading');
+  const b64 = await new Promise(function(res){
+    var r=new FileReader(); r.onload=function(){res(r.result.split(',')[1]);}; r.readAsDataURL(file);
+  });
+  const prompt = 'Esta es una captura de pantalla de Huawei Health / Salud de Huawei con datos de composición corporal. '
+    +'Extrae TODOS los valores numéricos que aparezcan: peso (kg), IMC, grasa corporal (%), masa muscular (kg o %), agua corporal (%), grasa visceral (nivel), masa ósea (kg), proteínas (%), tasa metabólica basal (kcal/día). '
+    +'Responde SOLO con un JSON válido con estas claves exactas: kg, imc, fat, musclemass, water, visceral, bone, protein, bmr. '
+    +'Si un valor no aparece en la imagen, omite esa clave. Sin texto adicional, solo el JSON.';
+  const text = await callAI(prompt, null, b64, file.type);
+  try {
+    var clean = text.replace(/```json|```/g,'').trim();
+    var data = JSON.parse(clean);
+    // Pre-fill modal
+    openM('weight');
+    var fields = {
+      'w-kg':data.kg, 'w-imc':data.imc, 'w-fat':data.fat,
+      'w-musclemass':data.musclemass, 'w-muscle':data.muscle,
+      'w-water':data.water, 'w-visceral':data.visceral,
+      'w-bone':data.bone, 'w-protein':data.protein, 'w-bmr':data.bmr
+    };
+    Object.keys(fields).forEach(function(id){
+      var el2=document.getElementById(id);
+      if(el2 && fields[id]!==undefined) el2.value=fields[id];
+    });
+    setAI(el,'✅ Datos extraídos — revisa y guarda','ok');
+  } catch(e){
+    setAI(el,'⚠️ No pude extraer todos los datos — rellena manualmente. Respuesta: '+text,'err');
+  }
+}
+
+// ── Weight AI trend analysis ──
+function aiWeightAnalysis(){
+  var el = document.getElementById('weight-ai-analysis');
+  setAI(el,'🤖 Analizando tendencia...','loading');
+  var data = ld('weight').slice(0,10); // últimos 10 registros
+  if(!data.length){ setAI(el,'Sin registros de peso para analizar','err'); return; }
+  var prof = ldObj('profile');
+  var dataStr = data.map(function(e){
+    return e.date+': '+e.kg+'kg'
+      +(e.fat?' grasa='+e.fat+'%':'')
+      +(e.musclemass?' masa_musc='+e.musclemass+'kg':'')
+      +(e.muscle?' musc%='+e.muscle+'%':'')
+      +(e.water?' agua='+e.water+'%':'')
+      +(e.visceral?' visceral='+e.visceral:'')
+      +(e.protein?' prot='+e.protein+'%':'')
+      +(e.imc?' IMC='+e.imc:'')
+      +(e.bmr?' TMB='+e.bmr:'');
+  }).join(' | ');
+  var goalKg = parseFloat(prof.weightGoal||prof.weight_goal||66);
+  var prompt = 'Atleta Ivan, 46 años, '+(prof.height||175)+'cm, meta de peso: '+goalKg+'kg. '
+    +'Historial de peso y composición corporal (más reciente primero): '+dataStr+'. '
+    +'Analiza: 1) Tendencia del peso (bajando/subiendo/estable y ritmo), '
+    +'2) Evolución de la composición corporal (grasa/músculo), '
+    +'3) Si va bien hacia la meta o necesita ajustes, '
+    +'4) Una recomendación concreta de nutrición o entrenamiento. '
+    +'Sé directo y conciso, máximo 150 palabras. Responde en español.';
+  callAI(prompt, el);
+}
+
 // ── Weight v20 ──
 var _wtDays = 30;
 var _wtHideFat = false;
@@ -4359,61 +4566,99 @@ function renderWeight(){
     var diff    = (parseFloat(lat.kg) - parseFloat(first.kg)).toFixed(1);
     var toGoal  = (parseFloat(lat.kg) - goalKg).toFixed(1);
     var pct     = Math.min(100,Math.max(0,((startKg - parseFloat(lat.kg))/(startKg - goalKg))*100));
-
-    // IMC dinámico
     var h = parseFloat(prof.height || 175)/100;
-    var imc = h>0 ? (parseFloat(lat.kg)/(h*h)).toFixed(1) : null;
+    var imc = lat.imc || (h>0 ? (parseFloat(lat.kg)/(h*h)).toFixed(1) : null);
+    var pWater   = parseFloat(lat.water)    || null;
+    var pFat     = parseFloat(lat.fat)      || null;
+    var pProtein = parseFloat(lat.protein)  || null;
+    var bone_kg  = parseFloat(lat.bone)     || null;
+    var pBone    = bone_kg ? (bone_kg/parseFloat(lat.kg)*100) : null;
+    var muscle_kg = parseFloat(lat.musclemass) || null;
+    var pMuscle   = parseFloat(lat.muscle)  || (muscle_kg ? (muscle_kg/parseFloat(lat.kg)*100) : null);
 
-    sum.innerHTML = '<div class="card" style="margin-bottom:10px;">' +
-      '<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">' +
-        '<div>' +
-          '<div style="font-size:40px;font-weight:800;color:var(--accent);line-height:1;">'+lat.kg+'<span style="font-size:16px;color:var(--text3);font-weight:400"> kg</span></div>' +
-          '<div style="font-size:11px;color:var(--text3);margin-top:2px;">'+fmtD(lat.date)+(lat.when?' · '+lat.when:'')+'</div>' +
-        '</div>' +
-        '<div class="metric-grid">' +
-          '<div class="mbadge"><div class="mbadge-val" style="color:'+(parseFloat(toGoal)>0?'var(--orange)':'var(--green)')+';">'+(parseFloat(toGoal)>0?'+':'')+toGoal+'</div><div class="mbadge-lbl">kg a meta</div></div>' +
-          '<div class="mbadge"><div class="mbadge-val" style="color:'+(parseFloat(diff)<0?'var(--green)':'var(--orange)')+';">'+(parseFloat(diff)>0?'+':'')+diff+'</div><div class="mbadge-lbl">vs inicio</div></div>' +
-          (lat.fat   ? '<div class="mbadge"><div class="mbadge-val" style="color:#f59e0b;">'+lat.fat+'%</div><div class="mbadge-lbl">% grasa</div></div>' : '') +
-          (lat.muscle? '<div class="mbadge"><div class="mbadge-val" style="color:#10b981;">'+lat.muscle+'%</div><div class="mbadge-lbl">% músculo</div></div>' : '') +
-          (imc       ? '<div class="mbadge"><div class="mbadge-val">'+imc+'</div><div class="mbadge-lbl">IMC</div></div>' : '') +
-        '</div>' +
-      '</div>' +
-      '<div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Progreso hacia '+goalKg+' kg</div>' +
-      '<div class="prog-wrap"><div class="prog-bar" style="width:'+pct.toFixed(0)+'%;background:var(--accent);"></div></div>' +
-      '<div class="prog-labels"><span>'+startKg+' kg</span><span>'+pct.toFixed(0)+'%</span><span>'+goalKg+' kg ✓</span></div>' +
-    '</div>';
+    var compSegs = [];
+    if(pWater)   compSegs.push({pct:pWater,              color:'#2dd4bf', label:'Agua',      kg:(parseFloat(lat.kg)*pWater/100).toFixed(1)});
+    if(pFat)     compSegs.push({pct:pFat,                color:'#f59e0b', label:'Grasa',     kg:(parseFloat(lat.kg)*pFat/100).toFixed(1)});
+    if(pProtein) compSegs.push({pct:pProtein,            color:'#60a5fa', label:'Proteinas', kg:(parseFloat(lat.kg)*pProtein/100).toFixed(1)});
+    else if(pMuscle) compSegs.push({pct:pMuscle,         color:'#60a5fa', label:'Musculo',   kg:muscle_kg?muscle_kg.toFixed(1):null});
+    if(pBone)    compSegs.push({pct:parseFloat(pBone.toFixed(1)), color:'#a78bfa', label:'Masa osea', kg:bone_kg?bone_kg.toFixed(2):null});
+
+    var bandHtml = '', legendHtml = '';
+    if(compSegs.length){
+      var total = compSegs.reduce(function(a,b){return a+parseFloat(b.pct);},0);
+      bandHtml = '<div class="wt-comp-band">'
+        +compSegs.map(function(s){ var w=(parseFloat(s.pct)/total*100).toFixed(1); return '<div class="wt-comp-seg" style="width:'+w+'%;background:'+s.color+';">'+parseFloat(s.pct).toFixed(1)+'%</div>'; }).join('')
+        +'</div>';
+      var cols=Math.min(compSegs.length,4);
+      legendHtml='<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:10px;">'
+        +compSegs.map(function(s){ return '<div class="wt-comp-leg"><div class="wt-comp-dot" style="background:'+s.color+';"></div><div class="wt-comp-info"><span class="wt-comp-name">'+s.label+'</span><span class="wt-comp-pct">'+parseFloat(s.pct).toFixed(1)+'%</span>'+(s.kg?'<span class="wt-comp-kg">'+s.kg+' kg</span>':'')+'</div></div>'; }).join('')
+        +'</div>';
+    }
+
+    var metrics=[];
+    if(muscle_kg)   metrics.push({val:muscle_kg.toFixed(1)+' kg', lbl:'Masa musc.',  color:'#60a5fa'});
+    if(lat.visceral)metrics.push({val:lat.visceral,                lbl:'G. visceral', color:'#f1f5f9'});
+    if(bone_kg)     metrics.push({val:bone_kg.toFixed(2)+' kg',    lbl:'Masa osea',   color:'#a78bfa'});
+    if(lat.bmr)     metrics.push({val:lat.bmr,                     lbl:'TMB kcal',    color:'#f1f5f9'});
+    if(pFat)        metrics.push({val:lat.fat+'%',                  lbl:'Grasa corp.', color:'#f59e0b'});
+    if(pProtein)    metrics.push({val:lat.protein+'%',              lbl:'Proteinas',   color:'#a78bfa'});
+    if(pWater)      metrics.push({val:lat.water+'%',                lbl:'Agua corp.',  color:'#2dd4bf'});
+
+    var metricsHtml = metrics.length
+      ? '<div class="wt-section-div"></div><div class="wt-section-lbl">Metricas adicionales</div><div class="wt-metrics-grid">'
+        +metrics.map(function(m){ return '<div class="wt-metric"><div class="wt-metric-val" style="color:'+m.color+';">'+m.val+'</div><div class="wt-metric-lbl">'+m.lbl+'</div></div>'; }).join('')
+        +'</div>' : '';
+
+    var imcStatus='',imcN=parseFloat(imc);
+    if(imc) imcStatus=imcN<18.5?'Bajo peso':imcN<25?'Saludable':imcN<30?'Sobrepeso':'Obesidad';
+
+    sum.innerHTML='<div class="card" style="margin-bottom:12px;padding:0;overflow:hidden;"><div style="padding:16px 18px;">'
+      +'<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px;">'
+        +'<div>'
+          +'<div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;">Peso actual</div>'
+          +'<div style="display:flex;align-items:baseline;gap:5px;"><span style="font-size:52px;font-weight:800;color:var(--accent);line-height:1;">'+lat.kg+'</span><span style="font-size:15px;color:var(--text3);">kg</span></div>'
+          +'<div style="font-size:11px;color:var(--text3);margin-top:3px;">'+fmtD(lat.date)+(lat.when?' · '+lat.when:'')+'</div>'
+          +(imc?'<div style="display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:4px 10px;border-radius:20px;background:rgba(132,204,22,.1);border:1px solid rgba(132,204,22,.2);font-size:11px;color:var(--accent);font-weight:600;">'+imcStatus+' · IMC '+imc+'</div>':'')
+        +'</div>'
+        +'<div style="flex:1;min-width:200px;">'
+          +'<div style="display:flex;gap:8px;margin-bottom:10px;">'
+            +'<div class="wt-metric" style="flex:1;"><div class="wt-metric-val" style="color:'+(parseFloat(toGoal)>0?'var(--orange)':'var(--green)')+';">'+(parseFloat(toGoal)>0?'+':'')+toGoal+'</div><div class="wt-metric-lbl">kg a meta</div></div>'
+            +'<div class="wt-metric" style="flex:1;"><div class="wt-metric-val" style="color:'+(parseFloat(diff)<0?'var(--green)':'var(--orange)')+';">'+(parseFloat(diff)>0?'+':'')+diff+'</div><div class="wt-metric-lbl">vs inicio</div></div>'
+            +(imc?'<div class="wt-metric" style="flex:1;"><div class="wt-metric-val">'+imc+'</div><div class="wt-metric-lbl">IMC</div></div>':'')
+          +'</div>'
+          +'<div style="font-size:10px;color:var(--text3);margin-bottom:5px;display:flex;justify-content:space-between;"><span>Hacia meta '+goalKg+' kg</span><span style="color:var(--accent);font-weight:700;">'+pct.toFixed(0)+'%</span></div>'
+          +'<div class="prog-wrap"><div class="prog-bar" style="width:'+pct.toFixed(0)+'%;background:var(--accent);"></div></div>'
+          +'<div class="prog-labels"><span>'+startKg+' kg</span><span>'+lat.kg+' hoy</span><span>'+goalKg+' kg</span></div>'
+        +'</div>'
+      +'</div>'
+      +(compSegs.length?'<div class="wt-section-div"></div><div class="wt-section-lbl">Composicion corporal</div>'+bandHtml+legendHtml:'')
+      +metricsHtml
+    +'</div></div>';
   }
 
-  // Draw canvas chart
   setTimeout(function(){ drawWeightChart(); }, 80);
 
-  // List
   var list = document.getElementById('weight-list');
-  if(!data.length){
-    list.innerHTML='<div class="empty"><div class="empty-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg></div>Sin registros de peso.</div>';
-    return;
-  }
-  list.innerHTML = data.map(function(e){
-    return '<div class="entry">' +
-      '<div class="entry-header">' +
-        '<div>' +
-          '<div class="entry-date">'+fmtD(e.date)+(e.when?' · '+e.when:'')+'</div>' +
-          '<div class="entry-title">'+e.kg+' kg'+(e.fat?' · <span style="color:#f59e0b;">'+e.fat+'% grasa</span>':'')+
-            (e.muscle?' · <span style="color:#10b981;">'+e.muscle+'% músculo</span>':'')+
-          '</div>' +
-          ((e.water||e.imc||e.bmr)?
-            '<div class="metric-grid" style="margin-top:4px;">' +
-              (e.water ?'<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">'+e.water+'%</div><div class="mbadge-lbl">agua</div></div>':'') +
-              (e.imc   ?'<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">'+e.imc  +'</div><div class="mbadge-lbl">IMC</div></div>'  :'') +
-              (e.bmr   ?'<div class="mbadge" style="min-width:60px;padding:4px 8px;"><div class="mbadge-val" style="font-size:13px;">'+e.bmr  +'</div><div class="mbadge-lbl">kcal basal</div></div>':'') +
-            '</div>' : '') +
-        '</div>' +
-        '<button class="btn btn-danger btn-sm" onclick="delEntry(\'weight\',\''+e.id+'\',renderWeight)">🗑️</button>' +
-      '</div>' +
-      (e.notes?'<div style="font-size:11px;color:var(--text3);">📝 '+e.notes+'</div>':'') +
-    '</div>';
+  if(!data.length){ list.innerHTML='<div class="empty"><div class="empty-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="M8.5 7h7l1.5 14H7L8.5 7z"/><path d="M4 21h16"/></svg></div>Sin registros de peso.</div>'; return; }
+  list.innerHTML=data.map(function(e){
+    var chips='';
+    if(e.fat)      chips+='<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:rgba(245,158,11,.1);color:#f59e0b;">'+e.fat+'% grasa</span>';
+    if(e.musclemass) chips+='<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:rgba(96,165,250,.1);color:#60a5fa;">'+e.musclemass+'kg musc.</span>';
+    else if(e.muscle) chips+='<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:rgba(96,165,250,.1);color:#60a5fa;">'+e.muscle+'% musc.</span>';
+    if(e.water)    chips+='<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:rgba(45,212,191,.1);color:#2dd4bf;">'+e.water+'% agua</span>';
+    if(e.imc)      chips+='<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:rgba(132,204,22,.1);color:#84cc16;">IMC '+e.imc+'</span>';
+    if(e.visceral) chips+='<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:rgba(241,245,249,.05);color:#94a3b8;">visc. '+e.visceral+'</span>';
+    return '<div class="entry"><div class="entry-header"><div>'
+      +'<div class="entry-date">'+fmtD(e.date)+(e.when?' · '+e.when:'')+'</div>'
+      +'<div style="display:flex;align-items:baseline;gap:5px;margin:3px 0 6px;"><span style="font-size:20px;font-weight:800;color:var(--accent);">'+e.kg+'</span><span style="font-size:12px;color:var(--text3);">kg</span></div>'
+      +(chips?'<div style="display:flex;gap:5px;flex-wrap:wrap;">'+chips+'</div>':'')
+      +(e.bmr?'<div style="font-size:10px;color:var(--text3);margin-top:4px;">TMB: '+e.bmr+' kcal</div>':'')
+      +'</div>'
+      +'<button class="btn btn-danger btn-sm" onclick="delEntry(\'weight\',\''+e.id+'\',renderWeight)">🗑️</button>'
+    +'</div>'+(e.notes?'<div style="font-size:11px;color:var(--text3);margin-top:4px;">📝 '+e.notes+'</div>':'')+'</div>';
   }).join('');
 }
+
 
 function renderRec(){
   const data=ld('rec');
@@ -6020,7 +6265,7 @@ function saveBike(){
 }
 
 function saveWeight(){
-  const e={id:uid(),date:document.getElementById('w-date').value||today(),kg:document.getElementById('w-kg').value,fat:document.getElementById('w-fat').value,muscle:document.getElementById('w-muscle').value,water:document.getElementById('w-water').value,imc:document.getElementById('w-imc').value,bone:document.getElementById('w-bone').value,bmr:document.getElementById('w-bmr').value,when:document.getElementById('w-when').value,notes:document.getElementById('w-notes').value,ts:Date.now()};
+  const e={id:uid(),date:document.getElementById('w-date').value||today(),kg:document.getElementById('w-kg').value,fat:document.getElementById('w-fat').value,muscle:document.getElementById('w-muscle').value,water:document.getElementById('w-water').value,imc:document.getElementById('w-imc').value,bone:document.getElementById('w-bone').value,bmr:document.getElementById('w-bmr').value,visceral:document.getElementById('w-visceral').value,protein:document.getElementById('w-protein').value,musclemass:document.getElementById('w-musclemass').value,when:document.getElementById('w-when').value,notes:document.getElementById('w-notes').value,ts:Date.now()};
   if(!e.kg)return alert('Ingresa el peso');
   const wEid=document.getElementById('w-eid').value;
   const wd=ld('weight');
@@ -6059,7 +6304,7 @@ function saveProfile(){
     fcmax:g('prof-fcmax'),fcrest:g('prof-fcrest'),goal:g('prof-goal'),
     lvlRun:g('prof-lvl-run'),lvlBike:g('prof-lvl-bike'),lvlGym:g('prof-lvl-gym'),
     diseases:g('prof-diseases'),meds:g('prof-meds'),injuries:g('prof-injuries'),
-    apikey:g('prof-apikey'),zones:saveZones(),preferredModel:g('preferred-model')||profile.preferredModel||''
+    apikey:g('prof-apikey'),gclientId:g('prof-gclient'),zones:saveZones(),preferredModel:g('preferred-model')||profile.preferredModel||''
   };
   sv('profile',profile);
   updateProfileDisplay();
@@ -6112,7 +6357,7 @@ function loadProfileToForm(){
   s('prof-fcmax',p.fcmax);s('prof-fcrest',p.fcrest);s('prof-goal',p.goal);
   s('prof-lvl-run',p.lvlRun);s('prof-lvl-bike',p.lvlBike);s('prof-lvl-gym',p.lvlGym);
   s('prof-diseases',p.diseases);s('prof-meds',p.meds);s('prof-injuries',p.injuries);
-  s('prof-apikey',p.apikey);
+  s('prof-apikey',p.apikey);  s('prof-gclient',p.gclientId);
   updateProfileDisplay();
   loadPreferredModel();
   setTimeout(renderProfileSummary, 100);
