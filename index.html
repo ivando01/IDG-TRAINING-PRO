@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<!-- IDG Training Pro v21.1 -->
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IDG PRO · Training Intelligence</title>
 <style>:root{--font-sans:'Inter',system-ui,sans-serif;--font-data:'Roboto Flex','Roboto',system-ui,sans-serif;--font-logo:'Space Grotesk',system-ui,sans-serif;--font-mono:'SF Mono','Fira Code',Consolas,monospace;}
@@ -1231,6 +1235,9 @@ window.addEventListener('unhandledrejection', function(e){
           <button class="btn btn-ghost btn-sm" id="btn-drive-sync" onclick="syncToDrive()" style="width:100%;justify-content:center;" disabled>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
             ⬆️ Guardar en Drive
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="diagDrive()" style="width:100%;justify-content:center;font-size:10px;">
+            🔍 Diagnóstico Drive
           </button>
           <button class="btn btn-ghost btn-sm" onclick="syncFromDrive()" style="width:100%;justify-content:center;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
@@ -3150,133 +3157,214 @@ function renderPlanTab(){ _planWeekOffset=0; _planSelectedDay=planToday(); _pbDa
 // ══════════════════════════════════════
 // GOOGLE DRIVE SYNC
 // ══════════════════════════════════════
-var DRIVE_FILE_NAME = 'idg_training_backup.json';
-var _gisInited = false, _gapiInited = false, _tokenClient = null;
+// ════════════════════════════════════
+// GOOGLE DRIVE SYNC — sistema único
+// ════════════════════════════════════
+var _gToken = '';  // access token
 
-function initGoogleDrive(){
-  var gcEl = document.getElementById('prof-gclient');
-  var clientId = (gcEl && gcEl.value) ? gcEl.value.trim() : (ldObj('profile').gclientId||'');
-  if(!clientId){ showToast('Agrega tu Google Client ID en Perfil'); return; }
-  _startGoogleOAuth(clientId);
+function _getClientId(){
+  var el = document.getElementById('prof-gclient');
+  var fromField = el && el.value ? el.value.trim() : '';
+  var fromProfile = ldObj('profile').gclientId || '';
+  return fromField || fromProfile;
 }
-function _startGoogleOAuth(clientId){
-  // Load GAPI
-  if(!window.gapi){
-    var s=document.createElement('script'); s.src='https://apis.google.com/js/api.js';
-    s.onload=function(){ gapi.load('client',function(){ gapi.client.init({discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']}).then(function(){ _gapiInited=true; maybeEnableDriveBtn(); }); }); };
-    document.head.appendChild(s);
-  }
-  if(!window.google || !window.google.accounts){
-    var s2=document.createElement('script'); s2.src='https://accounts.google.com/gsi/client';
-    s2.onload=function(){
-      _tokenClient=google.accounts.oauth2.initTokenClient({
-        client_id:clientId, scope:'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file',
-        callback:''
-      });
-      _gisInited=true; maybeEnableDriveBtn();
-    };
-    document.head.appendChild(s2);
-  }
+
+function _getToken(){
+  if(_gToken) return _gToken;
+  try{
+    var t = localStorage.getItem('iv_gt');
+    var exp = parseInt(localStorage.getItem('iv_ge') || '0');
+    if(t && Date.now() < exp){ _gToken = t; return t; }
+  }catch(e){}
+  return '';
 }
-function maybeEnableDriveBtn(){
-  if(_gapiInited && _gisInited){
-    var b=document.getElementById('btn-drive-sync');
-    if(b) b.disabled=false;
-    var b2=document.getElementById('btn-google-signin');
-    if(b2) b2.disabled=false;
-  }
-}
+
 function googleSignIn(){
-  // Read client ID from field directly — most reliable source
-  var gcEl = document.getElementById('prof-gclient');
-  var clientId = (gcEl && gcEl.value) ? gcEl.value.trim() : '';
-  // Fallback to localStorage
+  // Save clientId first
+  var clientId = _getClientId();
   if(!clientId){
-    var saved = ldObj('profile');
-    clientId = saved.gclientId || '';
-  }
-  if(!clientId){
-    showToast('Escribe tu Google Client ID en el campo y guarda el perfil');
+    showToast('Escribe tu Google Client ID en Credenciales');
     return;
   }
-  // Persist it
+  // Persist
+  var p = ldObj('profile');
+  p.gclientId = clientId;
+  sv('profile', p);
   profile.gclientId = clientId;
-  var saved2 = ldObj('profile');
-  saved2.gclientId = clientId;
-  sv('profile', saved2);
-  // Launch OAuth
-  _startGoogleOAuth(clientId);
-  setTimeout(function(){
-    if(!_tokenClient){ showToast('Iniciando Google...'); return; }
-    _tokenClient.callback=function(resp){
-      if(resp.error){ showToast('❌ Error Google: '+resp.error); return; }
-      document.getElementById('google-status').style.display='block';
-      document.getElementById('google-status').textContent='✅ Conectado con Google';
-      var b=document.getElementById('btn-drive-sync'); if(b) b.disabled=false;
-      var b2=document.getElementById('btn-fit-sync'); if(b2) b2.disabled=false;
-      showToast('✅ Google conectado');
-    };
-    if(gapi.client.getToken()===null){
-      _tokenClient.requestAccessToken({prompt:'consent'});
-    } else {
-      _tokenClient.requestAccessToken({prompt:''});
-    }
-  }, 1500);
+
+  var scopes = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.profile';
+  var redir  = encodeURIComponent(location.href.split('?')[0].split('#')[0]);
+  var url    = 'https://accounts.google.com/o/oauth2/v2/auth'
+    + '?client_id=' + encodeURIComponent(clientId)
+    + '&redirect_uri=' + redir
+    + '&response_type=token'
+    + '&scope=' + encodeURIComponent(scopes)
+    + '&prompt=consent';
+
+  var pop = window.open(url, 'gauth', 'width=520,height=640,left=200,top=100');
+  if(!pop){ showToast('Permite popups para conectar Google'); return; }
+
+  var tries = 0;
+  var poll = setInterval(function(){
+    tries++;
+    try{
+      if(pop.closed){ clearInterval(poll); return; }
+      var h = pop.location.hash || '';
+      if(h.indexOf('access_token') !== -1){
+        clearInterval(poll);
+        pop.close();
+        var params = new URLSearchParams(h.slice(1));
+        var tok = params.get('access_token');
+        var exp = parseInt(params.get('expires_in') || '3600');
+        if(tok){
+          _gToken = tok;
+          try{
+            localStorage.setItem('iv_gt', tok);
+            localStorage.setItem('iv_ge', String(Date.now() + exp*1000 - 60000));
+          }catch(e){}
+          // Get user info
+          fetch('https://www.googleapis.com/oauth2/v2/userinfo', {headers:{Authorization:'Bearer '+tok}})
+            .then(function(r){ return r.json(); })
+            .then(function(d){
+              var name = d.name || d.email || 'Usuario';
+              try{ localStorage.setItem('iv_gu', name); }catch(e){}
+              showToast('✅ Google conectado: ' + name);
+              _updateGoogleUI(true, name);
+            }).catch(function(){ showToast('✅ Google conectado'); _updateGoogleUI(true, ''); });
+        }
+      }
+    }catch(e){}
+    if(tries > 120) clearInterval(poll);
+  }, 500);
 }
 
-// ── Export all data to Drive ──
+function _updateGoogleUI(connected, user){
+  var container = document.getElementById('google-drive-card-container');
+  if(!container) return;
+  if(connected){
+    container.innerHTML = '<div style="font-size:11px;color:#22c55e;padding:8px 10px;background:rgba(34,197,94,.08);border-radius:8px;border:1px solid rgba(34,197,94,.2);margin-bottom:8px;">✅ Conectado'+(user?' como '+user:'')+'</div>';
+  } else {
+    var hasId = _getClientId();
+    if(hasId){
+      container.innerHTML = '<div style="font-size:11px;color:var(--accent);padding:8px 10px;background:rgba(132,204,22,.08);border-radius:8px;border:1px solid rgba(132,204,22,.2);margin-bottom:8px;">✓ Client ID listo — haz clic en Conectar con Google</div>';
+    } else {
+      container.innerHTML = '<div style="font-size:11px;color:var(--orange);margin-bottom:8px;">⚠️ Escribe tu Google Client ID en Credenciales. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--accent);">Obtener →</a></div>';
+    }
+  }
+  var btnDrive = document.getElementById('btn-drive-sync');
+  var btnSignin = document.getElementById('btn-google-signin');
+  if(btnDrive) btnDrive.disabled = !connected;
+  if(btnSignin && connected) btnSignin.innerHTML = btnSignin.innerHTML.replace('Conectar con Google','✅ Conectado');
+}
+
+function renderGoogleCard(){
+  var tok = _getToken();
+  var user = '';
+  try{ user = localStorage.getItem('iv_gu') || ''; }catch(e){}
+  _updateGoogleUI(!!tok, user);
+}
+
+
+async function diagDrive(){
+  var info = [];
+  info.push('Token: ' + (_getToken() ? '✅ OK ('+_getToken().slice(0,8)+'...)' : '❌ Sin token'));
+  info.push('ClientId: ' + (_getClientId() ? '✅ ' + _getClientId().slice(0,20)+'...' : '❌ Sin Client ID'));
+  info.push('Origin: ' + location.origin);
+  info.push('URL: ' + location.href.split('?')[0]);
+  var tok = _getToken();
+  if(tok){
+    try{
+      var r = await fetch('https://www.googleapis.com/drive/v3/about?fields=user', {headers:{Authorization:'Bearer '+tok}});
+      var d = await r.json();
+      if(d.user) info.push('Drive user: ✅ ' + (d.user.displayName||d.user.emailAddress));
+      else info.push('Drive about: ' + JSON.stringify(d).slice(0,100));
+    }catch(e){ info.push('Drive test error: ' + e.message); }
+  }
+  alert('🔍 Diagnóstico Google Drive:\n\n' + info.join('\n'));
+}
+
+function initOD(){ renderGoogleCard(); }
+
 async function syncToDrive(){
-  var tok=googToken||googGetToken();if(!tok){googleSignIn();return;}
+  var tok = _getToken();
+  if(!tok){ googleSignIn(); return; }
   showToast('⬆️ Guardando en Drive...');
-  var keys=['iv_gym','iv_run','iv_bike','iv_wgt','iv_rec','iv_goals','iv_profile','iv_plan'];
-  var backup={ts:Date.now(),v:21,data:{}};
-  keys.forEach(function(k){try{backup.data[k]=JSON.parse(localStorage.getItem(k)||'null');}catch(e){}});
-  var json=JSON.stringify(backup);
   try{
-    // Find existing file
-    var listR=await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%27'+encodeURIComponent(DRIVE_FILE_NAME)+'%27+and+trashed%3Dfalse&spaces=drive&fields=files(id,name)',{headers:{Authorization:'Bearer '+tok}});
-    var listD=await listR.json();
-    var fileId=listD.files&&listD.files.length?listD.files[0].id:null;
-    var form=new FormData();
-    form.append('metadata',new Blob([JSON.stringify(fileId?{name:DRIVE_FILE_NAME}:{name:DRIVE_FILE_NAME})],{type:'application/json'}));
-    form.append('file',new Blob([json],{type:'application/json'}));
-    var url=fileId
-      ?'https://www.googleapis.com/upload/drive/v3/files/'+fileId+'?uploadType=multipart'
-      :'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
-    var method=fileId?'PATCH':'POST';
-    var resp=await fetch(url,{method:method,headers:{Authorization:'Bearer '+tok},body:form});
-    if(resp.ok){
-      var now=new Date().toLocaleString('es-CO');
-      try{localStorage.setItem('iv_gls',now);}catch(e){}
-      var lsEl=document.getElementById('goog-last-sync');if(lsEl)lsEl.textContent=now;
-      showToast('✅ Guardado en Drive');
-    } else {
-      var eD=await resp.json();showToast('❌ Drive: '+(eD.error&&eD.error.message||resp.status));
+    var backup = { ts: Date.now(), v: 21, data: {} };
+    ['iv_gym','iv_run','iv_bike','iv_wgt','iv_rec','iv_goals','iv_profile','iv_plan'].forEach(function(k){
+      try{ backup.data[k] = JSON.parse(localStorage.getItem(k) || 'null'); }catch(e){}
+    });
+    var meta = { name: 'idg_training_backup.json', description: 'IDG Training Pro backup' };
+    var json = JSON.stringify(backup);
+
+    // Search for existing file
+    var qR = await fetch(
+      'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent("name='idg_training_backup.json' and trashed=false") + '&fields=files(id)&spaces=drive',
+      { headers: { Authorization: 'Bearer ' + tok } }
+    );
+    if(!qR.ok){
+      var errT = await qR.text();
+      showToast('❌ Drive API error ' + qR.status + ': ' + errT.slice(0,80));
+      return;
     }
-  }catch(e){showToast('❌ Error: '+e.message);}
+    var qD = await qR.json();
+    var fileId = qD.files && qD.files.length ? qD.files[0].id : null;
+
+    var form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(meta)], {type:'application/json'}));
+    form.append('file',     new Blob([json], {type:'application/json'}));
+
+    var url    = fileId
+      ? 'https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=multipart'
+      : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    var method = fileId ? 'PATCH' : 'POST';
+
+    var resp = await fetch(url, { method: method, headers: { Authorization: 'Bearer ' + tok }, body: form });
+    if(resp.ok){
+      var now = new Date().toLocaleString('es-CO');
+      try{ localStorage.setItem('iv_gls', now); }catch(e){}
+      var lsEl = document.getElementById('goog-last-sync');
+      if(lsEl) lsEl.textContent = now;
+      showToast('✅ Guardado en Drive correctamente');
+    } else {
+      var eBody = await resp.text();
+      showToast('❌ Drive ' + resp.status + ': ' + eBody.slice(0,100));
+    }
+  }catch(e){ showToast('❌ Error: ' + e.message); }
 }
 
-// ── Import from Drive ──
 async function syncFromDrive(){
-  var tok=googToken||googGetToken();if(!tok){googleSignIn();return;}
-  showToast('⬇️ Buscando en Drive...');
+  var tok = _getToken();
+  if(!tok){ googleSignIn(); return; }
+  showToast('⬇️ Buscando backup...');
   try{
-    var listR=await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%27'+encodeURIComponent(DRIVE_FILE_NAME)+'%27+and+trashed%3Dfalse&spaces=drive&fields=files(id,name,modifiedTime)',{headers:{Authorization:'Bearer '+tok}});
-    var listD=await listR.json();
-    if(!listD.files||!listD.files.length){showToast('Sin backup en Drive');return;}
-    var fileId=listD.files[0].id;
-    var resp=await fetch('https://www.googleapis.com/drive/v3/files/'+fileId+'?alt=media',{headers:{Authorization:'Bearer '+tok}});
-    var backup=await resp.json();
-    var d=new Date(backup.ts);
-    var dStr=d.toLocaleDateString('es-CO')+' '+d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
-    if(!confirm('Restaurar backup del '+dStr+'?\nSe sobreescribirán los datos locales.')){return;}
-    Object.keys(backup.data).forEach(function(k){if(backup.data[k]!==null)localStorage.setItem(k,JSON.stringify(backup.data[k]));});
-    showToast('✅ Restaurado desde Drive');
-    setTimeout(function(){window.location.reload();},1200);
-  }catch(e){showToast('❌ Error: '+e.message);}
+    var qR = await fetch(
+      'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent("name='idg_training_backup.json' and trashed=false") + '&fields=files(id,modifiedTime)',
+      { headers: { Authorization: 'Bearer ' + tok } }
+    );
+    var qD = await qR.json();
+    if(!qD.files || !qD.files.length){ showToast('Sin backup en Drive aún'); return; }
+
+    var fileId = qD.files[0].id;
+    var modTime = qD.files[0].modifiedTime;
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media',
+      { headers: { Authorization: 'Bearer ' + tok } });
+    var backup = await resp.json();
+
+    var d = new Date(backup.ts || modTime);
+    var dStr = d.toLocaleDateString('es-CO') + ' ' + d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+    if(!confirm('Restaurar backup del ' + dStr + '? Se sobreescribirán los datos locales.')){ return; }
+
+    Object.keys(backup.data || {}).forEach(function(k){
+      if(backup.data[k] !== null) try{ localStorage.setItem(k, JSON.stringify(backup.data[k])); }catch(e){}
+    });
+    showToast('✅ Datos restaurados desde Drive');
+    setTimeout(function(){ window.location.reload(); }, 1200);
+  }catch(e){ showToast('❌ Error: ' + e.message); }
 }
 
-function syncGoogleFit(){ showToast('Huawei Health: usa foto 📸 para importar datos'); }
+function syncGoogleFit(){ showToast('Usa 📸 Foto Huawei Health para importar datos de composición'); }
+
 
 function renderDash(){
   const gym=ld('gym'),run=ld('run'),bike=ld('bike'),weight=ld('weight'),goals=ld('goals'),rec=ld('rec');
@@ -4786,199 +4874,12 @@ function showToast(msg){try{var t=document.createElement('div');t.style.cssText=
 
 
 // ══ GOOGLE DRIVE + FITNESS ══
-var GOOG_CLIENT_ID='';
-const GOOG_SCOPES='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/fitness.activity.read https://www.googleapis.com/auth/fitness.body.read https://www.googleapis.com/auth/userinfo.profile';
-const DRIVE_API='https://www.googleapis.com/drive/v3';
-const DRIVE_UPLOAD='https://www.googleapis.com/upload/drive/v3';
-const FIT_API='https://www.googleapis.com/fitness/v1/users/me';
-let googToken='',googUser='',googAutoTimer=null,driveFolderId='';
-
-function getAllData(){
-  return{gym:ld('gym'),run:ld('run'),bike:ld('bike'),weight:ld('weight'),
-    rec:ld('rec'),goals:ld('goals'),profile:ldObj('profile'),
-    savedAt:new Date().toISOString(),version:'v9'};
-}
-function googGetToken(){
-  try{const t=localStorage.getItem('iv_gt'),exp=+localStorage.getItem('iv_ge')||0;
-    if(t&&Date.now()<exp){googToken=t;return t;}}catch(e){}return'';
-}
-function initOD(){
-  const t=googGetToken();
-  if(t){googToken=t;try{googUser=localStorage.getItem('iv_gu')||'';}catch(e){}googUpdateUI(true);}
-  else googUpdateUI(false);
-}
-function googLogin(){
-  // Get client ID fresh every time
-  var gcEl=document.getElementById('prof-gclient');
-  GOOG_CLIENT_ID=(gcEl&&gcEl.value.trim())||(ldObj('profile').gclientId||'');
-  if(!GOOG_CLIENT_ID){showToast('Escribe tu Google Client ID en Credenciales (Perfil)');return;}
-  const redir=encodeURIComponent(location.href.split('?')[0].split('#')[0]);
-  const url='https://accounts.google.com/o/oauth2/v2/auth?client_id='+GOOG_CLIENT_ID+'&redirect_uri='+redir+'&response_type=token&scope='+encodeURIComponent(GOOG_SCOPES)+'&prompt=consent';
-  const pop=window.open(url,'googauth','width=520,height=640,left=200,top=100');
-  if(!pop){showToast('Permite popups para conectar Google');return;}
-  let n=0;
-  const poll=setInterval(()=>{n++;
-    try{if(pop.closed){clearInterval(poll);return;}
-      const h=pop.location.hash||'';
-      if(h.indexOf('access_token')!==-1){
-        clearInterval(poll);pop.close();
-        const p=new URLSearchParams(h.slice(1));
-        const tok=p.get('access_token'),exp=+p.get('expires_in')||3600;
-        if(tok){googToken=tok;
-          try{localStorage.setItem('iv_gt',tok);localStorage.setItem('iv_ge',String(Date.now()+exp*1000-60000));}catch(e){}
-          googFetchUser();}}}catch(e){}
-    if(n>120)clearInterval(poll);},500);
-}
-async function googFetchUser(){
-  try{const r=await fetch('https://www.googleapis.com/oauth2/v2/userinfo',{headers:{Authorization:'Bearer '+googToken}});
-    if(r.ok){const d=await r.json();googUser=d.name||d.email||'Usuario';
-      try{localStorage.setItem('iv_gu',googUser);}catch(e){}
-      googUpdateUI(true);showToast('Conectado: '+googUser);}}catch(e){}
-}
-function googLogout(){
-  googToken='';googUser='';if(googAutoTimer){clearInterval(googAutoTimer);googAutoTimer=null;}
-  try{localStorage.removeItem('iv_gt');localStorage.removeItem('iv_ge');localStorage.removeItem('iv_gu');}catch(e){}
-  driveFolderId='';googUpdateUI(false);showToast('Desconectado de Google');
-}
-function googUpdateUI(on){
-  const out=document.getElementById('goog-logged-out');
-  const inn=document.getElementById('goog-logged-in');
-  if(out)out.style.display=on?'none':'block';
-  if(inn)inn.style.display=on?'block':'none';
-  const un=document.getElementById('goog-username');if(un&&on)un.textContent=googUser;
-  const ls=document.getElementById('goog-last-sync');
-  if(ls){try{ls.textContent=localStorage.getItem('iv_gls')||'Sin sincronizaciones';}catch(e){}}
-}
-async function getOrCreateFolder(){
-  if(driveFolderId)return driveFolderId;
-  const tok=googToken||googGetToken();
-  const q=encodeURIComponent("name='IvanPro' and mimeType='application/vnd.google-apps.folder' and trashed=false");
-  const r=await fetch(DRIVE_API+'/files?q='+q+'&fields=files(id)',{headers:{Authorization:'Bearer '+tok}});
-  const d=await r.json();
-  if(d.files&&d.files.length){driveFolderId=d.files[0].id;return driveFolderId;}
-  const cr=await fetch(DRIVE_API+'/files',{method:'POST',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({name:'IvanPro',mimeType:'application/vnd.google-apps.folder'})});
-  const cd=await cr.json();driveFolderId=cd.id;return driveFolderId;
-}
-async function driveBackup(){
-  const el=document.getElementById('goog-sync-result');
-  const tok=googToken||googGetToken();if(!tok){setAI(el,'Conecta primero con Google','info');return;}
-  setAI(el,'Guardando en Google Drive...','loading');
-  try{
-    const fid=await getOrCreateFolder();
-    const body=JSON.stringify(getAllData(),null,2);
-    const q=encodeURIComponent("name='datos.json' and '"+fid+"' in parents and trashed=false");
-    const sr=await fetch(DRIVE_API+'/files?q='+q+'&fields=files(id)',{headers:{Authorization:'Bearer '+tok}});
-    const sd=await sr.json();const fileId=sd.files&&sd.files.length?sd.files[0].id:null;
-    const meta=fileId?{}:{name:'datos.json',parents:[fid]};
-    const form=new FormData();
-    form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
-    form.append('file',new Blob([body],{type:'application/json'}));
-    const ur=await fetch((fileId?DRIVE_UPLOAD+'/files/'+fileId+'?uploadType=multipart':DRIVE_UPLOAD+'/files?uploadType=multipart'),
-      {method:fileId?'PATCH':'POST',headers:{Authorization:'Bearer '+tok},body:form});
-    if(!ur.ok){const e=await ur.json();throw new Error((e.error&&e.error.message)||'HTTP '+ur.status);}
-    const now=new Date().toLocaleString();
-    try{localStorage.setItem('iv_gls',now);}catch(e){}
-    const el2=document.getElementById('goog-last-sync');if(el2)el2.textContent='Guardado: '+now;
-    const d=getAllData();
-    setAI(el,'✅ Guardado en Google Drive/IvanPro/datos.json<br><small>'+d.gym.length+' gym · '+d.run.length+' runs · '+d.bike.length+' rutas · '+now+'</small>','ok');
-  }catch(e){setAI(el,'❌ Error Drive: '+e.message,'err');}
-}
-async function driveLoad(){
-  const el=document.getElementById('goog-sync-result');
-  const tok=googToken||googGetToken();if(!tok){setAI(el,'Conecta primero con Google','info');return;}
-  setAI(el,'Cargando desde Google Drive...','loading');
-  try{
-    const fid=await getOrCreateFolder();
-    const q=encodeURIComponent("name='datos.json' and '"+fid+"' in parents and trashed=false");
-    const sr=await fetch(DRIVE_API+'/files?q='+q+'&fields=files(id)',{headers:{Authorization:'Bearer '+tok}});
-    const sd=await sr.json();if(!sd.files||!sd.files.length){setAI(el,'Sin datos en Drive. Guarda primero.','info');return;}
-    const fr=await fetch(DRIVE_API+'/files/'+sd.files[0].id+'?alt=media',{headers:{Authorization:'Bearer '+tok}});
-    if(!fr.ok)throw new Error('HTTP '+fr.status);
-    const d=await fr.json();
-    const saved=d.savedAt?new Date(d.savedAt).toLocaleString():'?';
-    const cnt=[(d.gym&&d.gym.length||0)+' gym',(d.run&&d.run.length||0)+' runs',(d.bike&&d.bike.length||0)+' rutas'].join(', ');
-    if(!confirm('Cargar desde Google Drive?\nGuardado: '+saved+'\n'+cnt+'\nReplaza datos locales.'))return;
-    if(d.gym)sv('gym',d.gym);if(d.run)sv('run',d.run);if(d.bike)sv('bike',d.bike);
-    if(d.weight)sv('weight',d.weight);if(d.rec)sv('rec',d.rec);if(d.goals)sv('goals',d.goals);
-    if(d.profile){sv('profile',d.profile);profile=d.profile;}
-    renderDash();renderGym();renderRun();renderBike();renderWeight();renderRec();renderGoals();
-  initPeriodAnalysis();
-    setAI(el,'✅ Datos cargados de Google Drive<br><small>'+saved+'</small>','ok');
-  }catch(e){setAI(el,'❌ Error: '+e.message,'err');}
-}
-function driveAutoSync(){
-  const btn=document.getElementById('goog-autosync-btn');
-  if(googAutoTimer){clearInterval(googAutoTimer);googAutoTimer=null;if(btn)btn.textContent='🔄 Auto-sync: OFF';showToast('Auto-sync OFF');}
-  else{googAutoTimer=setInterval(()=>{if(googToken)driveBackup();},5*60*1000);if(btn)btn.textContent='🔄 Auto-sync: ON';showToast('Auto-sync activado (5 min)');driveBackup();}
-}
-async function fitImport(){
-  const el=document.getElementById('goog-sync-result');
-  const tok=googToken||googGetToken();if(!tok){setAI(el,'Conecta primero con Google','info');return;}
-  setAI(el,'Importando de Google Fit...','loading');
-  try{
-    const endMs=Date.now(),startMs=endMs-(30*24*60*60*1000);
-    const sr=await fetch(FIT_API+'/sessions?startTime='+new Date(startMs).toISOString()+'&endTime='+new Date(endMs).toISOString(),{headers:{Authorization:'Bearer '+tok}});
-    if(!sr.ok)throw new Error('Fitness API HTTP '+sr.status);
-    const sd=await sr.json();const sessions=sd.session||[];
-    const RUN=[8,9,56,87],BIKE=[7,11];
-    let ir=0,ib=0,iw=0;
-    const exR=ld('run').map(e=>e.date),exB=ld('bike').map(e=>e.date);
-    for(var _foi=0;_foi<sessions.length;_foi++){var s=sessions[_foi];
-      const date=new Date(+s.startTimeMillis).toISOString().split('T')[0];
-      const dur=Math.round((+s.endTimeMillis-+s.startTimeMillis)/60000);
-      if(RUN.includes(s.activityType)&&!exR.includes(date)){sv('run',[{id:uid(),date,time:dur,route:'Google Fit: '+s.name,notes:'Importado Fit tipo '+s.activityType,ts:Date.now()},...ld('run')]);ir++;}
-      else if(BIKE.includes(s.activityType)&&!exB.includes(date)){sv('bike',[{id:uid(),date,time:dur,type:'Importado Fit',route:'Google Fit: '+s.name,notes:'Importado Fit tipo '+s.activityType,ts:Date.now()},...ld('bike')]);ib++;}
-    }
-    const wr=await fetch(FIT_API+'/dataSources?dataTypeName=com.google.weight',{headers:{Authorization:'Bearer '+tok}});
-    if(wr.ok){const wd=await wr.json();const sources=(wd.dataSource||[]).slice(0,3);
-      const exW=ld('weight').map(e=>e.date);
-      for(var _foi=0;_foi<sources.length;_foi++){var src=sources[_foi];
-        const dr=await fetch(FIT_API+'/dataSources/'+encodeURIComponent(src.dataStreamId)+'/datasets/'+startMs+'000000-'+endMs+'000000',{headers:{Authorization:'Bearer '+tok}});
-        if(!dr.ok)continue;const dd=await dr.json();
-        var _pts=(dd.point||[]).slice(0,20);for(var _pi=0;_pi<_pts.length;_pi++){var pt=_pts[_pi];
-          const date=new Date(Math.round(+pt.startTimeNanos/1000000)).toISOString().split('T')[0];
-          const kg=pt.value&&pt.value[0]?+(pt.value[0].fpVal||0).toFixed(1):0;
-          if(kg>30&&kg<250&&!exW.includes(date)){sv('weight',[{id:uid(),date,kg,when:'Google Fit',notes:'Importado',ts:Date.now()},...ld('weight')]);iw++;}
-        }
-      }
-    }
-    renderRun();renderBike();renderWeight();renderDash();
-    setAI(el,'✅ Importado de Google Fit:'+(ir?'<br>🏃 '+ir+' runs':'')+(ib?'<br>🚴 '+ib+' rutas':'')+(iw?'<br>⚖️ '+iw+' pesos':'')+(ir+ib+iw===0?'<br>Sin sesiones nuevas en 30 días':''),'ok');
-  }catch(e){setAI(el,'❌ Error Fitness: '+e.message,'err');}
-}
-function exportBackup(){
-  const d=getAllData();const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
-  const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;
-  a.download='IvanPro_'+new Date().toISOString().split('T')[0]+'.json';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
-  showToast('✅ Backup exportado');
-}
-function importBackup(){
-  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
-  inp.onchange=function(ev){const f=ev.target.files[0];if(!f)return;
-    const r=new FileReader();r.onload=function(e){
-      try{const d=JSON.parse(e.target.result);
-        if(!d.gym&&!d.run&&!d.bike){showToast('Archivo no válido');return;}
-        const cnt=[(d.gym&&d.gym.length||0)+' gym',(d.run&&d.run.length||0)+' runs',(d.bike&&d.bike.length||0)+' rutas'].join(', ');
-        const saved=d.savedAt?new Date(d.savedAt).toLocaleString():'?';
-        if(!confirm('Cargar backup?\nGuardado: '+saved+'\n'+cnt+'\nReplaza datos actuales.'))return;
-        if(d.gym)sv('gym',d.gym);if(d.run)sv('run',d.run);if(d.bike)sv('bike',d.bike);
-        if(d.weight)sv('weight',d.weight);if(d.rec)sv('rec',d.rec);if(d.goals)sv('goals',d.goals);
-        if(d.profile){sv('profile',d.profile);profile=d.profile;}
-        renderDash();renderGym();renderRun();renderBike();renderWeight();renderRec();renderGoals();
-  initPeriodAnalysis();
-        showToast('✅ Datos cargados');
-      }catch(er){showToast('❌ Error: '+er.message);}
-    };r.readAsText(f);};inp.click();
-}
-
-// ══ GOOGLE CARD RENDERER ══
 function renderGoogleCard(){
   var container=document.getElementById('google-drive-card-container');
   if(!container)return;
   var gcEl=document.getElementById('prof-gclient');
   var hasId=(gcEl&&gcEl.value.trim())||(ldObj('profile').gclientId||'');
-  var connected=!!(googToken||googGetToken());
+  var connected=!!_getToken();
   if(connected){
     container.innerHTML='<div style="font-size:11px;color:#22c55e;padding:8px 10px;background:rgba(34,197,94,.08);border-radius:8px;border:1px solid rgba(34,197,94,.2);margin-bottom:8px;">✅ Conectado como '+googUser+'</div>';
   } else if(hasId){
@@ -4986,7 +4887,7 @@ function renderGoogleCard(){
   } else {
     container.innerHTML='<div style="font-size:11px;color:var(--orange);margin-bottom:8px;">⚠️ Escribe tu Client ID en Credenciales abajo y pulsa Conectar. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--accent);">Obtener →</a></div>';
   }
-  googUpdateUI(connected);
+  _updateGoogleUI(connected, "");
 }
 
 function fmtDur(el){
@@ -6008,74 +5909,6 @@ function googleSignIn(){
   googLogin();
 }
 
-function _initGoogleSignIn(clientId){
-  google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
-    scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/fitness.activity.read',
-    callback: function(resp){
-      if(resp.error){ showToast('Error Google: '+resp.error); return; }
-      _googleToken = resp.access_token;
-      _googleUser = 'Conectado';
-      updateGoogleUI(true);
-      showToast('✅ Google conectado correctamente');
-    }
-  }).requestAccessToken();
-}
-
-function updateGoogleUI(connected){
-  var status = document.getElementById('google-status');
-  var btnDrive = document.getElementById('btn-drive-sync');
-  var btnFit = document.getElementById('btn-fit-sync');
-  var btnSignin = document.getElementById('btn-google-signin');
-  if(status){ status.style.display='block'; status.textContent = connected ? '✅ Google conectado' : ''; }
-  if(btnDrive) btnDrive.disabled = !connected;
-  if(btnFit) btnFit.disabled = !connected;
-  if(btnSignin && connected) btnSignin.textContent = '✅ Google conectado';
-}
-
-function syncToDrive(){
-  if(!_googleToken){ showToast('Conecta Google primero'); return; }
-  var data = {
-    gym: ld('gym'), run: ld('run'), bike: ld('bike'),
-    weight: ld('weight'), profile: profile,
-    exportedAt: new Date().toISOString()
-  };
-  var blob = new Blob([JSON.stringify(data)], {type:'application/json'});
-  var metadata = {name:'idg_training_backup.json', parents:['appDataFolder']};
-  var form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)],{type:'application/json'}));
-  form.append('file', blob);
-  fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-    method:'POST',
-    headers:{'Authorization':'Bearer '+_googleToken},
-    body: form
-  }).then(function(r){ return r.json(); })
-  .then(function(d){
-    showToast(d.id ? '✅ Guardado en Google Drive' : '❌ Error Drive: '+(d.error?.message||'?'));
-  }).catch(function(e){ showToast('❌ Error Drive: '+e.message); });
-}
-
-function syncGoogleFit(){
-  if(!_googleToken){ showToast('Conecta Google primero'); return; }
-  var now = Date.now();
-  var weekAgo = now - 7*24*60*60*1000;
-  fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate', {
-    method:'POST',
-    headers:{'Authorization':'Bearer '+_googleToken,'Content-Type':'application/json'},
-    body: JSON.stringify({
-      aggregateBy:[{dataTypeName:'com.google.step_count.delta'},{dataTypeName:'com.google.calories.expended'}],
-      bucketByTime:{durationMillis:86400000},
-      startTimeMillis:weekAgo, endTimeMillis:now
-    })
-  }).then(function(r){ return r.json(); })
-  .then(function(d){
-    var buckets = d.bucket || [];
-    var total = buckets.reduce(function(acc,b){
-      return acc + (b.dataset?.[0]?.point?.[0]?.value?.[0]?.intVal||0);
-    }, 0);
-    showToast('✅ Google Fit: '+total.toLocaleString()+' pasos esta semana');
-  }).catch(function(e){ showToast('❌ Error Fit: '+e.message); });
-}
 // ══ MISSING FUNCTIONS FROM V16 ══
 
 function toB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
@@ -6424,6 +6257,11 @@ function sortByDate(arr){
     return new Date(b.date||0) - new Date(a.date||0);
   });
 }
+
+// Safety aliases for renamed functions
+if(typeof googUpdateUI==='undefined') window.googUpdateUI = function(on){ if(typeof _updateGoogleUI==='function') _updateGoogleUI(on,''); };
+if(typeof googGetToken==='undefined')  window.googGetToken  = function(){ if(typeof _getToken==='function') return _getToken(); return ''; };
+if(typeof googLogin==='undefined')     window.googLogin     = function(){ googleSignIn(); };
 
 // ═══ AUTO-UPDATE: inject real GPX/FIT data ═══
 function injectRealGPXData(){
