@@ -3186,56 +3186,24 @@ function googleSignIn(){
     showToast('Escribe tu Google Client ID en Credenciales');
     return;
   }
-  // Persist
+  // Persist before redirect
   var p = ldObj('profile');
   p.gclientId = clientId;
   sv('profile', p);
   profile.gclientId = clientId;
 
   var scopes = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.profile';
-  var redir  = encodeURIComponent(location.href.split('?')[0].split('#')[0]);
-  var url    = 'https://accounts.google.com/o/oauth2/v2/auth'
+  // Use current URL as redirect — token will come back in the hash
+  var redir = location.href.split('?')[0].split('#')[0];
+  var url = 'https://accounts.google.com/o/oauth2/v2/auth'
     + '?client_id=' + encodeURIComponent(clientId)
-    + '&redirect_uri=' + redir
+    + '&redirect_uri=' + encodeURIComponent(redir)
     + '&response_type=token'
     + '&scope=' + encodeURIComponent(scopes)
     + '&prompt=consent';
 
-  var pop = window.open(url, 'gauth', 'width=520,height=640,left=200,top=100');
-  if(!pop){ showToast('Permite popups para conectar Google'); return; }
-
-  var tries = 0;
-  var poll = setInterval(function(){
-    tries++;
-    try{
-      if(pop.closed){ clearInterval(poll); return; }
-      var h = pop.location.hash || '';
-      if(h.indexOf('access_token') !== -1){
-        clearInterval(poll);
-        pop.close();
-        var params = new URLSearchParams(h.slice(1));
-        var tok = params.get('access_token');
-        var exp = parseInt(params.get('expires_in') || '3600');
-        if(tok){
-          _gToken = tok;
-          try{
-            localStorage.setItem('iv_gt', tok);
-            localStorage.setItem('iv_ge', String(Date.now() + exp*1000 - 60000));
-          }catch(e){}
-          // Get user info
-          fetch('https://www.googleapis.com/oauth2/v2/userinfo', {headers:{Authorization:'Bearer '+tok}})
-            .then(function(r){ return r.json(); })
-            .then(function(d){
-              var name = d.name || d.email || 'Usuario';
-              try{ localStorage.setItem('iv_gu', name); }catch(e){}
-              showToast('✅ Google conectado: ' + name);
-              _updateGoogleUI(true, name);
-            }).catch(function(){ showToast('✅ Google conectado'); _updateGoogleUI(true, ''); });
-        }
-      }
-    }catch(e){}
-    if(tries > 120) clearInterval(poll);
-  }, 500);
+  // Redirect in same window — token returns in URL hash
+  location.href = url;
 }
 
 function _updateGoogleUI(connected, user){
@@ -6339,6 +6307,30 @@ function injectRealGPXData(){
 injectRealGPXData();
 
 window.onload=()=>{
+  // ── Detect OAuth token in URL hash (after Google redirect) ──
+  if(location.hash && location.hash.indexOf('access_token') !== -1){
+    try{
+      var params = new URLSearchParams(location.hash.slice(1));
+      var tok = params.get('access_token');
+      var exp = parseInt(params.get('expires_in') || '3600');
+      if(tok){
+        _gToken = tok;
+        localStorage.setItem('iv_gt', tok);
+        localStorage.setItem('iv_ge', String(Date.now() + exp*1000 - 60000));
+        // Clean URL without reloading
+        history.replaceState(null, '', location.pathname);
+        // Get user info
+        fetch('https://www.googleapis.com/oauth2/v2/userinfo', {headers:{Authorization:'Bearer '+tok}})
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            var name = d.name || d.email || 'Usuario';
+            localStorage.setItem('iv_gu', name);
+            _updateGoogleUI(true, name);
+            showToast('✅ Google conectado: ' + name);
+          }).catch(function(){ _updateGoogleUI(true,''); showToast('✅ Google conectado'); });
+      }
+    }catch(e){ console.warn('OAuth parse error:', e); }
+  }
   // Hide all pages explicitly at startup
   document.querySelectorAll('.page').forEach(function(p){p.style.display='none';});
   loadApiKeyStatus();
