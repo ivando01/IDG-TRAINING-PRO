@@ -1222,31 +1222,18 @@ window.addEventListener('unhandledrejection', function(e){
 
     <!-- Col 3: API Key + Google + Resumen -->
     <div style="display:flex;flex-direction:column;gap:12px;">
-      <!-- Google Integration -->
-      <div class="card">
-        <div class="card-title" style="margin-bottom:10px;">🔗 Conectar servicios</div>
-        <div id="google-drive-card-container"></div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
-          <button class="btn btn-primary" id="btn-google-signin" onclick="googleSignIn()" style="width:100%;justify-content:center;gap:8px;">
-            <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#EA4335" d="M5.26 9.77A7.18 7.18 0 0112 4.8c1.73 0 3.29.63 4.5 1.65L19.77 3.2A11.95 11.95 0 0012 0C7.38 0 3.4 2.7 1.38 6.65l3.88 3.12z"/><path fill="#34A853" d="M16.04 18.01A7.15 7.15 0 0112 19.2c-3.04 0-5.63-1.9-6.74-4.6l-3.88 3.12C3.4 21.3 7.38 24 12 24c3.19 0 6.12-1.17 8.34-3.08l-4.3-2.91z"/><path fill="#4A90D9" d="M20.34 20.92A11.95 11.95 0 0024 12c0-.73-.07-1.44-.19-2.13H12v4.5h6.74a5.74 5.74 0 01-2.44 3.55l4.04 2.73.07.07-.07-.07v.27z"/><path fill="#FBBC05" d="M5.26 14.23A7.18 7.18 0 014.8 12c0-.77.12-1.52.34-2.23L1.26 6.65A11.95 11.95 0 000 12c0 1.93.46 3.75 1.26 5.35l3.88-3.12h.12z"/></svg>
+      <!-- Google Drive Sync -->
+      <div class="card" style="padding:14px 16px;">
+        <div class="card-title" style="margin-bottom:12px;">☁️ Google Drive</div>
+        <div id="gd-status"></div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button id="gd-btn-connect" onclick="gdConnect()" class="btn btn-primary" style="width:100%;justify-content:center;gap:8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#EA4335" d="M5.26 9.77A7.18 7.18 0 0112 4.8c1.73 0 3.29.63 4.5 1.65L19.77 3.2A11.95 11.95 0 0012 0C7.38 0 3.4 2.7 1.38 6.65l3.88 3.12z"/><path fill="#34A853" d="M16.04 18.01A7.15 7.15 0 0112 19.2c-3.04 0-5.63-1.9-6.74-4.6l-3.88 3.12C3.4 21.3 7.38 24 12 24c3.19 0 6.12-1.17 8.34-3.08l-4.3-2.91z"/><path fill="#4A90D9" d="M20.34 20.92A11.95 11.95 0 0024 12c0-.73-.07-1.44-.19-2.13H12v4.5h6.74a5.74 5.74 0 01-2.44 3.55l4.04 2.73.07.07z"/><path fill="#FBBC05" d="M5.26 14.23A7.18 7.18 0 014.8 12c0-.77.12-1.52.34-2.23L1.26 6.65A11.95 11.95 0 000 12c0 1.93.46 3.75 1.26 5.35l3.88-3.12z"/></svg>
             Conectar con Google
           </button>
-          <div id="google-status" style="font-size:11px;color:var(--text3);text-align:center;display:none;"></div>
-          <button class="btn btn-ghost btn-sm" id="btn-drive-sync" onclick="syncToDrive()" style="width:100%;justify-content:center;" disabled>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-            ⬆️ Guardar en Drive
-          </button>
-          <button class="btn btn-ghost btn-sm" onclick="diagDrive()" style="width:100%;justify-content:center;font-size:10px;">
-            🔍 Diagnóstico Drive
-          </button>
-          <button class="btn btn-ghost btn-sm" onclick="syncFromDrive()" style="width:100%;justify-content:center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-            ⬇️ Restaurar desde Drive
-          </button>
-          <button class="btn btn-ghost btn-sm" id="btn-fit-sync" onclick="syncGoogleFit()" style="width:100%;justify-content:center;" disabled>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-            📸 Huawei Health → foto
-          </button>
+          <button id="gd-btn-save" onclick="gdSave()" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;" disabled>⬆️ Guardar en Drive</button>
+          <button id="gd-btn-load" onclick="gdLoad()" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;" disabled>⬇️ Restaurar desde Drive</button>
+          <button id="gd-btn-disconnect" onclick="gdDisconnect()" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;color:var(--danger);display:none;">Desconectar</button>
         </div>
       </div>
 
@@ -2171,9 +2158,7 @@ function getZones(){
   const fcmax=parseInt(document.getElementById('prof-fcmax')?.value||profile.fcmax||178);
   const stored=profile.zones||[];
   return ZONE_NAMES.map((_,i)=>{
-    if(stored[i])return stored[i];
-const ZONE_NAMES=['Z1 Recuperación','Z2 Base Aeróbica','Z3 Tempo','Z4 Umbral','Z5 VO2max'];
-    return{name:ZONE_NAMES[i],min:Math.round(fcmax*ZONE_DEFAULTS[i][0]),max:Math.round(fcmax*ZONE_DEFAULTS[i][1]),color:ZONE_COLORS[i]};
+    if(stored[i])return stored[i];    return{name:ZONE_NAMES[i],min:Math.round(fcmax*ZONE_DEFAULTS[i][0]),max:Math.round(fcmax*ZONE_DEFAULTS[i][1]),color:ZONE_COLORS[i]};
   });
 }
 
@@ -3160,176 +3145,222 @@ function renderPlanTab(){ _planWeekOffset=0; _planSelectedDay=planToday(); _pbDa
 // ════════════════════════════════════
 // GOOGLE DRIVE SYNC — sistema único
 // ════════════════════════════════════
-var _gToken = '';  // access token
+// ══════════════════════════════════════
+// GOOGLE DRIVE SYNC — clean implementation
+// ══════════════════════════════════════
+var GD_TOKEN = '';
+var GD_FILE  = 'idg_training_backup.json';
+var GD_KEYS  = ['iv_gym','iv_run','iv_bike','iv_wgt','iv_rec','iv_goals','iv_profile','iv_plan'];
 
-function _getClientId(){
-  var el = document.getElementById('prof-gclient');
-  var fromField = el && el.value ? el.value.trim() : '';
-  var fromProfile = ldObj('profile').gclientId || '';
-  return fromField || fromProfile;
-}
-
-function _getToken(){
-  if(_gToken) return _gToken;
+// ── Token helpers ──
+function gdGetToken(){
+  if(GD_TOKEN) return GD_TOKEN;
   try{
-    var t = localStorage.getItem('iv_gt');
-    var exp = parseInt(localStorage.getItem('iv_ge') || '0');
-    if(t && Date.now() < exp){ _gToken = t; return t; }
+    var t   = localStorage.getItem('iv_gt')||'';
+    var exp = parseInt(localStorage.getItem('iv_ge')||'0');
+    if(t && Date.now() < exp){ GD_TOKEN = t; return t; }
   }catch(e){}
   return '';
 }
 
-function googleSignIn(){
-  // Save clientId first
-  var clientId = _getClientId();
+function gdSaveToken(tok, expiresIn){
+  GD_TOKEN = tok;
+  try{
+    localStorage.setItem('iv_gt', tok);
+    localStorage.setItem('iv_ge', String(Date.now() + (expiresIn||3600)*1000 - 60000));
+  }catch(e){}
+}
+
+function gdClearToken(){
+  GD_TOKEN = '';
+  try{ localStorage.removeItem('iv_gt'); localStorage.removeItem('iv_ge'); localStorage.removeItem('iv_gu'); }catch(e){}
+}
+
+// ── Client ID ──
+function gdClientId(){
+  var el = document.getElementById('prof-gclient');
+  var fromField = el && el.value ? el.value.trim() : '';
+  return fromField || (ldObj('profile').gclientId || '');
+}
+
+// ── UI update ──
+function gdUpdateUI(){
+  var tok = gdGetToken();
+  var user = '';
+  try{ user = localStorage.getItem('iv_gu')||''; }catch(e){}
+
+  var statusEl  = document.getElementById('gd-status');
+  var btnConn   = document.getElementById('gd-btn-connect');
+  var btnSave   = document.getElementById('gd-btn-save');
+  var btnLoad   = document.getElementById('gd-btn-load');
+  var btnDisc   = document.getElementById('gd-btn-disconnect');
+
+  if(!statusEl) return;
+
+  if(tok){
+    statusEl.innerHTML = '<div style="padding:8px 10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;font-size:11px;color:#22c55e;margin-bottom:8px;">✅ Conectado'+(user?' como <b>'+user+'</b>':'')+'</div>';
+    if(btnConn) btnConn.style.display  = 'none';
+    if(btnSave) btnSave.disabled       = false;
+    if(btnLoad) btnLoad.disabled       = false;
+    if(btnDisc) btnDisc.style.display  = 'flex';
+  } else {
+    var hasId = gdClientId();
+    statusEl.innerHTML = hasId
+      ? '<div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Client ID guardado · haz clic en Conectar</div>'
+      : '<div style="font-size:11px;color:var(--orange);margin-bottom:8px;">⚠️ Escribe tu Google Client ID en Credenciales y guarda el perfil</div>';
+    if(btnConn) btnConn.style.display  = 'flex';
+    if(btnSave) btnSave.disabled       = true;
+    if(btnLoad) btnLoad.disabled       = true;
+    if(btnDisc) btnDisc.style.display  = 'none';
+  }
+}
+
+// ── Connect — redirect OAuth flow ──
+function gdConnect(){
+  var clientId = gdClientId();
   if(!clientId){
-    showToast('Escribe tu Google Client ID en Credenciales');
+    showToast('Escribe tu Google Client ID en Credenciales y guarda el perfil');
     return;
   }
-  // Persist before redirect
+  // Persist clientId
   var p = ldObj('profile');
   p.gclientId = clientId;
   sv('profile', p);
   profile.gclientId = clientId;
 
-  var scopes = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.profile';
-  // Use current URL as redirect — token will come back in the hash
+  var scope = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.profile';
   var redir = location.href.split('?')[0].split('#')[0];
-  var url = 'https://accounts.google.com/o/oauth2/v2/auth'
-    + '?client_id=' + encodeURIComponent(clientId)
-    + '&redirect_uri=' + encodeURIComponent(redir)
+  var url   = 'https://accounts.google.com/o/oauth2/v2/auth'
+    + '?client_id='     + encodeURIComponent(clientId)
+    + '&redirect_uri='  + encodeURIComponent(redir)
     + '&response_type=token'
-    + '&scope=' + encodeURIComponent(scopes)
+    + '&scope='         + encodeURIComponent(scope)
     + '&prompt=consent';
-
-  // Redirect in same window — token returns in URL hash
   location.href = url;
 }
 
-function _updateGoogleUI(connected, user){
-  var container = document.getElementById('google-drive-card-container');
-  if(!container) return;
-  if(connected){
-    container.innerHTML = '<div style="font-size:11px;color:#22c55e;padding:8px 10px;background:rgba(34,197,94,.08);border-radius:8px;border:1px solid rgba(34,197,94,.2);margin-bottom:8px;">✅ Conectado'+(user?' como '+user:'')+'</div>';
-  } else {
-    var hasId = _getClientId();
-    if(hasId){
-      container.innerHTML = '<div style="font-size:11px;color:var(--accent);padding:8px 10px;background:rgba(132,204,22,.08);border-radius:8px;border:1px solid rgba(132,204,22,.2);margin-bottom:8px;">✓ Client ID listo — haz clic en Conectar con Google</div>';
-    } else {
-      container.innerHTML = '<div style="font-size:11px;color:var(--orange);margin-bottom:8px;">⚠️ Escribe tu Google Client ID en Credenciales. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--accent);">Obtener →</a></div>';
-    }
-  }
-  var btnDrive = document.getElementById('btn-drive-sync');
-  var btnSignin = document.getElementById('btn-google-signin');
-  if(btnDrive) btnDrive.disabled = !connected;
-  if(btnSignin && connected) btnSignin.innerHTML = btnSignin.innerHTML.replace('Conectar con Google','✅ Conectado');
+// ── Called on page load — detect token from OAuth redirect ──
+function gdHandleRedirect(){
+  if(!location.hash || location.hash.indexOf('access_token') === -1) return;
+  try{
+    var params = new URLSearchParams(location.hash.slice(1));
+    var tok = params.get('access_token');
+    var exp = parseInt(params.get('expires_in')||'3600');
+    if(!tok) return;
+    gdSaveToken(tok, exp);
+    // Clean URL
+    history.replaceState(null, '', location.pathname);
+    // Fetch user
+    fetch('https://www.googleapis.com/oauth2/v2/userinfo',{headers:{Authorization:'Bearer '+tok}})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var name = d.name || d.email || 'Usuario';
+        try{ localStorage.setItem('iv_gu', name); }catch(e){}
+        gdUpdateUI();
+        showToast('✅ Conectado con Google: ' + name);
+      }).catch(function(){ gdUpdateUI(); showToast('✅ Google conectado'); });
+  }catch(e){ console.warn('gdHandleRedirect:', e); }
 }
 
-function renderGoogleCard(){
-  var tok = _getToken();
-  var user = '';
-  try{ user = localStorage.getItem('iv_gu') || ''; }catch(e){}
-  _updateGoogleUI(!!tok, user);
+// ── Disconnect ──
+function gdDisconnect(){
+  gdClearToken();
+  gdUpdateUI();
+  showToast('Desconectado de Google');
 }
 
-
-async function diagDrive(){
-  var info = [];
-  info.push('Token: ' + (_getToken() ? '✅ OK ('+_getToken().slice(0,8)+'...)' : '❌ Sin token'));
-  info.push('ClientId: ' + (_getClientId() ? '✅ ' + _getClientId().slice(0,20)+'...' : '❌ Sin Client ID'));
-  info.push('Origin: ' + location.origin);
-  info.push('URL: ' + location.href.split('?')[0]);
-  var tok = _getToken();
-  if(tok){
-    try{
-      var r = await fetch('https://www.googleapis.com/drive/v3/about?fields=user', {headers:{Authorization:'Bearer '+tok}});
-      var d = await r.json();
-      if(d.user) info.push('Drive user: ✅ ' + (d.user.displayName||d.user.emailAddress));
-      else info.push('Drive about: ' + JSON.stringify(d).slice(0,100));
-    }catch(e){ info.push('Drive test error: ' + e.message); }
-  }
-  alert('🔍 Diagnóstico Google Drive:\n\n' + info.join('\n'));
-}
-
-function initOD(){ renderGoogleCard(); }
-
-async function syncToDrive(){
-  var tok = _getToken();
-  if(!tok){ googleSignIn(); return; }
+// ── Save to Drive ──
+async function gdSave(){
+  var tok = gdGetToken();
+  if(!tok){ showToast('Conecta primero con Google'); gdUpdateUI(); return; }
   showToast('⬆️ Guardando en Drive...');
   try{
-    var backup = { ts: Date.now(), v: 21, data: {} };
-    ['iv_gym','iv_run','iv_bike','iv_wgt','iv_rec','iv_goals','iv_profile','iv_plan'].forEach(function(k){
-      try{ backup.data[k] = JSON.parse(localStorage.getItem(k) || 'null'); }catch(e){}
+    // Build backup
+    var backup = { ts: Date.now(), v: 21, app: 'IDG Training Pro', data: {} };
+    GD_KEYS.forEach(function(k){
+      try{ backup.data[k] = JSON.parse(localStorage.getItem(k)||'null'); }catch(e){}
     });
-    var meta = { name: 'idg_training_backup.json', description: 'IDG Training Pro backup' };
     var json = JSON.stringify(backup);
 
     // Search for existing file
-    var qR = await fetch(
-      'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent("name='idg_training_backup.json' and trashed=false") + '&fields=files(id)&spaces=drive',
+    var search = await fetch(
+      'https://www.googleapis.com/drive/v3/files'
+      + '?q=' + encodeURIComponent("name='" + GD_FILE + "' and trashed=false")
+      + '&fields=files(id)&spaces=drive',
       { headers: { Authorization: 'Bearer ' + tok } }
     );
-    if(!qR.ok){
-      var errT = await qR.text();
-      showToast('❌ Drive API error ' + qR.status + ': ' + errT.slice(0,80));
-      return;
-    }
-    var qD = await qR.json();
-    var fileId = qD.files && qD.files.length ? qD.files[0].id : null;
+    if(search.status === 401){ gdClearToken(); gdUpdateUI(); showToast('Sesión expirada — reconecta'); return; }
+    var searchData = await search.json();
+    var fileId = searchData.files && searchData.files.length ? searchData.files[0].id : null;
 
+    // Upload
     var form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(meta)], {type:'application/json'}));
-    form.append('file',     new Blob([json], {type:'application/json'}));
-
-    var url    = fileId
+    form.append('metadata', new Blob([JSON.stringify({name: GD_FILE})], {type:'application/json'}));
+    form.append('file',     new Blob([json],                            {type:'application/json'}));
+    var upUrl = fileId
       ? 'https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=multipart'
       : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
-    var method = fileId ? 'PATCH' : 'POST';
-
-    var resp = await fetch(url, { method: method, headers: { Authorization: 'Bearer ' + tok }, body: form });
-    if(resp.ok){
+    var up = await fetch(upUrl, {
+      method:  fileId ? 'PATCH' : 'POST',
+      headers: { Authorization: 'Bearer ' + tok },
+      body:    form
+    });
+    if(up.ok){
       var now = new Date().toLocaleString('es-CO');
       try{ localStorage.setItem('iv_gls', now); }catch(e){}
-      var lsEl = document.getElementById('goog-last-sync');
-      if(lsEl) lsEl.textContent = now;
-      showToast('✅ Guardado en Drive correctamente');
+      showToast('✅ Guardado en Drive · ' + now);
     } else {
-      var eBody = await resp.text();
-      showToast('❌ Drive ' + resp.status + ': ' + eBody.slice(0,100));
+      var err = await up.text();
+      showToast('❌ Drive ' + up.status + ': ' + err.slice(0,80));
     }
-  }catch(e){ showToast('❌ Error: ' + e.message); }
+  }catch(e){ showToast('❌ ' + e.message); }
 }
 
-async function syncFromDrive(){
-  var tok = _getToken();
-  if(!tok){ googleSignIn(); return; }
+// ── Load from Drive ──
+async function gdLoad(){
+  var tok = gdGetToken();
+  if(!tok){ showToast('Conecta primero con Google'); gdUpdateUI(); return; }
   showToast('⬇️ Buscando backup...');
   try{
-    var qR = await fetch(
-      'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent("name='idg_training_backup.json' and trashed=false") + '&fields=files(id,modifiedTime)',
+    var search = await fetch(
+      'https://www.googleapis.com/drive/v3/files'
+      + '?q=' + encodeURIComponent("name='" + GD_FILE + "' and trashed=false")
+      + '&fields=files(id,modifiedTime)&spaces=drive&orderBy=modifiedTime%20desc',
       { headers: { Authorization: 'Bearer ' + tok } }
     );
-    var qD = await qR.json();
-    if(!qD.files || !qD.files.length){ showToast('Sin backup en Drive aún'); return; }
+    if(search.status === 401){ gdClearToken(); gdUpdateUI(); showToast('Sesión expirada — reconecta'); return; }
+    var searchData = await search.json();
+    if(!searchData.files || !searchData.files.length){ showToast('Sin backup en Drive'); return; }
 
-    var fileId = qD.files[0].id;
-    var modTime = qD.files[0].modifiedTime;
-    var resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media',
-      { headers: { Authorization: 'Bearer ' + tok } });
-    var backup = await resp.json();
+    var fileId   = searchData.files[0].id;
+    var modified = searchData.files[0].modifiedTime;
+    var dateStr  = modified ? new Date(modified).toLocaleString('es-CO') : '—';
 
-    var d = new Date(backup.ts || modTime);
-    var dStr = d.toLocaleDateString('es-CO') + ' ' + d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
-    if(!confirm('Restaurar backup del ' + dStr + '? Se sobreescribirán los datos locales.')){ return; }
+    if(!confirm('Restaurar backup del ' + dateStr + '? Se reemplazarán los datos locales.')){ return; }
 
-    Object.keys(backup.data || {}).forEach(function(k){
-      if(backup.data[k] !== null) try{ localStorage.setItem(k, JSON.stringify(backup.data[k])); }catch(e){}
+    var dl = await fetch(
+      'https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media',
+      { headers: { Authorization: 'Bearer ' + tok } }
+    );
+    var backup = await dl.json();
+    if(!backup || !backup.data){ showToast('❌ Archivo inválido'); return; }
+
+    GD_KEYS.forEach(function(k){
+      if(backup.data[k] !== null && backup.data[k] !== undefined){
+        try{ localStorage.setItem(k, JSON.stringify(backup.data[k])); }catch(e){}
+      }
     });
-    showToast('✅ Datos restaurados desde Drive');
-    setTimeout(function(){ window.location.reload(); }, 1200);
-  }catch(e){ showToast('❌ Error: ' + e.message); }
+    showToast('✅ Restaurado · recargando...');
+    setTimeout(function(){ location.reload(); }, 1200);
+  }catch(e){ showToast('❌ ' + e.message); }
 }
+
+// ── Compat aliases (for any old references) ──
+function renderGoogleCard(){ gdUpdateUI(); }
+function syncToDrive(){ gdSave(); }
+function syncFromDrive(){ gdLoad(); }
+function initOD(){ gdHandleRedirect(); gdUpdateUI(); }
+function googleSignIn(){ gdConnect(); }
 
 function syncGoogleFit(){ showToast('Usa 📸 Foto Huawei Health para importar datos de composición'); }
 
@@ -4842,21 +4873,6 @@ function showToast(msg){try{var t=document.createElement('div');t.style.cssText=
 
 
 // ══ GOOGLE DRIVE + FITNESS ══
-function renderGoogleCard(){
-  var container=document.getElementById('google-drive-card-container');
-  if(!container)return;
-  var gcEl=document.getElementById('prof-gclient');
-  var hasId=(gcEl&&gcEl.value.trim())||(ldObj('profile').gclientId||'');
-  var connected=!!_getToken();
-  if(connected){
-    container.innerHTML='<div style="font-size:11px;color:#22c55e;padding:8px 10px;background:rgba(34,197,94,.08);border-radius:8px;border:1px solid rgba(34,197,94,.2);margin-bottom:8px;">✅ Conectado como '+googUser+'</div>';
-  } else if(hasId){
-    container.innerHTML='<div style="font-size:11px;color:var(--accent);padding:8px 10px;background:rgba(132,204,22,.08);border-radius:8px;border:1px solid rgba(132,204,22,.2);margin-bottom:8px;">✓ Client ID listo — haz clic en Conectar</div>';
-  } else {
-    container.innerHTML='<div style="font-size:11px;color:var(--orange);margin-bottom:8px;">⚠️ Escribe tu Client ID en Credenciales abajo y pulsa Conectar. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--accent);">Obtener →</a></div>';
-  }
-  _updateGoogleUI(connected, "");
-}
 
 function fmtDur(el){
   var v=el.value.replace(/[^0-9]/g,'');
@@ -5864,20 +5880,6 @@ function importFile(inp, type){
 var _googleUser = null;
 var _googleToken = null;
 
-function googleSignIn(){
-  // Save client ID from field first
-  var gcEl=document.getElementById('prof-gclient');
-  if(gcEl&&gcEl.value.trim()){
-    var p=ldObj('profile');
-    p.gclientId=gcEl.value.trim();
-    sv('profile',p);
-    profile.gclientId=gcEl.value.trim();
-  }
-  // Use the popup OAuth system
-  googLogin();
-}
-
-// ══ MISSING FUNCTIONS FROM V16 ══
 
 function toB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
 
@@ -6226,10 +6228,7 @@ function sortByDate(arr){
   });
 }
 
-// Safety aliases for renamed functions
-if(typeof googUpdateUI==='undefined') window.googUpdateUI = function(on){ if(typeof _updateGoogleUI==='function') _updateGoogleUI(on,''); };
-if(typeof googGetToken==='undefined')  window.googGetToken  = function(){ if(typeof _getToken==='function') return _getToken(); return ''; };
-if(typeof googLogin==='undefined')     window.googLogin     = function(){ googleSignIn(); };
+// Google Drive: see gdConnect, gdSave, gdLoad
 
 // ═══ AUTO-UPDATE: inject real GPX/FIT data ═══
 function injectRealGPXData(){
