@@ -741,6 +741,25 @@ svg {
   font-size: 14px;
 }
 
+.legal-links {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: -4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.legal-links a {
+  color: #0065ff;
+  text-decoration: none;
+}
+
+.legal-links a:hover {
+  text-decoration: underline;
+}
+
 .profile-card {
   display: flex;
   align-items: center;

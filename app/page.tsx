@@ -594,6 +594,11 @@ function LoginExperience({ user, setUser }: { user: User | null; setUser: (user:
               <p className="create-account">
                 ¿No tienes una cuenta? <button type="button">Crear cuenta</button>
               </p>
+              <p className="legal-links">
+                <a href="/privacy">Politica de privacidad</a>
+                <span aria-hidden="true">·</span>
+                <a href="/term">Terminos de servicio</a>
+              </p>
             </>
           ) : (
             <div className="active-session">
