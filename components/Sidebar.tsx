@@ -149,8 +149,8 @@ export default function Sidebar() {
           if (mobile) setMobileOpen(false);
         }}
       >
-        <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-lg ${active ? "bg-white" : "bg-slate-50"}`}>
-          <AppIcon name={item.icon} className="h-10 w-10" />
+        <span className={`grid shrink-0 place-items-center rounded-lg ${mobile ? "h-9 w-9" : "h-12 w-12"} ${active ? "bg-white" : "bg-slate-50"}`}>
+          <AppIcon name={item.icon} className={mobile ? "h-7 w-7" : "h-10 w-10"} />
         </span>
         {item.label}
       </button>
@@ -161,7 +161,7 @@ export default function Sidebar() {
     <>
       <div className="hidden h-screen w-64 flex-col border-r border-slate-200 bg-white lg:flex">
         <div className="border-b border-slate-200 p-4">
-          <IDGLogo className="scale-110 origin-left" />
+          <IDGLogo />
         </div>
 
         <div className="m-3 rounded-lg bg-[#0F172A] p-4 text-white">
@@ -205,7 +205,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2.5 lg:hidden">
         <IDGLogo compact />
         <button className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900" onClick={() => setMobileOpen(!mobileOpen)}>
           <AppIcon name="menu" className="h-6 w-6" />
@@ -214,12 +214,12 @@ export default function Sidebar() {
 
       {mobileOpen ? <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} /> : null}
       <div
-        className={`fixed bottom-0 left-0 top-0 z-40 w-72 overflow-y-auto bg-white transition-transform duration-300 lg:hidden ${
+        className={`fixed bottom-0 left-0 top-0 z-40 w-64 overflow-y-auto bg-white shadow-2xl transition-transform duration-300 lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="border-b border-slate-200 p-4">
-          <IDGLogo />
+          <IDGLogo compact />
         </div>
         <nav className="space-y-1 p-4">
           {navItems.map((item) => navButton(item, true))}

@@ -10,7 +10,7 @@ export function IDGLogo({ compact = false, className = "" }: LogoProps) {
     <img
       src="/brand/idg-training-pro-logo-cropped.png"
       alt="IDG Training Pro"
-      className={`${compact ? "h-11 w-auto" : "h-[68px] w-auto"} object-contain ${className}`}
+      className={`${compact ? "h-8 w-auto" : "h-12 w-auto"} object-contain ${className}`}
     />
   );
 }

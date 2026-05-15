@@ -251,7 +251,7 @@ export default function AnalyticsModule() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [question, setQuestion] = useState("");
-  const [showAnalysis, setShowAnalysis] = useState(true);
+  const [showAnalysis, setShowAnalysis] = useState(false);
   const [context, setContext] = useState(() => buildContext(false));
   const [todayLabel, setTodayLabel] = useState("");
   const [sleepImporting, setSleepImporting] = useState(false);
@@ -277,8 +277,9 @@ export default function AnalyticsModule() {
     getCloudCollection<HistoryItem>("/intelligence", "entries")
       .then((entries) => {
         if (!alive || !entries.length) return;
+        const latestGlobal = entries.find((entry) => entry.type === "global");
         setHistory(entries);
-        setSelectedId(entries[0]?.id || "");
+        setSelectedId(latestGlobal?.id || entries[0]?.id || "");
         localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
       })
       .catch(() => undefined);
@@ -287,7 +288,8 @@ export default function AnalyticsModule() {
     };
   }, []);
 
-  const selected = history.find((item) => item.id === selectedId) || history[0];
+  const latestGlobal = history.find((item) => item.type === "global");
+  const selected = history.find((item) => item.id === selectedId) || latestGlobal || history[0];
   const metrics = context.metrics;
   const action = metrics.hardSessions > 2 ? "Running Z2 - 40 min" : metrics.gymWeek < (num(context.profile.gymDaysPerWeek) || 4) ? "Gym tecnico - 60 min" : "Ciclismo Z2 - 60 min";
   const fatigueRisk = riskLabel(metrics);
@@ -627,58 +629,58 @@ export default function AnalyticsModule() {
               </div>
             </aside>
           </div>
-        </section>
 
-        <section className="mb-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-violet-50 text-violet-700"><AppIcon name="heartZones" className="h-4 w-4" /></span>
-              <h2 className="text-sm font-black uppercase tracking-wide text-blue-700">Impacto del sueno</h2>
-            </div>
-            <div className="grid gap-5 lg:grid-cols-[180px_minmax(0,1fr)]">
-              <div className="grid place-items-center">
-                <div className="grid h-36 w-36 place-items-center rounded-full p-2" style={{ background: `conic-gradient(#6D5DFB ${sleepEfficiency * 3.6}deg, #E9E7FF 0deg)` }}>
-                  <div className="grid h-full w-full place-items-center rounded-full bg-white">
-                    <div className="text-center">
-                      <p className="text-3xl font-black text-slate-900">{sleepEfficiency}%</p>
-                      <p className="text-xs font-black text-blue-700">Calidad</p>
+          <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="rounded-lg border border-slate-100 bg-white p-5">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-violet-50 text-violet-700"><AppIcon name="heartZones" className="h-4 w-4" /></span>
+                <h3 className="text-sm font-black uppercase tracking-wide text-blue-700">Impacto del sueno</h3>
+              </div>
+              <div className="grid gap-5 lg:grid-cols-[150px_minmax(0,1fr)]">
+                <div className="grid place-items-center">
+                  <div className="grid h-32 w-32 place-items-center rounded-full p-2" style={{ background: `conic-gradient(#6D5DFB ${sleepEfficiency * 3.6}deg, #E9E7FF 0deg)` }}>
+                    <div className="grid h-full w-full place-items-center rounded-full bg-white">
+                      <div className="text-center">
+                        <p className="text-3xl font-black text-slate-900">{sleepEfficiency}%</p>
+                        <p className="text-xs font-black text-blue-700">Calidad</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold leading-6 text-slate-600">{sleepImpact}</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-lg bg-slate-50 p-4">
+                      <p className="text-[10px] font-black uppercase text-slate-500">Promedio 7 dias</p>
+                      <p className="mt-1 text-xl font-black text-slate-900">{metrics.sleepWeekAvg ? formatSleep(metrics.sleepWeekAvg) : "--"}</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-50 p-4">
+                      <p className="text-[10px] font-black uppercase text-slate-500">Score</p>
+                      <p className="mt-1 text-xl font-black text-slate-900">{metrics.sleepScore ?? "--"}</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-50 p-4">
+                      <p className="text-[10px] font-black uppercase text-slate-500">Impacto</p>
+                      <p className="mt-1 text-xl font-black text-amber-600">{metrics.sleepHours !== null && metrics.sleepHours < 6.5 ? "Moderado" : "Bajo"}</p>
                     </div>
                   </div>
                 </div>
               </div>
-              <div>
-                <p className="text-sm font-semibold leading-6 text-slate-600">{sleepImpact}</p>
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-lg bg-slate-50 p-4">
-                    <p className="text-[10px] font-black uppercase text-slate-500">Promedio 7 dias</p>
-                    <p className="mt-1 text-xl font-black text-slate-900">{metrics.sleepWeekAvg ? formatSleep(metrics.sleepWeekAvg) : "--"}</p>
-                  </div>
-                  <div className="rounded-lg bg-slate-50 p-4">
-                    <p className="text-[10px] font-black uppercase text-slate-500">Score</p>
-                    <p className="mt-1 text-xl font-black text-slate-900">{metrics.sleepScore ?? "--"}</p>
-                  </div>
-                  <div className="rounded-lg bg-slate-50 p-4">
-                    <p className="text-[10px] font-black uppercase text-slate-500">Impacto</p>
-                    <p className="mt-1 text-xl font-black text-amber-600">{metrics.sleepHours !== null && metrics.sleepHours < 6.5 ? "Moderado" : "Bajo"}</p>
-                  </div>
-                </div>
-              </div>
             </div>
-          </div>
 
-          <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-wide text-blue-600">Correlacion sueno-rendimiento</p>
-            <h2 className="mt-1 text-lg font-black text-slate-900">Tendencia detectada</h2>
-            <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{correlationText}</p>
-            <div className="mt-4 grid gap-2">
-              {["FC promedio", "Z4/Z5", "Ritmo/Potencia", "Recuperacion"].map((item) => (
-                <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-xs font-black" key={item}>
-                  <span className="text-slate-600">{item}</span>
-                  <span className="text-blue-600">{metrics.sleepRecords < 4 ? "pendiente" : "comparando"}</span>
-                </div>
-              ))}
-            </div>
-          </aside>
+            <aside className="rounded-lg border border-slate-100 bg-slate-50 p-5">
+              <p className="text-xs font-black uppercase tracking-wide text-blue-600">Correlacion sueno-rendimiento</p>
+              <h3 className="mt-1 text-lg font-black text-slate-900">Tendencia detectada</h3>
+              <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{correlationText}</p>
+              <div className="mt-4 grid gap-2">
+                {["FC promedio", "Z4/Z5", "Ritmo/Potencia", "Recuperacion"].map((item) => (
+                  <div className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-xs font-black" key={item}>
+                    <span className="text-slate-600">{item}</span>
+                    <span className="text-blue-600">{metrics.sleepRecords < 4 ? "pendiente" : "comparando"}</span>
+                  </div>
+                ))}
+              </div>
+            </aside>
+          </div>
         </section>
 
         <section className="mb-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -743,10 +745,13 @@ export default function AnalyticsModule() {
               <div className="mt-6 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
                 <p className="text-sm font-bold text-slate-500">Genera el primer analisis para guardar una lectura global del atleta.</p>
               </div>
-            ) : selected.acknowledgedAt && !showAnalysis ? (
-              <div className="mt-6 flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50 p-4">
-                <p className="text-sm font-black text-emerald-800">Analisis leido y guardado.</p>
-                <button className="rounded-lg bg-white px-3 py-2 text-xs font-black text-emerald-700" type="button" onClick={() => setShowAnalysis(true)}>Abrir</button>
+            ) : !showAnalysis ? (
+              <div className="mt-6 flex flex-col gap-3 rounded-lg border border-emerald-100 bg-emerald-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-black text-emerald-800">{selected.type === "global" ? "Analisis global guardado." : "Lectura guardada."}</p>
+                  <p className="mt-1 text-xs font-bold text-emerald-700">Permanece colapsado para priorizar el tablero. Puedes abrirlo o generar uno nuevo cuando lo necesites.</p>
+                </div>
+                <button className="w-fit rounded-lg bg-white px-3 py-2 text-xs font-black text-emerald-700" type="button" onClick={() => setShowAnalysis(true)}>Abrir lectura</button>
               </div>
             ) : (
               <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
@@ -780,7 +785,7 @@ export default function AnalyticsModule() {
           <div className="mt-4 grid gap-2 xl:grid-cols-2">
               {history.map((item) => (
                 <div className={`grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border p-3 ${selected?.id === item.id ? "border-blue-200 bg-blue-50" : "border-slate-100 bg-white"}`} key={item.id}>
-                  <button className="text-left" type="button" onClick={() => { setSelectedId(item.id); setShowAnalysis(!item.acknowledgedAt); }}>
+                  <button className="text-left" type="button" onClick={() => { setSelectedId(item.id); setShowAnalysis(false); }}>
                     <p className="line-clamp-1 text-sm font-black text-slate-900">{item.title}</p>
                     <p className="mt-1 text-xs font-bold text-slate-500">{new Date(item.date).toLocaleDateString("es-CO")} - {item.period} - {item.acknowledgedAt ? "Leido" : "Pendiente"}</p>
                   </button>
