@@ -571,7 +571,7 @@ export default function AnalyticsModule() {
 
             <aside className="rounded-lg border border-slate-100 bg-white p-4">
               <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">Datos basicos</p>
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {[
                   ["Fecha", "date", "date"],
                   ["Horas", "hours", "number"],
@@ -579,10 +579,10 @@ export default function AnalyticsModule() {
                   ["HRV", "hrv", "number"],
                   ["FC reposo", "restingHr", "number"],
                 ].map(([label, key, type]) => (
-                  <label className={`${key === "date" ? "col-span-2" : ""} grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500`} key={key}>
+                  <label className={`${key === "date" ? "sm:col-span-2" : ""} grid min-w-0 gap-1 text-xs font-black uppercase tracking-wide text-slate-500`} key={key}>
                     {label}
                     <input
-                      className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold normal-case tracking-normal text-slate-800 outline-none focus:border-blue-400"
+                      className="h-11 w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold normal-case tracking-normal text-slate-800 outline-none focus:border-blue-400"
                       type={type}
                       step={key === "hours" ? "0.1" : "1"}
                       value={sleepForm[key as keyof typeof sleepForm]}
@@ -593,17 +593,17 @@ export default function AnalyticsModule() {
               </div>
               <details className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
                 <summary className="cursor-pointer text-xs font-black uppercase tracking-wide text-slate-500">Fases de sueno</summary>
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {[
                     ["Profundo min", "deepMinutes"],
                     ["Liviano min", "lightMinutes"],
                     ["REM min", "remMinutes"],
                     ["Despierto min", "awakeMinutes"],
                   ].map(([label, key]) => (
-                    <label className="grid gap-1 text-[10px] font-black uppercase text-slate-500" key={key}>
+                    <label className="grid min-w-0 gap-1 text-[10px] font-black uppercase text-slate-500" key={key}>
                       {label}
                       <input
-                        className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm font-bold normal-case text-slate-800 outline-none focus:border-blue-400"
+                        className="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-2 text-sm font-bold normal-case text-slate-800 outline-none focus:border-blue-400"
                         type="number"
                         value={sleepForm[key as keyof typeof sleepForm]}
                         onChange={(event) => setSleepForm((current) => ({ ...current, [key]: event.target.value }))}
@@ -736,6 +736,11 @@ export default function AnalyticsModule() {
                 <select className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold" value={period} onChange={(event) => setPeriod(event.target.value)}>
                   {["Semana actual", "Ultimo mes", "Ultimos 3 meses"].map((item) => <option key={item}>{item}</option>)}
                 </select>
+                {selected ? (
+                  <button className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-black text-blue-700" type="button" onClick={() => setShowAnalysis(true)}>
+                    Ver ultimo
+                  </button>
+                ) : null}
                 <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white disabled:bg-blue-300" disabled={loading} type="button" onClick={() => runAnalysis("global")}>
                   {loading ? "Analizando..." : "Analisis completo"}
                 </button>
@@ -745,15 +750,7 @@ export default function AnalyticsModule() {
               <div className="mt-6 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
                 <p className="text-sm font-bold text-slate-500">Genera el primer analisis para guardar una lectura global del atleta.</p>
               </div>
-            ) : !showAnalysis ? (
-              <div className="mt-6 flex flex-col gap-3 rounded-lg border border-emerald-100 bg-emerald-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-black text-emerald-800">{selected.type === "global" ? "Analisis global guardado." : "Lectura guardada."}</p>
-                  <p className="mt-1 text-xs font-bold text-emerald-700">Permanece colapsado para priorizar el tablero. Puedes abrirlo o generar uno nuevo cuando lo necesites.</p>
-                </div>
-                <button className="w-fit rounded-lg bg-white px-3 py-2 text-xs font-black text-emerald-700" type="button" onClick={() => setShowAnalysis(true)}>Abrir lectura</button>
-              </div>
-            ) : (
+            ) : showAnalysis ? (
               <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
                 <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{selected.analysis}</p>
                 <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4">
@@ -761,7 +758,7 @@ export default function AnalyticsModule() {
                   <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-black text-white" type="button" onClick={() => acknowledge(selected)}>Enterado</button>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
 
           <aside className="rounded-lg border border-slate-100 bg-slate-50 p-5">

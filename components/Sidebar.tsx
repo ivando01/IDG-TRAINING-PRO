@@ -111,7 +111,6 @@ function calculateScore(): ScoreState {
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [score, setScore] = useState<ScoreState>({ score: 82, ...scoreLabel(82) });
 
   useEffect(() => {
@@ -146,13 +145,29 @@ export default function Sidebar() {
         key={item.href}
         onClick={() => {
           router.push(item.href);
-          if (mobile) setMobileOpen(false);
         }}
       >
         <span className={`grid shrink-0 place-items-center rounded-lg ${mobile ? "h-9 w-9" : "h-12 w-12"} ${active ? "bg-white" : "bg-slate-50"}`}>
           <AppIcon name={item.icon} className={mobile ? "h-7 w-7" : "h-10 w-10"} />
         </span>
         {item.label}
+      </button>
+    );
+  };
+
+  const mobileTab = (item: NavItem) => {
+    const active = pathname === item.href || pathname.startsWith(item.href);
+    return (
+      <button
+        className={`grid min-w-20 place-items-center gap-1 rounded-lg px-2 py-2 text-[10px] font-black transition ${
+          active ? "bg-blue-50 text-blue-700" : "text-slate-500"
+        }`}
+        key={item.href}
+        onClick={() => router.push(item.href)}
+        type="button"
+      >
+        <AppIcon name={item.icon} className="h-6 w-6" />
+        <span className="line-clamp-1">{item.label.replace("Dashboard", "Inicio").replace("IDG Intelligence", "IA").replace("Peso & Cuerpo", "Peso").replace("Plan Semanal", "Plan")}</span>
       </button>
     );
   };
@@ -205,40 +220,11 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2 lg:hidden">
-        <button className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900" aria-label="Abrir menu" onClick={() => setMobileOpen(!mobileOpen)}>
-          <AppIcon name="menu" className="h-6 w-6" />
-        </button>
-        <span className="text-xs font-black uppercase tracking-wide text-slate-500">IDG Training Pro</span>
+      <div className="fixed inset-x-2 bottom-2 z-40 rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-2xl backdrop-blur lg:hidden">
+        <nav className="flex gap-1 overflow-x-auto">
+          {navItems.map((item) => mobileTab(item))}
+        </nav>
       </div>
-
-      {mobileOpen ? (
-        <div className="fixed inset-0 z-30 bg-slate-950/35 lg:hidden" onClick={() => setMobileOpen(false)}>
-          <div className="fixed inset-x-3 bottom-3 z-40 max-h-[76dvh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-              <span className="text-sm font-black uppercase tracking-wide text-slate-900">Menu</span>
-              <button className="rounded-lg px-3 py-2 text-xs font-black text-slate-600 hover:bg-slate-100" type="button" onClick={() => setMobileOpen(false)}>
-                Cerrar
-              </button>
-            </div>
-            <nav className="grid grid-cols-2 gap-2 p-3">
-              {navItems.map((item) => navButton(item, true))}
-            </nav>
-            <div className="border-t border-slate-200 p-3">
-              <button
-                className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-50"
-                onClick={() => {
-                  handleLogout();
-                  setMobileOpen(false);
-                }}
-              >
-                <AppIcon name="logout" className="h-4 w-4" />
-                Cerrar sesion
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }
