@@ -341,7 +341,7 @@ export default function AnalyticsModule() {
       const next = [item, ...history];
       saveHistory(next);
       setSelectedId(item.id);
-      setShowAnalysis(true);
+      setShowAnalysis(mode === "question");
       setStatus("Analisis guardado.");
       if (mode === "question") setQuestion("");
     } catch (error) {
@@ -756,7 +756,8 @@ export default function AnalyticsModule() {
             ) : (
               <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
                 <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{selected.analysis}</p>
-                <div className="mt-5 flex justify-end border-t border-slate-200 pt-4">
+                <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4">
+                  <button className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700" type="button" onClick={() => setShowAnalysis(false)}>Colapsar</button>
                   <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-black text-white" type="button" onClick={() => acknowledge(selected)}>Enterado</button>
                 </div>
               </div>

@@ -205,11 +205,11 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2.5 lg:hidden">
-        <IDGLogo compact />
-        <button className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900" onClick={() => setMobileOpen(!mobileOpen)}>
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2 lg:hidden">
+        <button className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900" aria-label="Abrir menu" onClick={() => setMobileOpen(!mobileOpen)}>
           <AppIcon name="menu" className="h-6 w-6" />
         </button>
+        <span className="text-xs font-black uppercase tracking-wide text-slate-500">IDG Training Pro</span>
       </div>
 
       {mobileOpen ? <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} /> : null}
@@ -218,8 +218,11 @@ export default function Sidebar() {
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="border-b border-slate-200 p-4">
-          <IDGLogo compact />
+        <div className="flex items-center justify-between border-b border-slate-200 p-4">
+          <span className="text-sm font-black uppercase tracking-wide text-slate-900">Menu</span>
+          <button className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" type="button" aria-label="Cerrar menu" onClick={() => setMobileOpen(false)}>
+            <AppIcon name="menu" className="h-5 w-5" />
+          </button>
         </div>
         <nav className="space-y-1 p-4">
           {navItems.map((item) => navButton(item, true))}
