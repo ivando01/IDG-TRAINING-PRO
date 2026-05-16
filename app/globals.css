@@ -28,6 +28,10 @@
 html,
 body {
   min-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
 }
 
 body {
@@ -36,6 +40,12 @@ body {
   font-family: "Inter", sans-serif;
   background: #eef2f7;
   overflow: hidden;
+  position: relative;
+  touch-action: pan-y;
+}
+
+body > * {
+  max-width: 100%;
 }
 
 button,

@@ -159,14 +159,14 @@ export default function Sidebar() {
     const active = pathname === item.href || pathname.startsWith(item.href);
     return (
       <button
-        className={`grid min-w-20 place-items-center gap-1 rounded-lg px-2 py-2 text-[10px] font-black transition ${
+        className={`grid min-w-0 place-items-center gap-1 rounded-lg px-1 py-2 text-[9px] font-black transition ${
           active ? "bg-blue-50 text-blue-700" : "text-slate-500"
         }`}
         key={item.href}
         onClick={() => router.push(item.href)}
         type="button"
       >
-        <AppIcon name={item.icon} className="h-6 w-6" />
+        <AppIcon name={item.icon} className="h-5 w-5" />
         <span className="line-clamp-1">{item.label.replace("Dashboard", "Inicio").replace("IDG Intelligence", "IA").replace("Peso & Cuerpo", "Peso").replace("Plan Semanal", "Plan")}</span>
       </button>
     );
@@ -220,8 +220,8 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <div className="fixed inset-x-2 bottom-2 z-40 rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-2xl backdrop-blur lg:hidden">
-        <nav className="flex gap-1 overflow-x-auto">
+      <div className="fixed inset-x-2 bottom-2 z-40 max-w-[calc(100vw-1rem)] rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-2xl backdrop-blur lg:hidden">
+        <nav className="grid grid-cols-5 gap-1">
           {navItems.map((item) => mobileTab(item))}
         </nav>
       </div>
