@@ -148,7 +148,7 @@ export default function WeightModule() {
   const [imagePreview, setImagePreview] = useState("");
   const [loadingImage, setLoadingImage] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
-  const [showAI, setShowAI] = useState(true);
+  const [showAI, setShowAI] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -452,10 +452,13 @@ export default function WeightModule() {
             </button>
           </div>
           {latest?.aiAnalysis ? (
-            latest.aiAcknowledgedAt && !showAI ? (
-              <div className="mt-4 flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50 p-4">
-                <p className="text-sm font-black text-emerald-800">Analisis leido y guardado.</p>
-                <button className="rounded-lg bg-white px-3 py-2 text-xs font-black text-emerald-700" type="button" onClick={() => setShowAI(true)}>Abrir</button>
+            !showAI ? (
+              <div className="mt-4 flex flex-col gap-3 rounded-lg border border-blue-100 bg-blue-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-black text-blue-900">Hay un analisis IA guardado para el ultimo registro.</p>
+                  <p className="mt-1 text-xs font-bold text-blue-700">Puedes abrirlo o generar uno nuevo cuando quieras.</p>
+                </div>
+                <button className="w-fit rounded-lg bg-white px-3 py-2 text-xs font-black text-blue-700" type="button" onClick={() => setShowAI(true)}>Abrir analisis</button>
               </div>
             ) : (
               <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">

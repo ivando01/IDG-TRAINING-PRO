@@ -352,9 +352,9 @@ export default function Dashboard() {
             <h3 className="text-lg font-black text-slate-900">Sesiones recientes</h3>
             <p className="text-sm font-bold text-slate-500">{data.sessions.length} registros totales</p>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3">
             {recent.map((session) => <SessionCard key={`${session.type}-${session.id}`} {...session} />)}
-            {!recent.length ? <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center text-sm font-bold text-slate-400 md:col-span-2">Aun no hay sesiones. Guarda una rutina o importa GPX/FIT para alimentar el dashboard.</div> : null}
+            {!recent.length ? <div className="rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center text-sm font-bold text-slate-400">Aun no hay sesiones. Guarda una rutina o importa GPX/FIT para alimentar el dashboard.</div> : null}
           </div>
         </section>
       </main>
