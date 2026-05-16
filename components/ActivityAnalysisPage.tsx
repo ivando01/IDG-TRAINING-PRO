@@ -960,7 +960,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       return;
     }
     setSyncingStrava(true);
-    setStatus("Sincronizando Strava: ultimos 15 dias, sesiones y actividades de soporte nuevas...");
+    setStatus("Sincronizando Strava: ultimos 90 dias, sesiones y actividades de soporte nuevas...");
     try {
       const existingStravaIds = activities
         .filter((activity) => activity.id.startsWith("strava-"))
@@ -968,8 +968,8 @@ export default function ActivityAnalysisPage({ sport }: Props) {
         .join(",");
       const params = new URLSearchParams({
         sport,
-        days: "15",
-        limit: "12",
+        days: "90",
+        limit: "30",
       });
       if (existingStravaIds) params.set("exclude", existingStravaIds);
       const response = await fetch(`${apiUrl()}/strava/sync?${params.toString()}`, {
@@ -991,16 +991,16 @@ export default function ActivityAnalysisPage({ sport }: Props) {
             return `${item.start_date?.slice(0, 10) || "sin fecha"} ${item.type || "sin tipo"} ${item.name || ""} (${flags})`.trim();
           }).join(" | ")}.`
           : "";
-        setStatus(`Strava conectado: no hay sesiones nuevas de ${sport === "cycling" ? "ciclismo" : "running"} en los ultimos ${data.days || 15} dias.${scanned}${types}${recent}`);
+        setStatus(`Strava conectado: no hay sesiones nuevas de ${sport === "cycling" ? "ciclismo" : "running"} en los ultimos ${data.days || 90} dias.${scanned}${types}${recent}`);
         return;
       }
       const next = [
         ...imported,
         ...activities.filter((activity) => !imported.some((item: ActivityAnalysis) => item.id === activity.id)),
-      ].slice(0, 20);
+      ].slice(0, 120);
       saveActivities(next);
       setSelectedId(imported[0].id);
-      setStatus(`${imported.length} actividades nuevas sincronizadas desde Strava en los ultimos ${data.days || 15} dias. Las caminatas quedan como soporte y no suman al acumulado de running.`);
+      setStatus(`${imported.length} actividades nuevas sincronizadas desde Strava en los ultimos ${data.days || 90} dias. Las caminatas quedan como soporte y no suman al acumulado de running.`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "No se pudo sincronizar Strava.");
     } finally {

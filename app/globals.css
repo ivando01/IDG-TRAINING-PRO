@@ -2029,7 +2029,7 @@ svg {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .gym-exercise-head {
     display: none;
   }
@@ -2037,6 +2037,19 @@ svg {
   .gym-exercise-row {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+}
+
+@media (max-width: 760px) {
+  .gym-workspace,
+  .gym-dashboard,
+  .gym-main,
+  .gym-builder,
+  .gym-builder-card,
+  .gym-intelligence-card,
+  .gym-history-card {
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   .weight-chips {

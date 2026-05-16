@@ -756,12 +756,12 @@ export default function GymModule() {
                   const detailSetCount = detailSession.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
                   return (
                     <Fragment key={session.id}>
-                      <article className={`grid grid-cols-[58px_minmax(180px,1fr)_110px_100px_100px_minmax(90px,1fr)_132px] items-center gap-4 rounded-lg border bg-white p-4 shadow-sm ${selected ? "border-blue-200" : "border-slate-200"}`}>
+                      <article className={`grid grid-cols-1 items-start gap-3 rounded-lg border bg-white p-4 shadow-sm min-[1100px]:grid-cols-[58px_minmax(180px,1fr)_110px_100px_100px_minmax(90px,1fr)_132px] min-[1100px]:items-center min-[1100px]:gap-4 ${selected ? "border-blue-200" : "border-slate-200"}`}>
                         <div className="border-l-4 border-emerald-500 pl-4">
                           <strong className="block text-2xl font-black leading-none text-slate-900">{day}</strong>
                           <span className="mt-1 block text-xs font-black uppercase text-slate-500">{shortMonth(session.date)}</span>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <strong className="block text-base font-black text-slate-900">{session.routineName}</strong>
                           <span className="mt-1 block text-sm font-semibold text-slate-500">{session.exercises.length} ejercicios - {setCount} series</span>
                         </div>
@@ -769,7 +769,7 @@ export default function GymModule() {
                         <div><strong className="block text-base font-black text-slate-900">{session.intensity * 10}%</strong><span className="text-xs font-semibold text-slate-500">Intensidad</span></div>
                         <div><strong className="block text-base font-black text-slate-900">{minutesToHHMM(session.duration)}</strong><span className="text-xs font-semibold text-slate-500">Duracion</span></div>
                         <div className="h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-blue-600" style={{ width: `${session.intensity * 10}%` }} /></div>
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-start gap-2 min-[1100px]:justify-end">
                           <button className="grid h-10 w-10 place-items-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" type="button" title={selected ? "Cerrar sesion" : "Ver sesion"} onClick={() => viewSession(session)}><Icon name="eye" /></button>
                           <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" type="button" title="Editar" onClick={() => editSession(session)}><Icon name="edit" /></button>
                           <button className="grid h-10 w-10 place-items-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100" type="button" title="Eliminar" onClick={() => deleteSession(session.id)}><Icon name="trash" /></button>
