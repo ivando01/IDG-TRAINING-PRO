@@ -630,9 +630,10 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
     if (!credentials) return res.status(409).json({ error: "Strava no conectado" });
 
     const sport = req.query.sport === "cycling" ? "cycling" : req.query.sport === "running" ? "running" : "";
-    const limit = Math.min(Number(req.query.limit) || 12, 30);
-    const days = Math.min(Math.max(Number(req.query.days) || 15, 1), 120);
+    const limit = Math.min(Number(req.query.limit) || 30, 100);
+    const days = Math.min(Math.max(Number(req.query.days) || 90, 1), 120);
     const cutoffMs = Date.now() - days * 86400000;
+    const after = Math.floor(cutoffMs / 1000);
     const excluded = new Set(
       String(req.query.exclude || "")
         .split(",")
@@ -640,14 +641,14 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
         .filter(Boolean)
     );
     const fetched = [];
-    for (let page = 1; page <= 2 && fetched.length < 60; page += 1) {
+    for (let page = 1; page <= 3 && fetched.length < 300; page += 1) {
       const activitiesResponse = await axios.get("https://www.strava.com/api/v3/athlete/activities", {
         headers: { Authorization: `Bearer ${credentials.strava_access_token}` },
-        params: { per_page: 30, page },
+        params: { per_page: 100, page, after },
       });
       const batch = Array.isArray(activitiesResponse.data) ? activitiesResponse.data : [];
       fetched.push(...batch);
-      if (batch.length < 30) break;
+      if (batch.length < 100) break;
     }
 
     const inRange = fetched.filter((activity) => {
