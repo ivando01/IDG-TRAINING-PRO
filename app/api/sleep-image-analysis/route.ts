@@ -69,11 +69,11 @@ Reglas:
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
-      "HTTP-Referer": "https://idgtraining.app",
+      "HTTP-Referer": "https://www.idgtraining.pro",
       "X-Title": "IDG Training Pro",
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_VISION_MODEL || process.env.OPENROUTER_MODEL || "openrouter/auto",
+      model: process.env.OPENROUTER_VISION_MODEL || process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-001",
       messages: [
         {
           role: "user",
@@ -90,7 +90,7 @@ Reglas:
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    return NextResponse.json({ error: data?.error?.message || `IDG Intelligence respondio ${response.status}.` }, { status: response.status });
+    return NextResponse.json({ error: data?.error?.message || `IDG Intelligence vision respondio ${response.status}. Revisa OPENROUTER_API_KEY y OPENROUTER_VISION_MODEL en Vercel Production.` }, { status: response.status });
   }
 
   const content = data?.choices?.[0]?.message?.content || "{}";

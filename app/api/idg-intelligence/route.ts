@@ -54,7 +54,7 @@ Maximo 420 palabras.
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
-      "HTTP-Referer": "https://idgtraining.app",
+      "HTTP-Referer": "https://www.idgtraining.pro",
       "X-Title": "IDG Training Pro",
     },
     body: JSON.stringify({

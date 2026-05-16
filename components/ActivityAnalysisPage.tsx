@@ -969,7 +969,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       const params = new URLSearchParams({
         sport,
         days: "90",
-        limit: "30",
+        limit: "100",
       });
       if (existingStravaIds) params.set("exclude", existingStravaIds);
       const response = await fetch(`${apiUrl()}/strava/sync?${params.toString()}`, {
