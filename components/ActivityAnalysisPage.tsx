@@ -254,7 +254,7 @@ function stravaToActivity(item: StravaSyncedActivity, sport: SportType) {
 }
 
 function compactActivityForStorage(activity: ActivityAnalysis): ActivityAnalysis {
-  const maxPoints = activity.sport === "cycling" ? 900 : 1200;
+  const maxPoints = activity.sport === "cycling" ? 180 : 220;
   if (activity.points.length <= maxPoints) return activity;
   const step = activity.points.length / maxPoints;
   const points = Array.from({ length: maxPoints }, (_, index) => activity.points[Math.min(activity.points.length - 1, Math.round(index * step))]);
@@ -262,7 +262,41 @@ function compactActivityForStorage(activity: ActivityAnalysis): ActivityAnalysis
 }
 
 function compactActivitiesForStorage(items: ActivityAnalysis[]) {
-  return items.map(compactActivityForStorage);
+  return items.slice(0, 80).map(compactActivityForStorage);
+}
+
+function ultraCompactActivitiesForStorage(items: ActivityAnalysis[]) {
+  return items.slice(0, 35).map((activity) => ({
+    ...compactActivityForStorage(activity),
+    points: activity.points.length > 80
+      ? Array.from({ length: 80 }, (_, index) => activity.points[Math.min(activity.points.length - 1, Math.round(index * (activity.points.length / 80)))])
+      : activity.points,
+    zoneTimeline: activity.zoneTimeline.slice(0, 60),
+    aiAnalysis: activity.aiAnalysis ? activity.aiAnalysis.slice(0, 1200) : undefined,
+  }));
+}
+
+function safeSetActivities(key: string, items: ActivityAnalysis[]) {
+  const attempts = [
+    compactActivitiesForStorage(items),
+    ultraCompactActivitiesForStorage(items),
+    ultraCompactActivitiesForStorage(items).slice(0, 15),
+  ];
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Continue with the write attempts even if the old cache cannot be removed.
+  }
+  for (const attempt of attempts) {
+    try {
+      localStorage.setItem(key, JSON.stringify(attempt));
+      return attempt;
+    } catch {
+      // Try a smaller local snapshot.
+    }
+  }
+  localStorage.removeItem(key);
+  return [];
 }
 
 function recalculateActivityZones(activity: ActivityAnalysis) {
@@ -814,7 +848,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       const parsed = saved ? JSON.parse(saved) : [];
       const recalculated = Array.isArray(parsed) ? parsed.map(recalculateActivityZones) : [];
       setActivities(recalculated);
-      localStorage.setItem(storageKeyForSport(sport), JSON.stringify(compactActivitiesForStorage(recalculated)));
+      safeSetActivities(storageKeyForSport(sport), recalculated);
       setSelectedId(recalculated[0]?.id || "");
     } catch {
       setActivities([]);
@@ -825,7 +859,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
         const recalculated = cloudActivities.map(recalculateActivityZones);
         setActivities(recalculated);
         setSelectedId(recalculated[0]?.id || "");
-        localStorage.setItem(storageKeyForSport(sport), JSON.stringify(compactActivitiesForStorage(recalculated)));
+        safeSetActivities(storageKeyForSport(sport), recalculated);
       })
       .catch(() => undefined);
     return () => {
@@ -848,18 +882,10 @@ export default function ActivityAnalysisPage({ sport }: Props) {
 
   const saveActivities = (next: ActivityAnalysis[]) => {
     const compact = compactActivitiesForStorage(next);
-    setActivities(compact);
-    try {
-      localStorage.setItem(storageKeyForSport(sport), JSON.stringify(compact));
-      saveCloudCollection("/activities", "activities", compact, { sport }).catch(() => undefined);
-    } catch {
-      const reduced = compact.slice(0, 20).map((activity) => ({
-        ...activity,
-        points: activity.points.filter((_, index) => index % 2 === 0),
-      }));
-      setActivities(reduced);
-      localStorage.setItem(storageKeyForSport(sport), JSON.stringify(reduced));
-      saveCloudCollection("/activities", "activities", reduced, { sport }).catch(() => undefined);
+    const stored = safeSetActivities(storageKeyForSport(sport), compact);
+    setActivities(stored.length ? stored : compact.slice(0, 10));
+    saveCloudCollection("/activities", "activities", compact, { sport }).catch(() => undefined);
+    if (stored.length !== compact.length) {
       setStatus("Se guardaron las actividades compactadas para no superar el limite local del navegador.");
     }
   };
@@ -997,7 +1023,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       const next = [
         ...imported,
         ...activities.filter((activity) => !imported.some((item: ActivityAnalysis) => item.id === activity.id)),
-      ].slice(0, 120);
+      ].slice(0, 80);
       saveActivities(next);
       setSelectedId(imported[0].id);
       setStatus(`${imported.length} actividades nuevas sincronizadas desde Strava en los ultimos ${data.days || 90} dias. Las caminatas quedan como soporte y no suman al acumulado de running.`);

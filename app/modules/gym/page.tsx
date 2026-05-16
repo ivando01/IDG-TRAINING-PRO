@@ -34,6 +34,32 @@ type GymSession = {
 
 const STORAGE_KEY = "idg_gym_sessions_json";
 const PROFILE_KEY = "idg_profile_json";
+const STRAVA_CACHE_KEYS = ["idg_cycling_activities_json", "idg_running_activities_json"];
+
+function safeSaveGymLocal(sessions: GymSession[]) {
+  const compact = sessions.slice(0, 160);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(compact));
+    return true;
+  } catch {
+    // Heavy Strava route caches can fill the browser quota and block gym saves.
+  }
+
+  for (const key of STRAVA_CACHE_KEYS) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Keep trying the remaining cleanup options.
+    }
+  }
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(compact.slice(0, 100)));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const routines: Record<RoutineKey, { name: string; exercises: Omit<ExerciseDraft, "id" | "weights">[] }> = {
   "1": {
@@ -266,7 +292,7 @@ export default function GymModule() {
         const sorted = sortSessions(cloudSessions);
         setHistory(sorted);
         setExercises(buildExercises("4", sorted));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted));
+        safeSaveGymLocal(sorted);
       })
       .catch(() => undefined);
     return () => {
@@ -436,7 +462,7 @@ export default function GymModule() {
     const withoutCurrent = history.filter((item) => item.id !== session.id);
     const nextHistory = [session, ...withoutCurrent].sort((a, b) => b.updatedAt - a.updatedAt);
     setHistory(nextHistory);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextHistory));
+    safeSaveGymLocal(nextHistory);
     saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
     setIntelligence(session.intelligence);
     setBuilderOpen(false);
@@ -527,7 +553,7 @@ export default function GymModule() {
     };
     const nextHistory = history.map((item) => (item.id === session.id ? session : item));
     setHistory(nextHistory);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextHistory));
+    safeSaveGymLocal(nextHistory);
     saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
     setIntelligence(session.intelligence);
     setInlineEditingId("");
@@ -537,7 +563,7 @@ export default function GymModule() {
   const deleteSession = (id: string) => {
     const nextHistory = history.filter((session) => session.id !== id);
     setHistory(nextHistory);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextHistory));
+    safeSaveGymLocal(nextHistory);
     saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
   };
 
