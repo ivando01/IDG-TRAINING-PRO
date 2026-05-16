@@ -460,7 +460,7 @@ export default function GymModule() {
     session.intelligence = buildIntelligence(session);
 
     const withoutCurrent = history.filter((item) => item.id !== session.id);
-    const nextHistory = [session, ...withoutCurrent].sort((a, b) => b.updatedAt - a.updatedAt);
+    const nextHistory = sortSessions([session, ...withoutCurrent]);
     setHistory(nextHistory);
     safeSaveGymLocal(nextHistory);
     saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
@@ -551,7 +551,7 @@ export default function GymModule() {
       intelligence: buildIntelligence(inlineDraft),
       updatedAt: Date.now(),
     };
-    const nextHistory = history.map((item) => (item.id === session.id ? session : item));
+    const nextHistory = sortSessions(history.map((item) => (item.id === session.id ? session : item)));
     setHistory(nextHistory);
     safeSaveGymLocal(nextHistory);
     saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
