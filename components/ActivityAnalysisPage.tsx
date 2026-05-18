@@ -142,7 +142,10 @@ function heartRateCoverage(activity: ActivityAnalysis) {
 }
 
 function hasReliableHeartRate(activity: ActivityAnalysis) {
-  return heartRateCoverage(activity) >= 0.08;
+  const zoneSeconds = activity.zoneTotals
+    .filter((zone) => zone.zoneKey !== "NA")
+    .reduce((sum, zone) => sum + zone.seconds, 0);
+  return heartRateCoverage(activity) >= 0.02 || zoneSeconds > 0 || Boolean(activity.metrics.avgHr || activity.metrics.maxHr);
 }
 
 function powerLabel(activity: ActivityAnalysis) {
@@ -1053,16 +1056,11 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     setSyncingStrava(true);
     setStatus("Sincronizando Strava: ultimos 90 dias, sesiones y actividades de soporte nuevas...");
     try {
-      const existingStravaIds = activities
-        .filter((activity) => activity.id.startsWith("strava-"))
-        .map((activity) => activity.id.replace(/^strava-/, ""))
-        .join(",");
       const params = new URLSearchParams({
         sport,
         days: "90",
         limit: "100",
       });
-      if (existingStravaIds) params.set("exclude", existingStravaIds);
       const response = await fetch(`${apiUrl()}/strava/sync?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -1091,7 +1089,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       ];
       saveActivities(next);
       setSelectedId(imported[0].id);
-      setStatus(`${imported.length} actividades nuevas sincronizadas desde Strava en los ultimos ${data.days || 90} dias. Las caminatas quedan como soporte y no suman al acumulado de running.`);
+      setStatus(`${imported.length} actividades sincronizadas/actualizadas desde Strava en los ultimos ${data.days || 90} dias. Las caminatas quedan como soporte y no suman al acumulado de running.`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "No se pudo sincronizar Strava.");
     } finally {
