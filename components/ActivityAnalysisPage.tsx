@@ -135,6 +135,16 @@ function displayCadence(activity: ActivityAnalysis) {
   return cadence;
 }
 
+function heartRateCoverage(activity: ActivityAnalysis) {
+  if (!activity.points.length) return 0;
+  const valid = activity.points.filter((point) => Number.isFinite(point.hr) && Number(point.hr) >= 40).length;
+  return valid / activity.points.length;
+}
+
+function hasReliableHeartRate(activity: ActivityAnalysis) {
+  return heartRateCoverage(activity) >= 0.08;
+}
+
 function powerLabel(activity: ActivityAnalysis) {
   if (activity.sport !== "cycling") return "";
   if (activity.metrics.powerSource === "estimated") return "Potencia estimada por velocidad, pendiente y peso";
@@ -424,19 +434,14 @@ function ActivityMap({
     <div className="grid gap-3">
       <div className="relative">
         <div ref={ref} className={`${expanded ? "h-[calc(100vh-190px)] min-h-[430px]" : "h-[340px] min-h-[280px] lg:h-[430px]"} w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-100`} />
-        {!expanded ? (
-          <button className="absolute left-3 top-3 z-10 rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs font-black text-slate-700 shadow-sm backdrop-blur hover:bg-white" type="button" onClick={onExpand}>
-            Expandir mapa
-          </button>
-        ) : null}
       </div>
       {showMetricPanel && selectedPoint ? (
-        <div className="rounded-lg border border-slate-200 bg-white p-3">
-          <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4 lg:grid-cols-7">
-            {cards.map(([label, value]) => (
-              <div key={label}>
+        <div className="rounded-lg border border-slate-200 bg-white p-2">
+          <div className="grid grid-cols-3 gap-2 text-[11px] md:grid-cols-6">
+            {cards.filter(([label]) => hasReliableHeartRate(activity) || label !== "FC").slice(0, 6).map(([label, value]) => (
+              <div className="min-w-0 rounded-md bg-slate-50 px-2 py-1.5" key={label}>
                 <p className="font-black uppercase text-slate-400">{label}</p>
-                <p className="mt-1 font-black text-slate-900">{value}</p>
+                <p className="mt-0.5 truncate font-black text-slate-900">{value}</p>
               </div>
             ))}
           </div>
@@ -542,20 +547,23 @@ function ActivityMetricChart({
 }) {
   const rawOptions: Array<ChartOption | null> = [
     { key: "ele", label: "Elevacion", color: "#22C55E", unit: "m", values: smoothChartValues(activity.points.map((point) => point.ele)), minRange: 20 },
-    { key: "hr", label: "Frecuencia cardiaca", color: "#EF4444", unit: "bpm", values: activity.points.map((point) => point.hr) },
+    hasReliableHeartRate(activity) ? { key: "hr", label: "Frecuencia cardiaca", color: "#EF4444", unit: "bpm", values: activity.points.map((point) => point.hr) } : null,
     { key: "pace", label: activity.sport === "cycling" ? "Velocidad" : "Ritmo", color: "#1D4ED8", unit: activity.sport === "cycling" ? "km/h" : "min/km", values: activity.points.map((point) => activity.sport === "cycling" ? point.speedKmh : point.speedKmh && point.speedKmh > 0.5 ? Number((60 / point.speedKmh).toFixed(2)) : null) },
     { key: "cad", label: "Cadencia", color: "#F97316", unit: activity.sport === "cycling" ? "rpm" : "ppm", values: activity.points.map((point) => point.cad) },
     activity.sport === "cycling" ? { key: "power", label: "Potencia", color: "#7C3AED", unit: "W", values: activity.points.map((point) => point.power) } : null,
   ];
   const options = rawOptions.filter((option): option is ChartOption => Boolean(option));
-  const [active, setActive] = useState<string[]>(["ele", "hr"]);
+  const [active, setActive] = useState<string[]>(() => hasReliableHeartRate(activity) ? ["ele", "hr"] : ["ele", "pace"]);
+  useEffect(() => {
+    setActive(hasReliableHeartRate(activity) ? ["ele", "hr"] : ["ele", "pace"]);
+  }, [activity.id]);
   const selected = options.filter((option) => active.includes(option.key)).slice(0, 2);
   const points = activity.points;
   if (points.length < 2) return <div className="grid h-44 place-items-center text-sm font-bold text-slate-400">Sin datos de grafica</div>;
   const safeIndex = clampIndex(selectedIndex, points.length);
   const cursorPoint = points[safeIndex];
   const w = 900;
-  const h = 300;
+  const h = expanded ? 280 : 240;
   const plot = { left: 54, right: 56, top: 22, bottom: 38 };
   const plotWidth = w - plot.left - plot.right;
   const plotHeight = h - plot.top - plot.bottom;
@@ -598,12 +606,12 @@ function ActivityMetricChart({
   };
   const cursorX = x(cursorPoint?.distanceKm || 0);
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,4fr)_minmax(180px,1fr)]">
+    <div className="grid gap-3 xl:grid-cols-[minmax(0,4fr)_minmax(170px,0.9fr)]">
       <div className="min-w-0">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-            {pointMetricCards(activity, cursorPoint).slice(0, 4).map(([label, value]) => (
-              <div className="rounded-lg bg-slate-50 px-3 py-2" key={label}>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="grid flex-1 grid-cols-3 gap-2 text-xs lg:grid-cols-6">
+            {pointMetricCards(activity, cursorPoint).filter(([label]) => hasReliableHeartRate(activity) || label !== "FC").slice(0, 6).map(([label, value]) => (
+              <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2" key={label}>
                 <p className="font-black uppercase text-slate-400">{label}</p>
                 <p className="mt-1 font-black text-slate-900">{value}</p>
               </div>
@@ -613,7 +621,7 @@ function ActivityMetricChart({
             {expanded ? "Cerrar visor" : "Expandir grafica"}
           </button>
         </div>
-        <svg viewBox={`0 0 ${w} ${h}`} className={`${expanded ? "h-[280px] xl:h-[320px]" : "h-[300px]"} w-full touch-none overflow-visible`} onPointerDown={moveCursorFromPointer} onPointerMove={(event) => { if (event.buttons === 1) moveCursorFromPointer(event); }}>
+        <svg viewBox={`0 0 ${w} ${h}`} className={`${expanded ? "h-[260px] xl:h-[300px]" : "h-[230px]"} w-full touch-none overflow-visible`} onPointerDown={moveCursorFromPointer} onPointerMove={(event) => { if (event.buttons === 1) moveCursorFromPointer(event); }}>
           <defs>
             <linearGradient id={`chart-bg-${activity.id}`} x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor="#F8FAFC" stopOpacity="0" />
@@ -691,7 +699,7 @@ function ActivityMetricChart({
         <div className="mt-2 flex flex-wrap gap-3 text-xs font-bold text-slate-500">
           {seriesScales.map((series, index) => <span key={series.key} style={{ color: series.color }}>{index === 0 ? "Eje Y izq." : "Eje Y der."} - {series.label} ({series.unit})</span>)}
         </div>
-        <div className={`${expanded ? "mt-2" : "mt-4"} grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3`}>
+        <div className={`${expanded ? "mt-2" : "mt-3"} grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3`}>
           <div className="flex items-center justify-between gap-3">
             <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700" type="button" onClick={() => onSelectedIndexChange(clampIndex(safeIndex - 1, points.length))}>Anterior</button>
             <span className="text-xs font-black text-slate-500">{cursorPoint.distanceKm.toFixed(2)} km / {maxKm.toFixed(2)} km</span>
@@ -728,6 +736,13 @@ function ActivityMetricChart({
 }
 
 function HeartZoneBars({ activity }: { activity: ActivityAnalysis }) {
+  if (!hasReliableHeartRate(activity)) {
+    return (
+      <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-xs font-bold leading-5 text-slate-500">
+        Esta actividad no trae suficientes puntos de frecuencia cardiaca. Revisa banda/reloj, bateria o permisos de Strava.
+      </div>
+    );
+  }
   const totalsByZone = new globalThis.Map(activity.zoneTotals.map((zone) => [zone.zoneKey, zone]));
   const zones = activity.zones.map((zone) => {
     const totalZone = totalsByZone.get(zone.key);
@@ -770,6 +785,36 @@ function HeartZoneBars({ activity }: { activity: ActivityAnalysis }) {
         );
       })}
       {!zoneTotal ? <p className="rounded-lg bg-slate-50 p-3 text-xs font-bold text-slate-400">Sin datos de frecuencia cardiaca para distribuir zonas.</p> : null}
+    </div>
+  );
+}
+
+function MapLayerControls({
+  layer,
+  heatmap,
+  onLayerChange,
+  onHeatmapChange,
+}: {
+  layer: LayerKey;
+  heatmap: boolean;
+  onLayerChange: (layer: LayerKey) => void;
+  onHeatmapChange: (value: boolean) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-3">
+      <p className="text-xs font-black uppercase tracking-wide text-slate-500">Capas del mapa</p>
+      <div className="mt-2 grid gap-2">
+        {(Object.keys(layerLabels) as LayerKey[]).map((key) => (
+          <label className="flex items-center gap-2 text-xs font-bold text-slate-700" key={key}>
+            <input type="radio" checked={layer === key} onChange={() => onLayerChange(key)} />
+            {layerLabels[key]}
+          </label>
+        ))}
+      </div>
+      <label className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-bold text-slate-700">
+        Heatmap
+        <input type="checkbox" checked={heatmap} onChange={(event) => onHeatmapChange(event.target.checked)} />
+      </label>
     </div>
   );
 }
@@ -1131,7 +1176,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
                   ["Desnivel -", selected.metrics.elevationLoss, "m"],
                   ["Altitud Max.", selected.metrics.altitudeMax, "m"],
                   ["Pendiente Prom.", selected.metrics.avgGradePct, "%"],
-                ]).map(([label, value, unit]) => (
+                ]).filter(([label]) => hasReliableHeartRate(selected) || !String(label).startsWith("FC")).map(([label, value, unit]) => (
                   <div className="min-w-0 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2" key={label} title={label === "Potencia" && sport === "cycling" ? powerLabel(selected) : String(label)}>
                     <p className="truncate text-[10px] font-black uppercase tracking-wide text-[#64748B]">{label}</p>
                     <p className="mt-0.5 text-lg font-black leading-tight text-[#0F172A] xl:text-xl">{metric(value, String(unit))}</p>
@@ -1157,8 +1202,17 @@ export default function ActivityAnalysisPage({ sport }: Props) {
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
               <section className="grid gap-3 rounded-lg border border-[#E2E8F0] bg-white p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-black text-slate-900">Mapa de ruta</h2>
+                    <p className="text-xs font-bold text-slate-500">El zoom y posicion quedan bajo tu control.</p>
+                  </div>
+                  <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50" type="button" onClick={() => setExpandedViewer("map")}>
+                    Expandir mapa
+                  </button>
+                </div>
                 <ActivityMap activity={selected} layer={layer} heatmap={heatmap} selectedPoint={mapPoint} onExpand={() => setExpandedViewer("map")} />
-                <div className="mt-3 grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <div className="grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3">
                   <div className="flex items-center justify-between gap-3">
                     <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700" type="button" onClick={() => setMapPointIndex(clampIndex(safeMapPointIndex - 1, selected.points.length))}>Punto anterior</button>
                     <span className="text-xs font-black text-slate-500">{mapPoint?.distanceKm.toFixed(2) || "0.00"} km</span>
@@ -1166,28 +1220,16 @@ export default function ActivityAnalysisPage({ sport }: Props) {
                   </div>
                   <input aria-label="Recorrer puntos sobre el mapa" className="w-full accent-blue-600" max={selected.points.length - 1} min={0} type="range" value={safeMapPointIndex} onChange={(event) => setMapPointIndex(Number(event.target.value))} />
                 </div>
-                <div className="rounded-lg border border-slate-200 bg-white p-3">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">Capas</p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                    {(Object.keys(layerLabels) as LayerKey[]).map((key) => (
-                      <label className="flex items-center gap-2 text-xs font-bold text-slate-700" key={key}>
-                        <input type="radio" checked={layer === key} onChange={() => setLayer(key)} />
-                        {layerLabels[key]}
-                      </label>
-                    ))}
-                  </div>
-                  <label className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-bold text-slate-700">
-                    Heatmap
-                    <input type="checkbox" checked={heatmap} onChange={(event) => setHeatmap(event.target.checked)} />
-                  </label>
-                </div>
               </section>
 
-              <aside className="rounded-lg border border-[#E2E8F0] bg-white p-5">
-                <p className="text-xs font-black uppercase tracking-wide text-blue-600">Analisis de zonas</p>
-                <h2 className="mt-1 text-lg font-black text-slate-900">Distribucion cardiaca</h2>
-                <p className="mt-1 text-xs font-bold leading-5 text-slate-500">Tiempo acumulado por zona para entender la carga real de la sesion.</p>
-                <div className="mt-5">
+              <aside className="grid content-start gap-4 rounded-lg border border-[#E2E8F0] bg-white p-5">
+                <MapLayerControls layer={layer} heatmap={heatmap} onLayerChange={setLayer} onHeatmapChange={setHeatmap} />
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-blue-600">Analisis de zonas</p>
+                  <h2 className="mt-1 text-lg font-black text-slate-900">Distribucion cardiaca</h2>
+                  <p className="mt-1 text-xs font-bold leading-5 text-slate-500">Tiempo acumulado por zona para entender la carga real de la sesion.</p>
+                </div>
+                <div>
                   <HeartZoneBars activity={selected} />
                 </div>
               </aside>
@@ -1326,9 +1368,10 @@ export default function ActivityAnalysisPage({ sport }: Props) {
               {expandedViewer === "chart" ? (
                 <ActivityMetricChart activity={selected} selectedIndex={safeChartPointIndex} onSelectedIndexChange={setChartPointIndex} expanded onExpand={() => setExpandedViewer("")} />
               ) : (
-                <div className="grid min-h-0 gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+                <div className="grid min-h-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
                   <ActivityMap activity={selected} layer={layer} heatmap={heatmap} selectedPoint={mapPoint} expanded showMetricPanel={false} onExpand={() => setExpandedViewer("")} />
                   <aside className="grid content-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <MapLayerControls layer={layer} heatmap={heatmap} onLayerChange={setLayer} onHeatmapChange={setHeatmap} />
                     <div>
                       <p className="text-xs font-black uppercase tracking-wide text-blue-600">Punto seleccionado</p>
                       <h3 className="mt-1 text-lg font-black text-slate-900">{mapPoint?.distanceKm.toFixed(2) || "0.00"} km</h3>
@@ -1349,7 +1392,11 @@ export default function ActivityAnalysisPage({ sport }: Props) {
                       </div>
                       <input aria-label="Recorrer puntos en visor de mapa" className="w-full accent-blue-600" max={selected.points.length - 1} min={0} type="range" value={safeMapPointIndex} onChange={(event) => setMapPointIndex(Number(event.target.value))} />
                     </div>
-                    <p className="text-[11px] font-bold leading-5 text-slate-500">El zoom queda bajo control del usuario; al cambiar de punto solo se recentra el mapa.</p>
+                    <div className="rounded-lg border border-slate-200 bg-white p-3">
+                      <p className="mb-3 text-xs font-black uppercase tracking-wide text-blue-600">Zonas FC</p>
+                      <HeartZoneBars activity={selected} />
+                    </div>
+                    <p className="text-[11px] font-bold leading-5 text-slate-500">El zoom queda bajo control del usuario; al cambiar de punto solo se mueve el marcador.</p>
                   </aside>
                 </div>
               )}
