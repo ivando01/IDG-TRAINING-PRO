@@ -853,7 +853,7 @@ function ZoneTimeline({ activity }: { activity: ActivityAnalysis }) {
           {activity.zones.map((zone) => (
             <span className="inline-flex items-center gap-1.5" key={zone.key}>
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: zone.color }} />
-              {zone.key}
+              {zone.key} {zone.min}-{zone.max}
             </span>
           ))}
           {hasNoZone ? (

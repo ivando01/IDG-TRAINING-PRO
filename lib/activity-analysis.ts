@@ -107,22 +107,71 @@ export const DEFAULT_ZONES: HRZone[] = [
   { key: "Z5", name: "Extremo", min: 171, max: 240, color: ZONE_COLORS.Z5 },
 ];
 
+function calculatedZonesFromProfile(profile: Record<string, unknown> | null | undefined): HRZone[] {
+  const fcmax = Number(profile?.fcmax) || 190;
+  const fcrest = Number(profile?.fcrest) || 0;
+  const useReserve = fcrest >= 35 && fcrest < fcmax - 20;
+  const ranges = [
+    [0.5, 0.6],
+    [0.6, 0.7],
+    [0.7, 0.8],
+    [0.8, 0.9],
+    [0.9, 1],
+  ];
+  return ranges.map(([minPct, maxPct], index) => {
+    const key = `Z${index + 1}` as HRZone["key"];
+    const min = useReserve ? fcrest + (fcmax - fcrest) * minPct : fcmax * minPct;
+    const max = useReserve ? fcrest + (fcmax - fcrest) * maxPct : fcmax * maxPct;
+    return {
+      key,
+      name: DEFAULT_ZONES[index].name,
+      min: index === 0 ? 0 : Math.round(min),
+      max: index === 4 ? Math.max(240, Math.round(max)) : Math.round(max),
+      color: ZONE_COLORS[key],
+    };
+  });
+}
+
+function sanitizeZones(zones: HRZone[], fallback: HRZone[]) {
+  let previousMax = 0;
+  const normalized = zones.slice(0, 5).map((zone, index) => {
+    const key = `Z${index + 1}` as HRZone["key"];
+    const fallbackZone = fallback[index] || DEFAULT_ZONES[index];
+    const rawMin = Number(zone.min);
+    const rawMax = Number(zone.max);
+    const min = index === 0 ? 0 : Math.max(previousMax, Number.isFinite(rawMin) ? Math.round(rawMin) : fallbackZone.min);
+    const max = Number.isFinite(rawMax) && rawMax > min ? Math.round(rawMax) : Math.max(min + 1, fallbackZone.max);
+    previousMax = max;
+    return {
+      key,
+      name: fallbackZone.name,
+      min,
+      max: index === 4 ? Math.max(max, 240) : max,
+      color: ZONE_COLORS[key],
+    };
+  });
+  const coherent = normalized.every((zone, index) => zone.min < zone.max && (index === 0 || zone.min >= normalized[index - 1].max));
+  return coherent ? normalized : fallback;
+}
+
 export function getStoredZones(): HRZone[] {
   if (typeof window === "undefined") return DEFAULT_ZONES;
   try {
     const raw = localStorage.getItem(PROFILE_KEY) || localStorage.getItem(LEGACY_PROFILE_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
+    const calculated = calculatedZonesFromProfile(parsed);
     if (Array.isArray(parsed?.zones) && parsed.zones.length >= 5) {
-      return parsed.zones.slice(0, 5).map((zone: { name?: string; min?: number; max?: number }, index: number) => {
+      const stored = parsed.zones.slice(0, 5).map((zone: { name?: string; min?: number; max?: number }, index: number) => {
         const key = `Z${index + 1}` as HRZone["key"];
         return {
           key,
           name: DEFAULT_ZONES[index].name,
-          min: Number(zone.min) || DEFAULT_ZONES[index].min,
-          max: Number(zone.max) || DEFAULT_ZONES[index].max,
+          min: Number(zone.min),
+          max: Number(zone.max),
           color: ZONE_COLORS[key],
         };
       });
+      return sanitizeZones(stored, calculated);
     }
   } catch {
     return DEFAULT_ZONES;
