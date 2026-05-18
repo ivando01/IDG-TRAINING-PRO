@@ -348,6 +348,17 @@ function normalizedPower(points: ActivityPoint[]) {
   return Math.round(fourth ** 0.25);
 }
 
+function estimateRunningVo2(avgSpeedKmh: number | null, avgHr: number | null, maxHr: number | null) {
+  if (!avgSpeedKmh || avgSpeedKmh <= 0) return null;
+  const metersPerMinute = (avgSpeedKmh * 1000) / 60;
+  const oxygenCost = 3.5 + 0.2 * metersPerMinute;
+  const reserveRatio = avgHr && maxHr && avgHr > 50 && maxHr > avgHr
+    ? Math.max(0.72, Math.min(0.94, avgHr / maxHr))
+    : 0.82;
+  const estimate = oxygenCost / reserveRatio;
+  return Math.round(Math.max(25, Math.min(75, estimate)));
+}
+
 function buildMetrics(points: ActivityPoint[], sport: SportType): ActivityMetrics {
   const durationSec = points.length > 1 && points[0].time && points.at(-1)?.time ? Math.round((points.at(-1)!.time! - points[0].time!) / 1000) : 0;
   const distanceKm = points.at(-1)?.distanceKm || 0;
@@ -365,7 +376,8 @@ function buildMetrics(points: ActivityPoint[], sport: SportType): ActivityMetric
   const avgCadence = avg(points.map((point) => point.cad));
   const avgSpeedKmh = speeds.length ? Number((speeds.reduce((sum, value) => sum + value, 0) / speeds.length).toFixed(1)) : durationSec ? Number((distanceKm / (durationSec / 3600)).toFixed(1)) : null;
   const strideMeters = sport === "running" && avgCadence && distanceKm && durationSec ? Number(((distanceKm * 1000) / ((avgCadence * durationSec) / 60)).toFixed(2)) : null;
-  const vo2Estimate = sport === "running" && avgSpeedKmh ? Math.round(3.5 + 3.5 * (avgSpeedKmh / 3.5)) : null;
+  const maxHrValue = max(points.map((point) => point.hr));
+  const vo2Estimate = sport === "running" ? estimateRunningVo2(avgSpeedKmh, avgHr, maxHrValue) : null;
   return {
     distanceKm: Number(distanceKm.toFixed(2)),
     durationSec,
@@ -380,7 +392,7 @@ function buildMetrics(points: ActivityPoint[], sport: SportType): ActivityMetric
     altitudeMin: elevation.min,
     avgGradePct: distanceKm ? Number(((elevation.gain / (distanceKm * 1000)) * 100).toFixed(1)) : null,
     avgHr,
-    maxHr: max(points.map((point) => point.hr)),
+    maxHr: maxHrValue,
     avgCadence,
     strideMeters,
     vo2Estimate,
