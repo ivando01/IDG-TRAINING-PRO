@@ -168,8 +168,9 @@ export function normalizeCadenceValue(value: unknown, sport: SportType, activity
   let cadence = parsed;
 
   if (sport === "running") {
+    if (cadence >= 40 && cadence <= 125) cadence = cadence * 2;
     if (looksLikeWalk && cadence > 170 && cadence <= 260) cadence = cadence / 2;
-    if (cadence < 40 || cadence > 230) return null;
+    if (cadence < 40 || cadence > 260) return null;
   } else if (cadence < 20 || cadence > 180) {
     return null;
   }

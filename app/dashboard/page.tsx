@@ -4,6 +4,7 @@ import { AppIcon } from "@/components/Brand";
 import KPICard from "@/components/KPICard";
 import SessionCard from "@/components/SessionCard";
 import TopNav from "@/components/TopNav";
+import { getCloudCollection, getCloudProfile } from "@/lib/cloud-sync";
 import { useEffect, useMemo, useState } from "react";
 
 type SportType = "gym" | "running" | "cycling";
@@ -260,7 +261,29 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData>({ profile: {}, sessions: [], weight: [], intelligence: [] });
 
   useEffect(() => {
+    let alive = true;
     setData(loadDashboardData());
+    Promise.allSettled([
+      getCloudProfile<Record<string, unknown>>(),
+      getCloudCollection<Record<string, unknown>>("/gym/sessions", "sessions"),
+      getCloudCollection<Record<string, unknown>>("/activities?sport=running", "activities"),
+      getCloudCollection<Record<string, unknown>>("/activities?sport=cycling", "activities"),
+      getCloudCollection<Record<string, unknown>>("/weight", "records"),
+      getCloudCollection<Record<string, unknown>>("/intelligence", "entries"),
+    ]).then((results) => {
+      if (!alive) return;
+      const [profileResult, gymResult, runResult, bikeResult, weightResult, intelligenceResult] = results;
+      if (profileResult.status === "fulfilled" && profileResult.value) localStorage.setItem("idg_profile_json", JSON.stringify(profileResult.value));
+      if (gymResult.status === "fulfilled") localStorage.setItem("idg_gym_sessions_json", JSON.stringify(gymResult.value));
+      if (runResult.status === "fulfilled") localStorage.setItem("idg_running_activities_json", JSON.stringify(runResult.value));
+      if (bikeResult.status === "fulfilled") localStorage.setItem("idg_cycling_activities_json", JSON.stringify(bikeResult.value));
+      if (weightResult.status === "fulfilled") localStorage.setItem("idg_weight_records_json", JSON.stringify(weightResult.value));
+      if (intelligenceResult.status === "fulfilled") localStorage.setItem("idg_intelligence_history_json", JSON.stringify(intelligenceResult.value));
+      setData(loadDashboardData());
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const weekSessions = useMemo(() => data.sessions.filter((session) => inCurrentWeek(session.date)), [data.sessions]);

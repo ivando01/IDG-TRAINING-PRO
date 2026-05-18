@@ -9,6 +9,7 @@ type Zone = { name: string; min: number; max: number; color: string };
 type AthleteProfile = {
   name: string;
   email: string;
+  updatedAt?: string;
   gender: string;
   dob: string;
   weight: string;
@@ -88,6 +89,11 @@ function normalizeZones(zones: Zone[] | undefined, fcmax: string) {
   }));
 }
 
+function profileTime(profile: Partial<AthleteProfile> | null | undefined) {
+  const timestamp = Date.parse(String(profile?.updatedAt || ""));
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
 function ageFromDob(dob: string) {
   if (!dob) return "";
   const birth = new Date(`${dob}T00:00:00`);
@@ -144,6 +150,10 @@ export default function ProfilePage() {
     getCloudProfile<AthleteProfile>()
       .then((cloudProfile) => {
         if (!alive || !cloudProfile) return;
+        if (profileTime(parsed) > profileTime(cloudProfile)) {
+          saveCloudProfile(parsed as AthleteProfile).catch(() => undefined);
+          return;
+        }
         const synced = { ...seedProfile, ...cloudProfile, zones: normalizeZones(cloudProfile.zones, cloudProfile.fcmax || seedProfile.fcmax) };
         setProfile(synced);
         localStorage.setItem(PROFILE_KEY, JSON.stringify(synced));
@@ -200,11 +210,13 @@ export default function ProfilePage() {
   };
 
   const saveProfile = async () => {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-    localStorage.setItem(LEGACY_PROFILE_KEY, JSON.stringify(profile));
+    const payload = { ...profile, updatedAt: new Date().toISOString() };
+    setProfile(payload);
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(payload));
+    localStorage.setItem(LEGACY_PROFILE_KEY, JSON.stringify(payload));
     setStatus("Perfil guardado localmente. Sincronizando nube...");
     try {
-      await saveCloudProfile(profile);
+      await saveCloudProfile(payload);
       setStatus("Perfil guardado y sincronizado. Gym usara tus dias por semana para el progreso semanal.");
     } catch {
       setStatus("Perfil guardado localmente. No se pudo sincronizar con la nube.");

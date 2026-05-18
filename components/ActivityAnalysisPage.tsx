@@ -416,12 +416,6 @@ function ActivityMap({
     } else {
       markerRef.current.setLngLat(lngLat);
     }
-    map.easeTo({
-      center: lngLat,
-      duration: 320,
-      essential: true,
-      offset: [0, expanded ? -12 : -18],
-    });
   }, [expanded, selectedPoint]);
 
   const cards = pointMetricCards(activity, selectedPoint);
@@ -858,6 +852,17 @@ export default function ActivityAnalysisPage({ sport }: Props) {
 
   useEffect(() => {
     let alive = true;
+    const loadCloudActivities = () => {
+      getCloudCollection<ActivityAnalysis>(`/activities?sport=${sport}`, "activities")
+        .then((cloudActivities) => {
+          if (!alive || !cloudActivities.length) return;
+          const recalculated = sortActivitiesBySessionDate(cloudActivities.map(recalculateActivityZones));
+          setActivities(recalculated);
+          setSelectedId((current) => current && recalculated.some((activity) => activity.id === current) ? current : recalculated[0]?.id || "");
+          safeSetActivities(storageKeyForSport(sport), recalculated);
+        })
+        .catch(() => undefined);
+    };
     try {
       const saved = localStorage.getItem(storageKeyForSport(sport));
       const parsed = saved ? JSON.parse(saved) : [];
@@ -868,17 +873,16 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     } catch {
       setActivities([]);
     }
-    getCloudCollection<ActivityAnalysis>(`/activities?sport=${sport}`, "activities")
-      .then((cloudActivities) => {
-        if (!alive || !cloudActivities.length) return;
-        const recalculated = sortActivitiesBySessionDate(cloudActivities.map(recalculateActivityZones));
-        setActivities(recalculated);
-        setSelectedId(recalculated[0]?.id || "");
-        safeSetActivities(storageKeyForSport(sport), recalculated);
-      })
-      .catch(() => undefined);
+    loadCloudActivities();
+    const refreshOnFocus = () => loadCloudActivities();
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshOnFocus);
+    const timer = window.setInterval(loadCloudActivities, 30000);
     return () => {
       alive = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshOnFocus);
     };
   }, [sport]);
 
@@ -1152,7 +1156,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
             </section>
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-              <section className="relative overflow-hidden rounded-lg border border-[#E2E8F0] bg-white p-3">
+              <section className="grid gap-3 rounded-lg border border-[#E2E8F0] bg-white p-3">
                 <ActivityMap activity={selected} layer={layer} heatmap={heatmap} selectedPoint={mapPoint} onExpand={() => setExpandedViewer("map")} />
                 <div className="mt-3 grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3">
                   <div className="flex items-center justify-between gap-3">
@@ -1162,9 +1166,9 @@ export default function ActivityAnalysisPage({ sport }: Props) {
                   </div>
                   <input aria-label="Recorrer puntos sobre el mapa" className="w-full accent-blue-600" max={selected.points.length - 1} min={0} type="range" value={safeMapPointIndex} onChange={(event) => setMapPointIndex(Number(event.target.value))} />
                 </div>
-                <div className="absolute right-4 top-4 w-36 rounded-lg border border-slate-200 bg-white/95 p-3 backdrop-blur">
+                <div className="rounded-lg border border-slate-200 bg-white p-3">
                   <p className="text-xs font-black uppercase tracking-wide text-slate-500">Capas</p>
-                  <div className="mt-2 grid gap-2">
+                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
                     {(Object.keys(layerLabels) as LayerKey[]).map((key) => (
                       <label className="flex items-center gap-2 text-xs font-bold text-slate-700" key={key}>
                         <input type="radio" checked={layer === key} onChange={() => setLayer(key)} />
