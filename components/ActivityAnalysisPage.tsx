@@ -859,7 +859,7 @@ function ZoneTimeline({ activity }: { activity: ActivityAnalysis }) {
           {hasNoZone ? (
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-              Sin FC / fuera de zona
+              Sin FC
             </span>
           ) : null}
         </div>
@@ -1056,11 +1056,16 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     setSyncingStrava(true);
     setStatus("Sincronizando Strava: ultimos 90 dias, sesiones y actividades de soporte nuevas...");
     try {
+      const existingStravaIds = activities
+        .filter((activity) => activity.id.startsWith("strava-"))
+        .map((activity) => activity.id.replace(/^strava-/, ""))
+        .join(",");
       const params = new URLSearchParams({
         sport,
         days: "90",
         limit: "100",
       });
+      if (existingStravaIds) params.set("exclude", existingStravaIds);
       const response = await fetch(`${apiUrl()}/strava/sync?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -1089,7 +1094,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       ];
       saveActivities(next);
       setSelectedId(imported[0].id);
-      setStatus(`${imported.length} actividades sincronizadas/actualizadas desde Strava en los ultimos ${data.days || 90} dias. Las caminatas quedan como soporte y no suman al acumulado de running.`);
+      setStatus(`${imported.length} actividades nuevas sincronizadas desde Strava en los ultimos ${data.days || 90} dias. Las caminatas quedan como soporte y no suman al acumulado de running.`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "No se pudo sincronizar Strava.");
     } finally {
