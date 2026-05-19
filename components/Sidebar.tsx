@@ -13,6 +13,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: "dashboard", label: "Dashboard", href: "/dashboard", section: "PRINCIPAL" },
+  { icon: "profile", label: "Perfil", href: "/profile", section: "PRINCIPAL" },
   { icon: "gym", label: "Gym", href: "/modules/gym", section: "DEPORTES" },
   { icon: "cycling", label: "Ciclismo", href: "/modules/cycling", section: "DEPORTES" },
   { icon: "running", label: "Running", href: "/modules/running", section: "DEPORTES" },
@@ -20,7 +21,6 @@ const navItems: NavItem[] = [
   { icon: "goals", label: "Metas", href: "/modules/goals", section: "CONTROL" },
   { icon: "intelligence", label: "IDG Intelligence", href: "/modules/analytics", section: "HERRAMIENTAS" },
   { icon: "plan", label: "Plan Semanal", href: "/modules/plan", section: "HERRAMIENTAS" },
-  { icon: "profile", label: "Perfil", href: "/profile", section: "CUENTA" },
 ];
 
 type ScoreState = {
@@ -131,7 +131,7 @@ export default function Sidebar() {
     router.push("/");
   };
 
-  const sections = ["PRINCIPAL", "DEPORTES", "CONTROL", "HERRAMIENTAS", "CUENTA"];
+  const sections = ["PRINCIPAL", "DEPORTES", "CONTROL", "HERRAMIENTAS"];
 
   const navButton = (item: NavItem, mobile = false) => {
     const active = pathname === item.href || pathname.startsWith(item.href);
