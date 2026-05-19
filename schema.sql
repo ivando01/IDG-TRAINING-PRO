@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS users (
   strava_access_token TEXT,
   strava_refresh_token TEXT,
   strava_expires_at BIGINT,
+  plan TEXT NOT NULL DEFAULT 'free',
+  coach_access BOOLEAN NOT NULL DEFAULT false,
+  full_access_until TIMESTAMPTZ,
+  is_founder BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -20,6 +24,10 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS strava_id TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS strava_access_token TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS strava_refresh_token TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS strava_expires_at BIGINT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'free';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS coach_access BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS full_access_until TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_founder BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now();
 ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique_idx ON users (email);

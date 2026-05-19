@@ -34,6 +34,14 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID || "232892";
 const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
 const STRAVA_REDIRECT_URI = process.env.STRAVA_REDIRECT_URI || "http://localhost:3000/auth/strava/callback";
+const FULL_ACCESS_EMAILS = new Set(
+  String(process.env.IDG_FULL_ACCESS_EMAILS || process.env.FULL_ACCESS_EMAILS || "")
+    .split(/[,\n;]/)
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean),
+);
+const BETA_FULL_ACCESS = /^(1|true|yes|on)$/i.test(String(process.env.PUBLIC_BETA_FULL_ACCESS || process.env.BETA_FULL_ACCESS || ""));
+const TRIAL_FULL_ACCESS_UNTIL = process.env.TRIAL_FULL_ACCESS_UNTIL || null;
 
 if (!JWT_SECRET) {
   throw new Error("Falta JWT_SECRET en variables de entorno.");
@@ -52,6 +60,7 @@ async function initDatabase() {
 }
 
 async function getUserId(email, fallback = {}) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
   await pool.query(
     `INSERT INTO users (email, name, picture)
      VALUES ($1, $2, $3)
@@ -59,9 +68,81 @@ async function getUserId(email, fallback = {}) {
        name=COALESCE(EXCLUDED.name, users.name),
        picture=COALESCE(EXCLUDED.picture, users.picture),
        updated_at=now()`,
-    [email, fallback.name || null, fallback.picture || null],
+    [normalizedEmail, fallback.name || null, fallback.picture || null],
   );
-  return String(email).toLowerCase();
+  await applyConfiguredAccess(normalizedEmail);
+  return normalizedEmail;
+}
+
+function validDateOrNull(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+}
+
+function isFuture(value) {
+  if (!value) return false;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) && date.getTime() > Date.now();
+}
+
+async function applyConfiguredAccess(email) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail) return;
+
+  if (FULL_ACCESS_EMAILS.has(normalizedEmail)) {
+    await pool.query(
+      `UPDATE users
+       SET plan='founder',
+           coach_access=true,
+           is_founder=true,
+           full_access_until=NULL,
+           updated_at=now()
+       WHERE email=$1`,
+      [normalizedEmail],
+    );
+    return;
+  }
+
+  if (BETA_FULL_ACCESS) {
+    await pool.query(
+      `UPDATE users
+       SET plan=CASE WHEN is_founder THEN plan ELSE 'trial' END,
+           coach_access=CASE WHEN is_founder THEN coach_access ELSE true END,
+           full_access_until=CASE WHEN is_founder THEN full_access_until ELSE $2::timestamptz END,
+           updated_at=now()
+       WHERE email=$1`,
+      [normalizedEmail, validDateOrNull(TRIAL_FULL_ACCESS_UNTIL)],
+    );
+  }
+}
+
+function accessPayload(userRow = {}, email = "") {
+  const normalizedEmail = String(email || userRow.email || "").trim().toLowerCase();
+  const founder = Boolean(userRow.is_founder || FULL_ACCESS_EMAILS.has(normalizedEmail));
+  const until = userRow.full_access_until || null;
+  const timedAccess = isFuture(until);
+  const betaAccess = BETA_FULL_ACCESS && !founder;
+  const coachAccess = Boolean(userRow.coach_access || founder || betaAccess || timedAccess);
+  return {
+    email: normalizedEmail,
+    plan: founder ? "founder" : betaAccess ? "trial" : userRow.plan || "free",
+    coachAccess,
+    fullAccess: founder || coachAccess || timedAccess || betaAccess,
+    isFounder: founder,
+    betaFullAccess: betaAccess,
+    fullAccessUntil: founder ? null : until,
+  };
+}
+
+async function getUserAccess(email) {
+  const userId = await getUserId(email);
+  const result = await pool.query(
+    `SELECT email, plan, coach_access, full_access_until, is_founder
+     FROM users WHERE email=$1`,
+    [userId],
+  );
+  return accessPayload(result.rows[0] || {}, userId);
 }
 
 function asArray(value) {
@@ -198,25 +279,19 @@ app.post('/auth/google', async (req, res) => {
     const payload = ticket.getPayload();
     const { name, email, picture } = payload;
 
-    await pool.query(
-      `INSERT INTO users (name, email, picture)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (email) DO UPDATE SET
-         name=EXCLUDED.name,
-         picture=EXCLUDED.picture,
-         updated_at=now()`,
-      [name, email, picture]
-    );
+    const userId = await getUserId(email, { name, picture });
+    const access = await getUserAccess(userId);
 
     const tokenJWT = jwt.sign(
-      { email, name },
+      { email: userId, name },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
 
     res.json({
-      user: { name, email, picture },
+      user: { name, email: userId, picture },
       token: tokenJWT,
+      access,
     });
 
   } catch (error) {
@@ -242,13 +317,26 @@ function authMiddleware(req, res, next) {
   }
 }
 
+/* ================= ACCESO ================= */
+
+app.get('/access', authMiddleware, async (req, res) => {
+  try {
+    const access = await getUserAccess(req.user.email);
+    res.json({ access });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo leer el acceso del usuario" });
+  }
+});
+
 /* ================= PERFIL ================= */
 
 app.get('/profile', authMiddleware, async (req, res) => {
   try {
     const userId = await getUserId(req.user.email, req.user);
+    const access = await getUserAccess(userId);
     const profile = await pool.query(`SELECT data, updated_at FROM user_profiles WHERE user_id=$1`, [userId]);
-    res.json({ user: req.user, profile: profile.rows[0]?.data || null, updatedAt: profile.rows[0]?.updated_at || null });
+    res.json({ user: req.user, access, profile: profile.rows[0]?.data || null, updatedAt: profile.rows[0]?.updated_at || null });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "No se pudo leer el perfil" });
