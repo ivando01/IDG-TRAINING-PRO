@@ -21,7 +21,7 @@ const navItems: NavItem[] = [
   { icon: "sleep", label: "Sueño & Recuperación", href: "/modules/sleep", section: "CONTROL" },
   { icon: "weight", label: "Peso & Cuerpo", href: "/modules/weight", section: "CONTROL" },
   { icon: "goals", label: "Metas", href: "/modules/goals", section: "CONTROL" },
-  { icon: "intelligence", label: "IDG Intelligence", href: "/modules/analytics", section: "HERRAMIENTAS" },
+  { icon: "intelligence", label: "IDG Coach", href: "/modules/analytics", section: "HERRAMIENTAS" },
   { icon: "plan", label: "Plan Semanal", href: "/modules/plan", section: "HERRAMIENTAS" },
 ];
 
@@ -170,7 +170,7 @@ export default function Sidebar() {
         type="button"
       >
         <AppIcon name={item.icon} className="h-5 w-5" />
-        <span className="line-clamp-1">{item.label.replace("Dashboard", "Inicio").replace("IDG Intelligence", "IA").replace("Peso & Cuerpo", "Peso").replace("Plan Semanal", "Plan")}</span>
+        <span className="line-clamp-1">{item.label.replace("Dashboard", "Inicio").replace("IDG Coach", "Coach").replace("Peso & Cuerpo", "Peso").replace("Plan Semanal", "Plan")}</span>
       </button>
     );
   };

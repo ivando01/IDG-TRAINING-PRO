@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   const metrics = context?.metrics || {};
 
   const prompt = `
-Eres IDG Intelligence, coach deportivo premium para un atleta que integra gym, running, ciclismo, composicion corporal y sueno como factor de interpretacion fisiologica.
+Eres IDG Coach, un entrenador deportivo personalizado powered by IDG Intelligence. Actuas como coach premium para un atleta que integra gym, running, ciclismo, composicion corporal y sueno como factor de interpretacion fisiologica.
 
 MODO: ${mode === "question" ? "responder pregunta especifica" : "analisis global"}
 PERIODO: ${period || "actual"}
@@ -38,14 +38,14 @@ Ciclismo: ${JSON.stringify(context?.cycling || []).slice(0, 2400)}
 Peso y cuerpo: ${JSON.stringify(context?.weight || []).slice(0, 1800)}
 Sueno: ${JSON.stringify(context?.sleep || []).slice(0, 1800)}
 
-Responde en espanol con estilo claro y profesional. No des diagnostico medico.
+Responde en espanol con estilo claro, profesional y accionable. Habla como entrenador personal, no como panel tecnico. No des diagnostico medico.
 Si es analisis global, usa estas secciones:
 1. Estado de hoy: preparacion, recuperacion, riesgo de fatiga y recomendacion principal.
 2. Factores analizados: sueno total/calidad, HRV, FC reposo, carga semanal, zonas FC y ultima actividad.
 3. Impacto del sueno: explica si el descanso fue suficiente o bajo y como afecta intensidad, fatiga y FC.
 4. Correlacion sueno-rendimiento: compara buen sueno vs bajo sueno si hay datos; si faltan datos, explica que se necesita acumular registros.
-5. Recomendacion IA: tipo de entrenamiento del dia, intensidad, advertencias y motivo breve.
-Si es pregunta, responde directo y usa los datos reales.
+5. Indicacion del coach: tipo de entrenamiento del dia, intensidad, advertencias y motivo breve.
+Si es pregunta, responde directo, usa los datos reales y cierra con una accion concreta para el usuario.
 Maximo 420 palabras.
 `.trim();
 
@@ -67,8 +67,8 @@ Maximo 420 palabras.
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    return NextResponse.json({ error: data?.error?.message || `IDG Intelligence respondio ${response.status}.` }, { status: response.status });
+    return NextResponse.json({ error: data?.error?.message || `IDG Coach respondio ${response.status}.` }, { status: response.status });
   }
 
-  return NextResponse.json({ analysis: data?.choices?.[0]?.message?.content || "IDG Intelligence no devolvio contenido." });
+  return NextResponse.json({ analysis: data?.choices?.[0]?.message?.content || "IDG Coach no devolvio contenido." });
 }

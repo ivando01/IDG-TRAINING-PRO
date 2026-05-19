@@ -295,7 +295,7 @@ export default function AnalyticsModule() {
   const fatigueRisk = riskLabel(metrics);
   const recoveryLabel = metrics.sleepHours !== null && metrics.sleepHours < 6.3 ? "Comprometida" : metrics.hardSessions > 2 ? "Vigilar" : "Estable";
   const sleepImpact = metrics.sleepHours === null
-    ? "Importa analisis de sueno para que IDG Intelligence relacione descanso, carga y rendimiento."
+    ? "Importa analisis de sueno para que IDG Coach relacione descanso, carga y rendimiento."
     : metrics.sleepHours < 6.3
       ? `Dormiste ${formatSleep(metrics.sleepHours)}, por debajo del rango ideal. Conviene bajar intensidad y priorizar trabajo aerobico suave.`
       : `Dormiste ${formatSleep(metrics.sleepHours)}. El descanso permite tolerar carga moderada con control de zonas altas.`;
@@ -319,7 +319,7 @@ export default function AnalyticsModule() {
 
   const runAnalysis = async (mode: "global" | "question", customQuestion = "") => {
     setLoading(true);
-    setStatus("IDG Intelligence esta leyendo tus modulos...");
+    setStatus("IDG Coach esta leyendo tus modulos...");
     try {
       const freshContext = buildContext();
       setContext(freshContext);
@@ -335,7 +335,7 @@ export default function AnalyticsModule() {
         date: new Date().toISOString(),
         type: mode,
         period,
-        title: mode === "question" ? customQuestion.slice(0, 80) || "Pregunta a IDG Intelligence" : "Analisis global",
+        title: mode === "question" ? customQuestion.slice(0, 80) || "Pregunta a IDG Coach" : "Analisis global",
         analysis: data.analysis,
       };
       const next = [item, ...history];
@@ -345,7 +345,7 @@ export default function AnalyticsModule() {
       setStatus("Analisis guardado.");
       if (mode === "question") setQuestion("");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "No se pudo conectar con IDG Intelligence.");
+      setStatus(error instanceof Error ? error.message : "No se pudo conectar con IDG Coach.");
     } finally {
       setLoading(false);
     }
@@ -376,7 +376,7 @@ export default function AnalyticsModule() {
   const importSleepAnalysis = async (file?: File) => {
     if (!file) return;
     setSleepImporting(true);
-    setStatus("IDG Intelligence esta interpretando el analisis de sueno...");
+    setStatus("IDG Coach esta interpretando el analisis de sueno...");
     try {
       let record: SleepRecord;
       if (file.type.startsWith("image/")) {
@@ -434,21 +434,21 @@ export default function AnalyticsModule() {
 
   return (
     <>
-      <TopNav title="Analisis IA" />
+      <TopNav title="IDG Coach" />
       <main className="min-h-0 flex-1 overflow-y-auto bg-[#F8FAFC] p-4 text-slate-900 lg:p-6">
         {status ? <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">{status}</div> : null}
 
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-bold text-slate-500">Inteligencia aplicada a tu rendimiento y recuperacion</p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-900">Analisis IA</h1>
+            <p className="text-sm font-bold text-slate-500">Entrenador personalizado con lectura cruzada de toda la app</p>
+            <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-900">IDG Coach</h1>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="w-fit rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-blue-700 shadow-sm">
               {todayLabel ? `Hoy, ${todayLabel}` : "Hoy"}
             </div>
             <button className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-sm disabled:bg-blue-300" disabled={loading} type="button" onClick={() => runAnalysis("global")}>
-              {loading ? "Analizando..." : "Generar analisis completo"}
+              {loading ? "Analizando..." : "Pedir indicacion al coach"}
             </button>
           </div>
         </div>
@@ -465,7 +465,7 @@ export default function AnalyticsModule() {
               <p className="mt-2 text-lg font-black text-slate-900">{metrics.readiness >= 80 ? "Alta" : metrics.readiness >= 65 ? "Media" : "Baja"}</p>
             </div>
             <div className="px-0 lg:px-8">
-              <p className="text-sm font-black text-slate-900">Recomendacion IA</p>
+              <p className="text-sm font-black text-slate-900">Indicacion del coach</p>
               <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">Hoy estas en condicion para {action.toLowerCase()}. Ajusta intensidad segun recuperacion y evita esfuerzos maximos si aparece fatiga.</p>
               <span className="mt-4 inline-flex rounded-lg bg-emerald-500 px-4 py-2 text-sm font-black text-white">{action}</span>
             </div>
@@ -487,7 +487,7 @@ export default function AnalyticsModule() {
         <section className="mb-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-blue-50 text-blue-700"><AppIcon name="analytics" className="h-4 w-4" /></span>
-            <h2 className="text-sm font-black uppercase tracking-wide text-blue-700">Factores analizados</h2>
+            <h2 className="text-sm font-black uppercase tracking-wide text-blue-700">Datos que esta leyendo el coach</h2>
           </div>
           <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
             {[
@@ -686,7 +686,7 @@ export default function AnalyticsModule() {
         <section className="mb-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-700"><AppIcon name="plan" className="h-4 w-4" /></span>
-            <h2 className="text-sm font-black uppercase tracking-wide text-blue-700">Recomendacion IA</h2>
+            <h2 className="text-sm font-black uppercase tracking-wide text-blue-700">Indicacion del coach</h2>
           </div>
           <div className="grid gap-4 lg:grid-cols-4">
             <div className="rounded-lg border border-emerald-100 bg-emerald-50/70 p-5">
@@ -729,7 +729,7 @@ export default function AnalyticsModule() {
           <div className="min-w-0">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-black uppercase tracking-wide text-blue-600">Lectura IA</p>
+                <p className="text-xs font-black uppercase tracking-wide text-blue-600">Lectura del coach</p>
                 <h2 className="mt-1 text-xl font-black text-slate-900">{selected?.title || "Sin analisis generado"}</h2>
               </div>
               <div className="flex flex-wrap justify-end gap-2">
@@ -761,12 +761,24 @@ export default function AnalyticsModule() {
             ) : null}
           </div>
 
-          <aside className="rounded-lg border border-slate-100 bg-slate-50 p-5">
-            <p className="text-xs font-black uppercase tracking-wide text-blue-600">Pregunta rapida</p>
-            <h2 className="mt-1 text-lg font-black text-slate-900">Ajusta la lectura</h2>
-            <textarea className="mt-4 min-h-28 w-full resize-none rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold outline-none focus:border-blue-500" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ej: Que deberia entrenar manana segun mi carga y sueno?" />
+          <aside className="rounded-lg border border-blue-100 bg-slate-50 p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-blue-600">Chat del entrenador</p>
+                <h2 className="mt-1 text-lg font-black text-slate-900">IDG Coach</h2>
+              </div>
+              <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide text-slate-500 shadow-sm">
+                Powered by IDG Intelligence
+              </span>
+            </div>
+            <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+              <p className="text-sm font-semibold leading-6 text-slate-600">
+                Preguntame que entrenar, como ajustar una rutina, si conviene descansar o como ordenar la semana segun tus datos.
+              </p>
+            </div>
+            <textarea className="mt-3 min-h-32 w-full resize-none rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold outline-none focus:border-blue-500" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ej: Coach, que deberia entrenar manana segun mi carga, sueno y ultima sesion?" />
             <button className="mt-3 w-full rounded-lg bg-slate-900 px-4 py-3 text-sm font-black text-white disabled:bg-slate-400" disabled={loading || !question.trim()} type="button" onClick={() => runAnalysis("question", question)}>
-              {loading ? "Consultando..." : "Enviar pregunta"}
+              {loading ? "Consultando..." : "Enviar al coach"}
             </button>
           </aside>
           </div>
@@ -775,8 +787,8 @@ export default function AnalyticsModule() {
         <section className="rounded-lg border border-slate-200 bg-white p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-wide text-blue-600">Archivo IA</p>
-              <h2 className="text-lg font-black text-slate-900">Historial de analisis</h2>
+              <p className="text-xs font-black uppercase tracking-wide text-blue-600">Archivo del coach</p>
+              <h2 className="text-lg font-black text-slate-900">Historial de conversaciones y analisis</h2>
             </div>
             <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{history.length} lecturas</span>
           </div>
