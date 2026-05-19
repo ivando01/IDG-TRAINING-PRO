@@ -2,7 +2,7 @@
 
 import { AppIcon, AppIconName } from "@/components/Brand";
 import TopNav from "@/components/TopNav";
-import { getCloudCollection, saveCloudCollection } from "@/lib/cloud-sync";
+import { canSyncCloud, getCloudCollection, saveCloudCollection } from "@/lib/cloud-sync";
 import { useEffect, useMemo, useState } from "react";
 
 type SessionType = "gym" | "running" | "cycling" | "mobility" | "rest";
@@ -192,15 +192,43 @@ export default function PlanModule() {
   useEffect(() => {
     let alive = true;
     setMounted(true);
-    setSessions(readJSON<PlannedSession[]>(PLAN_KEY, []));
+    const localPlan = readJSON<PlannedSession[]>(PLAN_KEY, []);
+    setSessions(localPlan);
     setRealSessions(getRealSessions());
+
+    if (!canSyncCloud()) {
+      if (localPlan.length) setStatus("Plan cargado en este dispositivo. Inicia sesion para sincronizarlo en todos tus equipos.");
+      return () => {
+        alive = false;
+      };
+    }
+
     getCloudCollection<PlannedSession>("/plan", "plan")
-      .then((cloudPlan) => {
-        if (!alive || !cloudPlan.length) return;
+      .then(async (cloudPlan) => {
+        if (!alive) return;
+        if (cloudPlan.length) {
+          const sortedCloudPlan = [...cloudPlan].sort((a, b) => `${a.date}-${a.type}`.localeCompare(`${b.date}-${b.type}`));
+          setSessions(sortedCloudPlan);
+          localStorage.setItem(PLAN_KEY, JSON.stringify(sortedCloudPlan));
+          setStatus("Plan semanal sincronizado desde la nube.");
+          return;
+        }
+        if (localPlan.length) {
+          const sortedLocalPlan = [...localPlan].sort((a, b) => `${a.date}-${a.type}`.localeCompare(`${b.date}-${b.type}`));
+          await saveCloudCollection("/plan", "plan", sortedLocalPlan);
+          if (!alive) return;
+          setSessions(sortedLocalPlan);
+          localStorage.setItem(PLAN_KEY, JSON.stringify(sortedLocalPlan));
+          setStatus("Plan local subido a la nube. Ya debe verse en movil y web.");
+          return;
+        }
         setSessions(cloudPlan);
         localStorage.setItem(PLAN_KEY, JSON.stringify(cloudPlan));
       })
-      .catch(() => undefined);
+      .catch((error) => {
+        if (!alive) return;
+        setStatus(error instanceof Error ? error.message : "No se pudo sincronizar el plan semanal.");
+      });
     return () => {
       alive = false;
     };
@@ -224,9 +252,16 @@ export default function PlanModule() {
   const completion = weekPlan.length ? Math.round((completedCount / weekPlan.length) * 100) : 0;
 
   const saveSessions = (next: PlannedSession[]) => {
-    setSessions(next);
-    localStorage.setItem(PLAN_KEY, JSON.stringify(next));
-    saveCloudCollection("/plan", "plan", next).catch(() => undefined);
+    const sorted = [...next].sort((a, b) => `${a.date}-${a.type}`.localeCompare(`${b.date}-${b.type}`));
+    setSessions(sorted);
+    localStorage.setItem(PLAN_KEY, JSON.stringify(sorted));
+    if (!canSyncCloud()) {
+      setStatus("Plan guardado solo en este dispositivo. Inicia sesion para verlo en movil y web.");
+    } else {
+      saveCloudCollection("/plan", "plan", sorted)
+        .then(() => setStatus("Plan sincronizado en la nube."))
+        .catch((error) => setStatus(error instanceof Error ? error.message : "No se pudo sincronizar el plan semanal."));
+    }
     setRealSessions(getRealSessions());
   };
 
