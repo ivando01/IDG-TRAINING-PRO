@@ -1,6 +1,7 @@
 "use client";
 
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
+import { storeAccess } from "@/lib/access";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
@@ -68,6 +69,7 @@ export default function Home() {
       if (!response.ok || !data.token) throw new Error(data.error || "No se pudo iniciar sesion.");
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      storeAccess(data.access);
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al iniciar sesion.");

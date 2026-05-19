@@ -1,6 +1,7 @@
 "use client";
 
 import { AppIcon, AppIconName, IDGLogo } from "@/components/Brand";
+import { clearStoredAccess } from "@/lib/access";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -129,6 +130,7 @@ export default function Sidebar() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    clearStoredAccess();
     router.push("/");
   };
 

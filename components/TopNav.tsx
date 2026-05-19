@@ -1,6 +1,7 @@
 "use client";
 
 import { AppIcon } from "@/components/Brand";
+import { clearStoredAccess } from "@/lib/access";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -23,6 +24,7 @@ export default function TopNav({ title }: { title: string }) {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    clearStoredAccess();
     router.push("/");
   };
 
