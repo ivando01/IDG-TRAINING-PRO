@@ -37,6 +37,7 @@ export type AppIconName =
   | "analytics"
   | "goals"
   | "plan"
+  | "sleep"
   | "profile"
   | "bell"
   | "chevronDown"
@@ -120,6 +121,12 @@ export function AppIcon({ name, className = "" }: { name: AppIconName; className
           <path d="M5 12H19" stroke={green} strokeWidth="2.2" strokeLinecap="round" fill="none" />
           <circle cx="12" cy="12" r="7" stroke={navy} strokeWidth="2.2" fill="none" />
           <circle cx="12" cy="12" r="2.5" stroke={navy} strokeWidth="2.2" fill="none" />
+        </>
+      ) : null}
+      {name === "sleep" ? (
+        <>
+          <path d="M5 17.5C9.5 18.8 16.4 17 19 11.5C15.2 13.1 10.8 11 11 6C7.5 7.5 4.7 11.4 5 17.5Z" stroke={navy} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <path d="M17 5H21M19 3V7" stroke={green} strokeWidth="2.2" strokeLinecap="round" />
         </>
       ) : null}
       {name === "plan" ? (

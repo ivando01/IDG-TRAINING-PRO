@@ -17,6 +17,7 @@ const navItems: NavItem[] = [
   { icon: "gym", label: "Gym", href: "/modules/gym", section: "DEPORTES" },
   { icon: "cycling", label: "Ciclismo", href: "/modules/cycling", section: "DEPORTES" },
   { icon: "running", label: "Running", href: "/modules/running", section: "DEPORTES" },
+  { icon: "sleep", label: "Sueño & Recuperación", href: "/modules/sleep", section: "CONTROL" },
   { icon: "weight", label: "Peso & Cuerpo", href: "/modules/weight", section: "CONTROL" },
   { icon: "goals", label: "Metas", href: "/modules/goals", section: "CONTROL" },
   { icon: "intelligence", label: "IDG Intelligence", href: "/modules/analytics", section: "HERRAMIENTAS" },

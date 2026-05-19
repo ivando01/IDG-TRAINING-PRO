@@ -20,14 +20,21 @@ function pick(data: Record<string, unknown>, keys: string[]) {
 function normalizeValues(data: Record<string, unknown>) {
   return {
     date: pick(data, ["date", "fecha"]),
+    bedtime: pick(data, ["bedtime", "horaDormir", "horaDeDormir", "sleepStart"]),
+    wakeTime: pick(data, ["wakeTime", "horaDespertar", "teDespertaste", "sleepEnd"]),
     hours: pick(data, ["hours", "horas", "sleepHours", "totalHours", "horasSueno"]),
     minutes: pick(data, ["minutes", "minutos", "totalMinutes", "durationMinutes", "duracionMinutos"]),
     score: pick(data, ["score", "points", "puntos", "sleepScore", "puntuacion"]),
-    qualityScore: pick(data, ["qualityScore", "breathingQuality", "calidadRespiracion"]),
+    qualityScore: pick(data, ["qualityScore", "breathingQuality", "calidadRespiracion", "breathingQualityScore"]),
     deepMinutes: pick(data, ["deepMinutes", "suenoProfundoMin", "deepSleepMinutes"]),
     lightMinutes: pick(data, ["lightMinutes", "suenoLivianoMin", "lightSleepMinutes"]),
     remMinutes: pick(data, ["remMinutes", "suenoRemMin", "remSleepMinutes"]),
     awakeMinutes: pick(data, ["awakeMinutes", "vigiliaMin", "awake"]),
+    deepPct: pick(data, ["deepPct", "suenoProfundoPct", "deepPercent"]),
+    lightPct: pick(data, ["lightPct", "suenoLivianoPct", "lightPercent"]),
+    remPct: pick(data, ["remPct", "suenoRemPct", "remPercent"]),
+    deepContinuityScore: pick(data, ["deepContinuityScore", "continuidadSuenoProfundo", "continuidad"]),
+    awakenings: pick(data, ["awakenings", "despertares", "vecesDespertaste"]),
     hrv: pick(data, ["hrv", "vfc", "vfcProm", "hrvMs"]),
     restingHr: pick(data, ["restingHr", "fcReposo", "fcProm", "restingHeartRate"]),
     spo2: pick(data, ["spo2", "spO2", "oxygen"]),
@@ -50,14 +57,18 @@ export async function POST(request: Request) {
   const prompt = `
 Esta es una captura de Huawei Health / Salud de Huawei u otra app de sueno.
 Extrae SOLO los datos visibles y responde SOLO un JSON valido con estas claves:
-date, hours, minutes, score, qualityScore, deepMinutes, lightMinutes, remMinutes, awakeMinutes, hrv, restingHr, spo2, respiratoryRate, notes.
+date, bedtime, wakeTime, hours, minutes, score, qualityScore, deepMinutes, lightMinutes, remMinutes, awakeMinutes, deepPct, lightPct, remPct, deepContinuityScore, awakenings, hrv, restingHr, spo2, respiratoryRate, notes.
 
 Reglas:
 - hours debe ser decimal si aparece duracion total, por ejemplo 4h 38m = 4.63.
 - minutes debe ser la duracion total en minutos si aparece.
 - deepMinutes, lightMinutes, remMinutes y awakeMinutes deben ir en minutos.
+- deepPct, lightPct y remPct deben ser porcentajes visibles de fases.
+- bedtime y wakeTime deben quedar en formato HH:mm si se ven.
 - score son puntos de sueno.
 - qualityScore es calidad de respiracion si aparece.
+- deepContinuityScore es continuidad de sueno profundo si aparece.
+- awakenings son las veces que desperto.
 - hrv corresponde a VFC.
 - restingHr o fcProm si solo aparece FC promedio durante sueno.
 - No inventes datos.
