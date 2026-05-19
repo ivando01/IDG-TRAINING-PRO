@@ -429,6 +429,37 @@ app.put('/weight', authMiddleware, async (req, res) => {
   }
 });
 
+app.get('/sleep', authMiddleware, async (req, res) => {
+  try {
+    const userId = await getUserId(req.user.email, req.user);
+    const result = await pool.query(
+      `SELECT data FROM sleep_records WHERE user_id=$1 ORDER BY record_date DESC NULLS LAST, updated_at DESC`,
+      [userId],
+    );
+    res.json({ records: result.rows.map((row) => row.data) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudieron leer los registros de sueno" });
+  }
+});
+
+app.put('/sleep', authMiddleware, async (req, res) => {
+  try {
+    const userId = await getUserId(req.user.email, req.user);
+    const records = asArray(req.body?.records);
+    await replaceCollection({
+      table: "sleep_records",
+      userId,
+      items: records,
+      extra: (item) => ({ columns: ["record_date"], values: [itemDate(item)] }),
+    });
+    res.json({ ok: true, records });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudieron guardar los registros de sueno" });
+  }
+});
+
 app.get('/goals', authMiddleware, async (req, res) => {
   try {
     const userId = await getUserId(req.user.email, req.user);

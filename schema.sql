@@ -62,6 +62,18 @@ CREATE TABLE IF NOT EXISTS weight_records (
   PRIMARY KEY (user_id, id)
 );
 
+CREATE TABLE IF NOT EXISTS sleep_records (
+  id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  record_date DATE,
+  data JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sleep_user_date
+  ON sleep_records (user_id, record_date DESC);
+
 CREATE TABLE IF NOT EXISTS goals (
   id TEXT NOT NULL,
   user_id TEXT NOT NULL,
