@@ -469,6 +469,44 @@ export default function GymModule() {
     setEditingId("");
   };
 
+  const saveExercise = (exerciseId: string) => {
+    const exercise = exercises.find((item) => item.id === exerciseId);
+    if (!exercise) return;
+    const targetSession = editingId
+      ? history.find((item) => item.id === editingId)
+      : history.find((item) => item.date === date && item.routine === routine);
+    const sessionId = targetSession?.id || editingId || `gym-${Date.now()}`;
+    const previousExercises = targetSession?.exercises ?? [];
+    const existingById = previousExercises.some((item) => item.id === exercise.id);
+    const existingByName = previousExercises.some((item) => item.name === exercise.name);
+    const nextExercises = existingById || existingByName
+      ? previousExercises.map((item) => (item.id === exercise.id || item.name === exercise.name ? exercise : item))
+      : [...previousExercises, exercise];
+    const session: GymSession = {
+      id: sessionId,
+      date,
+      routine,
+      routineName,
+      duration: hhmmToMinutes(duration),
+      intensity,
+      painLevel,
+      pain,
+      calories,
+      notes,
+      exercises: nextExercises,
+      intelligence: "",
+      updatedAt: Date.now(),
+    };
+    session.intelligence = buildIntelligence(session);
+
+    const nextHistory = sortSessions([session, ...history.filter((item) => item.id !== session.id)]);
+    setHistory(nextHistory);
+    safeSaveGymLocal(nextHistory);
+    saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
+    setEditingId(session.id);
+    setIntelligence(`${exercise.name} guardado en la sesion ${date}.`);
+  };
+
   const editSession = (session: GymSession) => {
     setRoutine(session.routine);
     setDate(session.date);
@@ -710,7 +748,7 @@ export default function GymModule() {
                         <div className="weight-chips">{exercise.weights.map((weight, setIndex) => <label key={`${exercise.id}-${setIndex}`}>S{setIndex + 1}<input type="number" value={weight} onChange={(event) => updateWeight(exercise.id, setIndex, event.target.value)} /></label>)}</div>
                         <input className="compact-input rest-input h-9 rounded-lg border border-slate-200 px-2 text-center text-sm text-slate-800" value={secondsToMMSS(exercise.rest)} onChange={(event) => updateExercise(exercise.id, { rest: mmssToSeconds(event.target.value) })} />
                         <div className="gym-row-actions">
-                          <button type="button" title="Guardar" onClick={saveSession}><Icon name="save" /></button>
+                          <button type="button" title="Guardar ejercicio" onClick={() => saveExercise(exercise.id)}><Icon name="save" /></button>
                           <button type="button" title="Editar"><Icon name="edit" /></button>
                           <button type="button" title="Eliminar" onClick={() => deleteExercise(exercise.id)}><Icon name="trash" /></button>
                         </div>
