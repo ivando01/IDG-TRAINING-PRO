@@ -340,18 +340,13 @@ function sortActivitiesBySessionDate(items: ActivityAnalysis[]) {
   return [...items].sort((a, b) => activitySessionTime(b) - activitySessionTime(a) || String(b.id).localeCompare(String(a.id)));
 }
 
-function profileTime(profile: Record<string, unknown> | null | undefined) {
-  const timestamp = Date.parse(String(profile?.updatedAt || ""));
-  return Number.isFinite(timestamp) ? timestamp : 0;
-}
-
 async function syncCloudProfileToLocal() {
   try {
     const localRaw = localStorage.getItem(PROFILE_KEY) || localStorage.getItem(LEGACY_PROFILE_KEY);
     const localProfile = localRaw ? JSON.parse(localRaw) as Record<string, unknown> : null;
     const cloudProfile = await getCloudProfile<Record<string, unknown>>();
     if (!cloudProfile) return localProfile;
-    const selected = profileTime(cloudProfile) >= profileTime(localProfile) ? cloudProfile : localProfile;
+    const selected = cloudProfile;
     if (selected) {
       localStorage.setItem(PROFILE_KEY, JSON.stringify(selected));
       localStorage.setItem(LEGACY_PROFILE_KEY, JSON.stringify(selected));
@@ -833,15 +828,16 @@ function ActivityMetricChart({
 }
 
 function HeartZoneBars({ activity }: { activity: ActivityAnalysis }) {
-  if (!hasReliableHeartRate(activity)) {
+  const liveActivity = hydrateCloudActivity(activity);
+  if (!hasReliableHeartRate(liveActivity)) {
     return (
       <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-xs font-bold leading-5 text-slate-500">
         Esta actividad no trae suficientes puntos de frecuencia cardiaca. Revisa banda/reloj, bateria o permisos de Strava.
       </div>
     );
   }
-  const totalsByZone = new globalThis.Map(activity.zoneTotals.map((zone) => [zone.zoneKey, zone]));
-  const zones = activity.zones.map((zone) => {
+  const totalsByZone = new globalThis.Map(liveActivity.zoneTotals.map((zone) => [zone.zoneKey, zone]));
+  const zones = liveActivity.zones.map((zone) => {
     const totalZone = totalsByZone.get(zone.key);
     return {
       zoneKey: zone.key,
@@ -917,11 +913,12 @@ function MapLayerControls({
 }
 
 function ZoneTimeline({ activity }: { activity: ActivityAnalysis }) {
-  const total = activity.zoneTimeline.reduce((sum, item) => sum + item.seconds, 0) || 1;
-  const strongest = [...activity.zoneTotals].sort((a, b) => b.seconds - a.seconds)[0];
-  const peaks = activity.zoneTimeline.filter((item) => (item.zoneKey === "Z4" || item.zoneKey === "Z5") && item.seconds >= 12).length;
-  const last = activity.zoneTimeline.at(-1);
-  const hasNoZone = activity.zoneTimeline.some((item) => item.zoneKey === "NA");
+  const liveActivity = hydrateCloudActivity(activity);
+  const total = liveActivity.zoneTimeline.reduce((sum, item) => sum + item.seconds, 0) || 1;
+  const strongest = [...liveActivity.zoneTotals].sort((a, b) => b.seconds - a.seconds)[0];
+  const peaks = liveActivity.zoneTimeline.filter((item) => (item.zoneKey === "Z4" || item.zoneKey === "Z5") && item.seconds >= 12).length;
+  const last = liveActivity.zoneTimeline.at(-1);
+  const hasNoZone = liveActivity.zoneTimeline.some((item) => item.zoneKey === "NA");
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -930,7 +927,7 @@ function ZoneTimeline({ activity }: { activity: ActivityAnalysis }) {
       </div>
       <div className="mt-5">
         <div className="flex h-6 overflow-hidden rounded-md bg-slate-100">
-          {activity.zoneTimeline.map((segment, index) => (
+          {liveActivity.zoneTimeline.map((segment, index) => (
             <div
               key={`${segment.zoneKey}-${index}`}
               className="group relative min-w-[4px]"
@@ -941,10 +938,10 @@ function ZoneTimeline({ activity }: { activity: ActivityAnalysis }) {
         </div>
         <div className="mt-2 flex justify-between text-xs font-bold text-slate-500">
           <span>0 km</span>
-          <span>{activity.metrics.distanceKm.toFixed(1)} km</span>
+          <span>{liveActivity.metrics.distanceKm.toFixed(1)} km</span>
         </div>
         <div className="mt-3 flex flex-wrap gap-3 text-xs font-bold text-slate-500">
-          {activity.zones.map((zone) => (
+          {liveActivity.zones.map((zone) => (
             <span className="inline-flex items-center gap-1.5" key={zone.key}>
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: zone.color }} />
               {zone.key} {zone.min}-{zone.max}
