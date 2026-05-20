@@ -2,7 +2,7 @@
 
 import TopNav from "@/components/TopNav";
 import { getCloudCollection, saveCloudCollection } from "@/lib/cloud-sync";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 type RoutineKey = "1" | "2" | "3" | "4" | "5" | "wod" | "custom";
 
@@ -29,6 +29,9 @@ type GymSession = {
   notes: string;
   exercises: ExerciseDraft[];
   intelligence: string;
+  aiAnalysis?: string;
+  aiGeneratedAt?: string;
+  aiAcknowledgedAt?: string;
   updatedAt: number;
 };
 
@@ -192,6 +195,10 @@ function normalizeSession(session: GymSession): GymSession {
     intensity: Number(session.intensity) || 0,
     painLevel: Number(session.painLevel) || 0,
     exercises: Array.isArray(session.exercises) ? session.exercises : [],
+    intelligence: String(session.intelligence || ""),
+    aiAnalysis: String(session.aiAnalysis || ""),
+    aiGeneratedAt: session.aiGeneratedAt ? String(session.aiGeneratedAt) : undefined,
+    aiAcknowledgedAt: session.aiAcknowledgedAt ? String(session.aiAcknowledgedAt) : undefined,
     updatedAt: Number(session.updatedAt) || Date.now(),
   };
 }
@@ -228,6 +235,7 @@ function Icon({ name }: { name: "save" | "edit" | "trash" | "chart" | "spark" | 
 }
 
 export default function GymModule() {
+  const intelligenceRef = useRef<HTMLElement | null>(null);
   const [routine, setRoutine] = useState<RoutineKey>("4");
   const [unit, setUnit] = useState<"kg" | "lbs">("lbs");
   const [date, setDate] = useState("");
@@ -246,6 +254,8 @@ export default function GymModule() {
   const [inlineEditingId, setInlineEditingId] = useState("");
   const [inlineDraft, setInlineDraft] = useState<GymSession | null>(null);
   const [intelligence, setIntelligence] = useState("Selecciona una sesion guardada o guarda una rutina para generar recomendaciones.");
+  const [showAI, setShowAI] = useState(true);
+  const [aiLoadingId, setAiLoadingId] = useState("");
   const [weeklyTarget, setWeeklyTarget] = useState(4);
 
   const buildExercises = (nextRoutine: RoutineKey, savedHistory: GymSession[]) => {
@@ -535,24 +545,91 @@ export default function GymModule() {
     updatedAt: Date.now(),
   });
 
+  const savedAnalysisFor = (session: GymSession) => usableIntelligence(session.aiAnalysis || "");
+
+  const persistHistory = (sessions: GymSession[]) => {
+    const nextHistory = sortSessions(sessions);
+    setHistory(nextHistory);
+    safeSaveGymLocal(nextHistory);
+    saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
+    return nextHistory;
+  };
+
+  const requestGymAnalysis = async (session: GymSession) => {
+    const response = await fetch("/api/gym-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session, unit, load: sessionVolume(session), context: buildCoachContext(session), history: history.slice(0, 8) }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "No se pudo analizar la rutina.");
+    return data.analysis || buildIntelligence(session);
+  };
+
   const analyzeRoutine = async () => {
     const draft = buildDraftSession();
     setIntelligence("IDG Coach esta analizando carga, intensidad y coherencia de la rutina...");
     try {
-      const response = await fetch("/api/gym-analysis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session: draft, unit, load: sessionVolume(draft), context: buildCoachContext(draft), history: history.slice(0, 8) }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "No se pudo analizar la rutina.");
-      setIntelligence(data.analysis || buildIntelligence(draft));
+      setIntelligence(await requestGymAnalysis(draft));
     } catch {
       setIntelligence(buildIntelligence(draft));
     }
     window.requestAnimationFrame(() => {
       document.querySelector(".gym-intelligence-card")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
+  };
+
+  const analyzeSessionFromHistory = async (session: GymSession, forceNew = false) => {
+    const existing = savedAnalysisFor(session) || usableIntelligence(session.intelligence);
+    setBuilderOpen(false);
+    setSelectedSessionId(session.id);
+    setShowAI(true);
+    window.requestAnimationFrame(() => {
+      intelligenceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    if (existing && !forceNew) {
+      if (!savedAnalysisFor(session)) {
+        persistHistory(history.map((item) => (item.id === session.id ? { ...session, aiAnalysis: existing, intelligence: existing, aiAcknowledgedAt: undefined, aiGeneratedAt: new Date().toISOString(), updatedAt: Date.now() } : item)));
+      }
+      setIntelligence(existing);
+      return;
+    }
+
+    setAiLoadingId(session.id);
+    try {
+      const analysis = await requestGymAnalysis(session);
+      const updatedSession: GymSession = {
+        ...session,
+        intelligence: analysis,
+        aiAnalysis: analysis,
+        aiGeneratedAt: new Date().toISOString(),
+        aiAcknowledgedAt: undefined,
+        updatedAt: Date.now(),
+      };
+      persistHistory(history.map((item) => (item.id === session.id ? updatedSession : item)));
+      setIntelligence(analysis);
+    } catch {
+      const analysis = buildIntelligence(session);
+      const updatedSession: GymSession = {
+        ...session,
+        intelligence: analysis,
+        aiAnalysis: analysis,
+        aiGeneratedAt: new Date().toISOString(),
+        aiAcknowledgedAt: undefined,
+        updatedAt: Date.now(),
+      };
+      persistHistory(history.map((item) => (item.id === session.id ? updatedSession : item)));
+      setIntelligence(analysis);
+    } finally {
+      setAiLoadingId("");
+    }
+  };
+
+  const markSessionAnalysisRead = (session: GymSession) => {
+    const nextSession = { ...session, aiAcknowledgedAt: new Date().toISOString(), updatedAt: Date.now() };
+    persistHistory(history.map((item) => (item.id === session.id ? nextSession : item)));
+    setShowAI(false);
   };
 
   const toggleBuilder = () => {
@@ -582,12 +659,12 @@ export default function GymModule() {
       updatedAt: Date.now(),
     };
     session.intelligence = usableIntelligence(intelligence) || buildIntelligence(session);
+    session.aiAnalysis = usableIntelligence(intelligence) || "";
+    session.aiGeneratedAt = session.aiAnalysis ? new Date().toISOString() : undefined;
+    session.aiAcknowledgedAt = undefined;
 
     const withoutCurrent = history.filter((item) => item.id !== session.id);
-    const nextHistory = sortSessions([session, ...withoutCurrent]);
-    setHistory(nextHistory);
-    safeSaveGymLocal(nextHistory);
-    saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
+    persistHistory([session, ...withoutCurrent]);
     localStorage.removeItem(DRAFT_KEY);
     setIntelligence(session.intelligence);
     setBuilderOpen(false);
@@ -625,7 +702,8 @@ export default function GymModule() {
     setEditingId("");
     setInlineEditingId("");
     setInlineDraft(null);
-    setIntelligence(session.intelligence || buildIntelligence(session));
+    setIntelligence(savedAnalysisFor(session) || usableIntelligence(session.intelligence) || buildIntelligence(session));
+    setShowAI(!session.aiAcknowledgedAt);
     setSelectedSessionId((current) => (current === session.id ? "" : session.id));
   };
 
@@ -683,24 +761,21 @@ export default function GymModule() {
     if (!inlineDraft) return;
     const session: GymSession = {
       ...inlineDraft,
-      intelligence: buildIntelligence(inlineDraft),
+      intelligence: usableIntelligence(inlineDraft.aiAnalysis || inlineDraft.intelligence) || buildIntelligence(inlineDraft),
       updatedAt: Date.now(),
     };
-    const nextHistory = sortSessions(history.map((item) => (item.id === session.id ? session : item)));
-    setHistory(nextHistory);
-    safeSaveGymLocal(nextHistory);
-    saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
+    persistHistory(history.map((item) => (item.id === session.id ? session : item)));
     setIntelligence(session.intelligence);
     setInlineEditingId("");
     setInlineDraft(null);
   };
 
   const deleteSession = (id: string) => {
-    const nextHistory = history.filter((session) => session.id !== id);
-    setHistory(nextHistory);
-    safeSaveGymLocal(nextHistory);
-    saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
+    persistHistory(history.filter((session) => session.id !== id));
   };
+
+  const selectedSession = history.find((session) => session.id === selectedSessionId) || null;
+  const selectedSessionAnalysis = selectedSession ? savedAnalysisFor(selectedSession) || usableIntelligence(selectedSession.intelligence) : "";
 
   return (
     <>
@@ -896,6 +971,58 @@ export default function GymModule() {
             </section>
             ) : null}
 
+            <section ref={intelligenceRef} className="rounded-lg border border-blue-100 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-600 text-white">
+                    <Icon name="spark" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wide text-blue-600">IDG Intelligence</p>
+                    <h2 className="mt-1 text-lg font-black text-slate-900">IDG Intelligence</h2>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">
+                      {selectedSession
+                        ? `${selectedSession.routineName} - analisis guardado para esta sesion.`
+                        : "Selecciona una sesion del historial para generar o revisar el analisis IA."}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    className="rounded-lg bg-blue-600 px-4 py-3 text-sm font-black text-white disabled:bg-blue-300"
+                    type="button"
+                    disabled={!selectedSession || aiLoadingId === selectedSession?.id}
+                    onClick={() => selectedSession && analyzeSessionFromHistory(selectedSession, true)}
+                  >
+                    {selectedSession && aiLoadingId === selectedSession.id ? "Analizando..." : selectedSessionAnalysis ? "Reanalizar sesion" : "Generar analisis IA"}
+                  </button>
+                </div>
+              </div>
+
+              {selectedSession && selectedSessionAnalysis && !showAI ? (
+                <button
+                  className="mt-4 w-full rounded-lg border border-slate-200 bg-slate-50 p-4 text-left text-sm font-black text-slate-700 hover:bg-slate-100"
+                  type="button"
+                  onClick={() => setShowAI(true)}
+                >
+                  Hay un analisis IA guardado. Toca para volver a leerlo.
+                </button>
+              ) : selectedSession && selectedSessionAnalysis ? (
+                <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{selectedSessionAnalysis}</p>
+                  <div className="mt-4 flex justify-end border-t border-slate-200 pt-4">
+                    <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-black text-white" type="button" onClick={() => markSessionAnalysisRead(selectedSession)}>
+                      Enterado
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
+                  {selectedSession ? "Esta sesion aun no tiene analisis IA. Genera uno para conservarlo en el historial." : "El analisis aparecera aqui cuando elijas una sesion."}
+                </div>
+              )}
+            </section>
+
             <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
@@ -915,9 +1042,11 @@ export default function GymModule() {
                   const detailSession = isInlineEditing && inlineDraft ? inlineDraft : session;
                   const detailVolume = sessionVolume(detailSession);
                   const detailSetCount = detailSession.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
+                  const aiAnalysis = savedAnalysisFor(session);
+                  const aiLabel = aiAnalysis ? (session.aiAcknowledgedAt ? "IA leida" : "IA nueva") : "Generar IA";
                   return (
                     <Fragment key={session.id}>
-                      <article className={`grid grid-cols-1 items-start gap-3 rounded-lg border bg-white p-4 shadow-sm min-[1100px]:grid-cols-[58px_minmax(180px,1fr)_110px_100px_100px_minmax(90px,1fr)_132px] min-[1100px]:items-center min-[1100px]:gap-4 ${selected ? "border-blue-200" : "border-slate-200"}`}>
+                      <article className={`grid grid-cols-1 items-start gap-3 rounded-lg border bg-white p-4 shadow-sm min-[1100px]:grid-cols-[58px_minmax(180px,1fr)_110px_100px_100px_100px_180px] min-[1100px]:items-center min-[1100px]:gap-4 ${selected ? "border-blue-200" : "border-slate-200"}`}>
                         <div className="border-l-4 border-emerald-500 pl-4">
                           <strong className="block text-2xl font-black leading-none text-slate-900">{day}</strong>
                           <span className="mt-1 block text-xs font-black uppercase text-slate-500">{shortMonth(session.date)}</span>
@@ -929,9 +1058,13 @@ export default function GymModule() {
                         <div><strong className="block text-base font-black text-slate-900">{volume.toFixed(0)} {unit}</strong><span className="text-xs font-semibold text-slate-500">Carga</span></div>
                         <div><strong className="block text-base font-black text-slate-900">{session.intensity * 10}%</strong><span className="text-xs font-semibold text-slate-500">Intensidad</span></div>
                         <div><strong className="block text-base font-black text-slate-900">{minutesToHHMM(session.duration)}</strong><span className="text-xs font-semibold text-slate-500">Duracion</span></div>
-                        <div className="h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-blue-600" style={{ width: `${session.intensity * 10}%` }} /></div>
+                        <div>
+                          <strong className={`block text-sm font-black ${aiAnalysis && !session.aiAcknowledgedAt ? "text-blue-600" : "text-slate-900"}`}>{aiLabel}</strong>
+                          <span className="text-xs font-semibold text-slate-500">{aiAnalysis ? "Analisis guardado" : "Sin analisis IA"}</span>
+                        </div>
                         <div className="flex justify-start gap-2 min-[1100px]:justify-end">
                           <button className="grid h-10 w-10 place-items-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" type="button" title={selected ? "Cerrar sesion" : "Ver sesion"} onClick={() => viewSession(session)}><Icon name="eye" /></button>
+                          <button className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 disabled:opacity-60" type="button" onClick={() => analyzeSessionFromHistory(session)} disabled={aiLoadingId === session.id}>{aiLoadingId === session.id ? "..." : aiAnalysis ? "Ver IA" : "IA"}</button>
                           <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" type="button" title="Editar" onClick={() => editSession(session)}><Icon name="edit" /></button>
                           <button className="grid h-10 w-10 place-items-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100" type="button" title="Eliminar" onClick={() => deleteSession(session.id)}><Icon name="trash" /></button>
                         </div>
@@ -990,12 +1123,22 @@ export default function GymModule() {
                           </div>
 
                           <section className="mt-4 rounded-lg border border-blue-100 bg-blue-50 p-4">
-                            <div className="flex gap-3">
-                              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-600 text-white"><Icon name="spark" /></span>
-                              <div>
-                                <p className="text-xs font-black uppercase tracking-wide text-blue-700">Analisis IA de la rutina</p>
-                                <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-6 text-slate-700">{usableIntelligence(detailSession.intelligence) || buildIntelligence(detailSession)}</p>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="flex gap-3">
+                                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-600 text-white"><Icon name="spark" /></span>
+                                <div>
+                                  <p className="text-xs font-black uppercase tracking-wide text-blue-700">IDG Intelligence</p>
+                                  <p className="mt-1 text-sm font-semibold leading-6 text-slate-700">{savedAnalysisFor(detailSession) ? "Esta sesion tiene analisis IA guardado." : "Genera un analisis especifico para esta sesion."}</p>
+                                </div>
                               </div>
+                              <button
+                                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white disabled:bg-blue-300"
+                                type="button"
+                                disabled={aiLoadingId === detailSession.id}
+                                onClick={() => analyzeSessionFromHistory(detailSession, !savedAnalysisFor(detailSession))}
+                              >
+                                {aiLoadingId === detailSession.id ? "Analizando..." : savedAnalysisFor(detailSession) ? "Ver IA" : "Generar IA"}
+                              </button>
                             </div>
                           </section>
 
