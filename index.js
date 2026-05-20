@@ -524,6 +524,22 @@ app.put('/activities/upsert', authMiddleware, async (req, res) => {
   }
 });
 
+app.delete('/activities/:id', authMiddleware, async (req, res) => {
+  try {
+    const userId = await getUserId(req.user.email, req.user);
+    const id = String(req.params.id || "");
+    if (!id) return res.status(400).json({ error: "Falta id de actividad" });
+    const result = await pool.query(
+      `DELETE FROM activities WHERE user_id=$1 AND id=$2`,
+      [userId, id],
+    );
+    res.json({ ok: true, deleted: result.rowCount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo eliminar la actividad" });
+  }
+});
+
 app.get('/weight', authMiddleware, async (req, res) => {
   try {
     const userId = await getUserId(req.user.email, req.user);
