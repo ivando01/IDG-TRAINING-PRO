@@ -279,10 +279,10 @@ function zoneForHr(hr: number | null | undefined, zones: HRZone[]) {
   if (!hr || hr < 40) return null;
   const ordered = [...zones].sort((a, b) => a.min - b.min);
   if (ordered[0] && hr < ordered[0].min) return ordered[0];
-  return ordered.find((zone, index) => {
-    const isLast = index === ordered.length - 1;
-    return hr >= zone.min && (hr < zone.max || (isLast && hr <= zone.max));
-  }) || ordered.at(-1) || null;
+  return ordered.find((zone) => hr >= zone.min && hr <= zone.max)
+    || [...ordered].reverse().find((zone) => hr >= zone.min)
+    || ordered.at(-1)
+    || null;
 }
 
 function estimateCalories(avgHr: number | null, durationSec: number, sport: SportType, distanceKm: number) {
