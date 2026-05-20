@@ -494,6 +494,36 @@ app.put('/activities', authMiddleware, async (req, res) => {
   }
 });
 
+app.put('/activities/upsert', authMiddleware, async (req, res) => {
+  try {
+    const userId = await getUserId(req.user.email, req.user);
+    const sport = req.body?.sport === "cycling" ? "cycling" : req.body?.sport === "running" ? "running" : null;
+    const activities = asArray(req.body?.activities);
+    const saved = [];
+    for (const item of activities) {
+      const itemSport = item?.sport === "cycling" ? "cycling" : item?.sport === "running" ? "running" : sport;
+      if (!itemSport) continue;
+      const id = String(item.id || `${itemSport}-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      await pool.query(
+        `INSERT INTO activities (id, user_id, sport, source, activity_date, data, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, now())
+         ON CONFLICT (user_id, id) DO UPDATE SET
+           sport=EXCLUDED.sport,
+           source=EXCLUDED.source,
+           activity_date=EXCLUDED.activity_date,
+           data=EXCLUDED.data,
+           updated_at=now()`,
+        [id, userId, itemSport, item.source || null, itemDate(item), { ...item, id }],
+      );
+      saved.push(id);
+    }
+    res.json({ ok: true, saved: saved.length });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudieron actualizar las actividades" });
+  }
+});
+
 app.get('/weight', authMiddleware, async (req, res) => {
   try {
     const userId = await getUserId(req.user.email, req.user);
