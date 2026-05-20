@@ -166,12 +166,63 @@ function numericOrNull(value, decimals = 2) {
   return Number(parsed.toFixed(decimals));
 }
 
-function appActivityFromStravaRow(row, sport) {
+function streamData(streams, key) {
+  const data = streams?.[key]?.data;
+  return Array.isArray(data) ? data : [];
+}
+
+function sampledIndexes(length, maxItems = 1200) {
+  if (length <= maxItems) return Array.from({ length }, (_, index) => index);
+  const step = (length - 1) / (maxItems - 1);
+  return Array.from({ length: maxItems }, (_, index) => Math.round(index * step));
+}
+
+function stravaPointsFromStreams(summary, streams, sport) {
+  const latlng = streamData(streams, "latlng");
+  const time = streamData(streams, "time");
+  const distance = streamData(streams, "distance");
+  const altitude = streamData(streams, "altitude");
+  const heartrate = streamData(streams, "heartrate");
+  const cadence = streamData(streams, "cadence");
+  const watts = streamData(streams, "watts");
+  const velocity = streamData(streams, "velocity_smooth");
+  const temp = streamData(streams, "temp");
+  const length = Math.max(latlng.length, time.length, distance.length, altitude.length, heartrate.length, velocity.length);
+  const start = summary?.start_date ? new Date(summary.start_date).getTime() : Date.now();
+  const maxHr = Number(summary?.max_heartrate) || null;
+
+  return sampledIndexes(length).map((streamIndex) => {
+    const coord = latlng[streamIndex];
+    const hr = numericOrNull(heartrate[streamIndex], 0);
+    const rawCadence = numericOrNull(cadence[streamIndex], 0);
+    return {
+      lat: Array.isArray(coord) ? numericOrNull(coord[0], 6) : undefined,
+      lon: Array.isArray(coord) ? numericOrNull(coord[1], 6) : undefined,
+      ele: numericOrNull(altitude[streamIndex], 1),
+      time: Number.isFinite(Number(time[streamIndex])) ? start + Number(time[streamIndex]) * 1000 : undefined,
+      distanceKm: Number.isFinite(Number(distance[streamIndex])) ? numericOrNull(Number(distance[streamIndex]) / 1000, 3) || 0 : 0,
+      hr: hr && maxHr ? Math.min(hr, maxHr) : hr,
+      cad: sport === "running" && rawCadence && rawCadence >= 40 && rawCadence <= 125 ? rawCadence * 2 : rawCadence,
+      speedKmh: Number.isFinite(Number(velocity[streamIndex])) ? numericOrNull(Number(velocity[streamIndex]) * 3.6, 1) : null,
+      power: sport === "cycling" ? numericOrNull(watts[streamIndex], 0) : null,
+      temp: numericOrNull(temp[streamIndex], 0),
+    };
+  });
+}
+
+function appActivityFromStravaRow(row, sport, streams = null) {
   const distanceKm = numericOrNull(row.distance_km, 3) || 0;
   const durationSec = Math.round((Number(row.duration_min) || Number(row.elapsed_min) || 0) * 60);
   const startMs = row.date ? new Date(row.date).getTime() : Date.now();
   const avgHr = numericOrNull(row.avg_hr, 0);
   const maxHr = numericOrNull(row.max_hr, 0);
+  const streamPoints = streams ? stravaPointsFromStreams(row.raw_data || {}, streams, sport) : [];
+  const points = streamPoints.length >= 2
+    ? streamPoints
+    : [
+      { distanceKm: 0, time: startMs, hr: avgHr },
+      { distanceKm, time: startMs + durationSec * 1000, hr: maxHr || avgHr },
+    ];
   return {
     id: `strava-${row.external_id}`,
     sport,
@@ -182,10 +233,7 @@ function appActivityFromStravaRow(row, sport) {
     name: row.name || (sport === "cycling" ? "Actividad de ciclismo" : "Actividad de running"),
     date: row.date ? String(row.date).slice(0, 10) : new Date().toISOString().slice(0, 10),
     startTime: row.date || null,
-    points: [
-      { distanceKm: 0, time: startMs, hr: avgHr },
-      { distanceKm, time: startMs + durationSec * 1000, hr: maxHr || avgHr },
-    ],
+    points,
     metrics: {
       distanceKm,
       durationSec,
@@ -220,34 +268,36 @@ function appActivityFromStravaRow(row, sport) {
 }
 
 function normalizeStravaActivity(activity, userId, sport) {
-  const externalId = String(activity.id);
-  const distanceKm = activity.distance ? Number(activity.distance) / 1000 : null;
-  const durationMin = activity.moving_time ? Number(activity.moving_time) / 60 : null;
-  const elapsedMin = activity.elapsed_time ? Number(activity.elapsed_time) / 60 : null;
+  const summary = activity?.summary || activity;
+  const streams = activity?.streams || null;
+  const externalId = String(summary.id);
+  const distanceKm = summary.distance ? Number(summary.distance) / 1000 : null;
+  const durationMin = summary.moving_time ? Number(summary.moving_time) / 60 : null;
+  const elapsedMin = summary.elapsed_time ? Number(summary.elapsed_time) / 60 : null;
   const row = {
     id: `strava-${externalId}`,
     user_id: userId,
     sport,
     source: "strava",
     external_id: externalId,
-    type: activity.sport_type || activity.type || null,
-    name: activity.name || null,
-    date: activity.start_date || null,
-    activity_date: itemDate({ date: activity.start_date }),
+    type: summary.sport_type || summary.type || null,
+    name: summary.name || null,
+    date: summary.start_date || null,
+    activity_date: itemDate({ date: summary.start_date }),
     distance_km: numericOrNull(distanceKm, 3),
     duration_min: numericOrNull(durationMin, 2),
     elapsed_min: numericOrNull(elapsedMin, 2),
-    elevation_m: numericOrNull(activity.total_elevation_gain, 1),
-    avg_speed_kmh: activity.average_speed ? numericOrNull(Number(activity.average_speed) * 3.6, 2) : null,
-    max_speed_kmh: activity.max_speed ? numericOrNull(Number(activity.max_speed) * 3.6, 2) : null,
-    avg_hr: numericOrNull(activity.average_heartrate, 0),
-    max_hr: numericOrNull(activity.max_heartrate, 0),
-    calories: numericOrNull(activity.calories, 0),
-    raw_data: activity,
+    elevation_m: numericOrNull(summary.total_elevation_gain, 1),
+    avg_speed_kmh: summary.average_speed ? numericOrNull(Number(summary.average_speed) * 3.6, 2) : null,
+    max_speed_kmh: summary.max_speed ? numericOrNull(Number(summary.max_speed) * 3.6, 2) : null,
+    avg_hr: numericOrNull(summary.average_heartrate, 0),
+    max_hr: numericOrNull(summary.max_heartrate, 0),
+    calories: numericOrNull(summary.calories, 0),
+    raw_data: summary,
   };
   return {
     ...row,
-    data: appActivityFromStravaRow(row, sport),
+    data: appActivityFromStravaRow(row, sport, streams),
   };
 }
 
@@ -1033,11 +1083,11 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
           summary: detailResponse.data,
           streams: streamsResponse.data,
         });
-        normalizedForStorage.push(detailResponse.data);
+        normalizedForStorage.push({ summary: detailResponse.data, streams: streamsResponse.data });
       } catch (streamError) {
         console.error("No se pudo leer stream Strava", activity.id, streamError.response?.data || streamError.message);
         enriched.push({ summary: activity, streams: null, streamError: true });
-        normalizedForStorage.push(activity);
+        normalizedForStorage.push({ summary: activity, streams: null });
       }
     }
 
