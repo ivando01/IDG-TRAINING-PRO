@@ -160,6 +160,154 @@ function itemDate(item) {
   return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : null;
 }
 
+function numericOrNull(value, decimals = 2) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  return Number(parsed.toFixed(decimals));
+}
+
+function appActivityFromStravaRow(row, sport) {
+  const distanceKm = numericOrNull(row.distance_km, 3) || 0;
+  const durationSec = Math.round((Number(row.duration_min) || Number(row.elapsed_min) || 0) * 60);
+  const startMs = row.date ? new Date(row.date).getTime() : Date.now();
+  const avgHr = numericOrNull(row.avg_hr, 0);
+  const maxHr = numericOrNull(row.max_hr, 0);
+  return {
+    id: `strava-${row.external_id}`,
+    sport,
+    activityKind: "training",
+    activitySubType: row.type || null,
+    countsTowardTraining: true,
+    source: "STRAVA",
+    name: row.name || (sport === "cycling" ? "Actividad de ciclismo" : "Actividad de running"),
+    date: row.date ? String(row.date).slice(0, 10) : new Date().toISOString().slice(0, 10),
+    startTime: row.date || null,
+    points: [
+      { distanceKm: 0, time: startMs, hr: avgHr },
+      { distanceKm, time: startMs + durationSec * 1000, hr: maxHr || avgHr },
+    ],
+    metrics: {
+      distanceKm,
+      durationSec,
+      movingSec: durationSec,
+      avgSpeedKmh: numericOrNull(row.avg_speed_kmh, 1),
+      maxSpeedKmh: numericOrNull(row.max_speed_kmh, 1),
+      pace: null,
+      avgPower: null,
+      elevationGain: numericOrNull(row.elevation_m, 0) || 0,
+      elevationLoss: 0,
+      altitudeMax: null,
+      altitudeMin: null,
+      avgGradePct: null,
+      avgHr,
+      maxHr,
+      avgCadence: null,
+      strideMeters: null,
+      vo2Estimate: null,
+      calories: numericOrNull(row.calories, 0),
+      normalizedPower: null,
+      powerSource: "none",
+      tss: null,
+      intensityFactor: null,
+      variabilityIndex: null,
+    },
+    zones: [],
+    zoneTotals: [],
+    zoneTimeline: [],
+    notes: "",
+    segments: [],
+  };
+}
+
+function normalizeStravaActivity(activity, userId, sport) {
+  const externalId = String(activity.id);
+  const distanceKm = activity.distance ? Number(activity.distance) / 1000 : null;
+  const durationMin = activity.moving_time ? Number(activity.moving_time) / 60 : null;
+  const elapsedMin = activity.elapsed_time ? Number(activity.elapsed_time) / 60 : null;
+  const row = {
+    id: `strava-${externalId}`,
+    user_id: userId,
+    sport,
+    source: "strava",
+    external_id: externalId,
+    type: activity.sport_type || activity.type || null,
+    name: activity.name || null,
+    date: activity.start_date || null,
+    activity_date: itemDate({ date: activity.start_date }),
+    distance_km: numericOrNull(distanceKm, 3),
+    duration_min: numericOrNull(durationMin, 2),
+    elapsed_min: numericOrNull(elapsedMin, 2),
+    elevation_m: numericOrNull(activity.total_elevation_gain, 1),
+    avg_speed_kmh: activity.average_speed ? numericOrNull(Number(activity.average_speed) * 3.6, 2) : null,
+    max_speed_kmh: activity.max_speed ? numericOrNull(Number(activity.max_speed) * 3.6, 2) : null,
+    avg_hr: numericOrNull(activity.average_heartrate, 0),
+    max_hr: numericOrNull(activity.max_heartrate, 0),
+    calories: numericOrNull(activity.calories, 0),
+    raw_data: activity,
+  };
+  return {
+    ...row,
+    data: appActivityFromStravaRow(row, sport),
+  };
+}
+
+async function saveStravaActivities(stravaActivities, userId, sport) {
+  const rows = asArray(stravaActivities).map((activity) => normalizeStravaActivity(activity, userId, sport));
+  const chunkSize = 100;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      for (const row of chunk) {
+        await client.query(
+          `INSERT INTO activities (
+             id, user_id, sport, source, external_id, type, name, date,
+             distance_km, duration_min, elapsed_min, elevation_m, avg_speed_kmh,
+             max_speed_kmh, avg_hr, max_hr, calories, raw_data, activity_date, data, updated_at
+           )
+           VALUES (
+             $1, $2, $3, $4, $5, $6, $7, $8,
+             $9, $10, $11, $12, $13,
+             $14, $15, $16, $17, $18, $19, $20, now()
+           )
+           ON CONFLICT (user_id, source, external_id) DO UPDATE SET
+             id=EXCLUDED.id,
+             sport=EXCLUDED.sport,
+             type=EXCLUDED.type,
+             name=EXCLUDED.name,
+             date=EXCLUDED.date,
+             distance_km=EXCLUDED.distance_km,
+             duration_min=EXCLUDED.duration_min,
+             elapsed_min=EXCLUDED.elapsed_min,
+             elevation_m=EXCLUDED.elevation_m,
+             avg_speed_kmh=EXCLUDED.avg_speed_kmh,
+             max_speed_kmh=EXCLUDED.max_speed_kmh,
+             avg_hr=EXCLUDED.avg_hr,
+             max_hr=EXCLUDED.max_hr,
+             calories=EXCLUDED.calories,
+             raw_data=EXCLUDED.raw_data,
+             activity_date=EXCLUDED.activity_date,
+             data=EXCLUDED.data,
+             updated_at=now()`,
+          [
+            row.id, row.user_id, row.sport, row.source, row.external_id, row.type, row.name, row.date,
+            row.distance_km, row.duration_min, row.elapsed_min, row.elevation_m, row.avg_speed_kmh,
+            row.max_speed_kmh, row.avg_hr, row.max_hr, row.calories, row.raw_data, row.activity_date, row.data,
+          ],
+        );
+      }
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+  return rows.length;
+}
+
 async function replaceCollection({ table, userId, items, extra = () => ({ columns: [], values: [] }) }) {
   const client = await pool.connect();
   try {
@@ -504,16 +652,21 @@ app.put('/activities/upsert', authMiddleware, async (req, res) => {
       const itemSport = item?.sport === "cycling" ? "cycling" : item?.sport === "running" ? "running" : sport;
       if (!itemSport) continue;
       const id = String(item.id || `${itemSport}-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      const source = String(item.source || "").toLowerCase() === "strava" ? "strava" : item.source || null;
+      const externalId = source === "strava"
+        ? String(item.external_id || item.externalId || id.replace(/^strava-/, ""))
+        : item.external_id || item.externalId || null;
       await pool.query(
-        `INSERT INTO activities (id, user_id, sport, source, activity_date, data, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, now())
+        `INSERT INTO activities (id, user_id, sport, source, external_id, activity_date, data, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, now())
          ON CONFLICT (user_id, id) DO UPDATE SET
            sport=EXCLUDED.sport,
            source=EXCLUDED.source,
+           external_id=COALESCE(EXCLUDED.external_id, activities.external_id),
            activity_date=EXCLUDED.activity_date,
            data=EXCLUDED.data,
            updated_at=now()`,
-        [id, userId, itemSport, item.source || null, itemDate(item), { ...item, id }],
+        [id, userId, itemSport, source, externalId, itemDate(item), { ...item, id }],
       );
       saved.push(id);
     }
@@ -799,6 +952,7 @@ app.get('/strava/status', authMiddleware, async (req, res) => {
 
 app.get('/strava/sync', authMiddleware, async (req, res) => {
   try {
+    const userId = await getUserId(req.user.email, req.user);
     const credentials = await getStravaCredentials(req.user.email);
     if (!credentials) return res.status(409).json({ error: "Strava no conectado" });
 
@@ -862,6 +1016,7 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
 
     const streamsKeys = "time,latlng,distance,altitude,heartrate,cadence,watts,velocity_smooth,temp,grade_smooth";
     const enriched = [];
+    const normalizedForStorage = [];
     for (const activity of candidates) {
       try {
         const [detailResponse, streamsResponse] = await Promise.all([
@@ -878,13 +1033,16 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
           summary: detailResponse.data,
           streams: streamsResponse.data,
         });
+        normalizedForStorage.push(detailResponse.data);
       } catch (streamError) {
         console.error("No se pudo leer stream Strava", activity.id, streamError.response?.data || streamError.message);
         enriched.push({ summary: activity, streams: null, streamError: true });
+        normalizedForStorage.push(activity);
       }
     }
 
-    res.json({ sport, days, scanned: fetched.length, inRange: inRange.length, availableTypes, recent, count: enriched.length, activities: enriched });
+    const saved = await saveStravaActivities(normalizedForStorage, userId, sport);
+    res.json({ sport, days, scanned: fetched.length, inRange: inRange.length, availableTypes, recent, count: enriched.length, saved, activities: enriched });
   } catch (error) {
     console.error(error.response?.data || error);
     res.status(500).json({ error: "No se pudo sincronizar Strava" });

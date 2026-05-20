@@ -52,14 +52,53 @@ CREATE TABLE IF NOT EXISTS activities (
   user_id TEXT NOT NULL,
   sport TEXT NOT NULL CHECK (sport IN ('running', 'cycling')),
   source TEXT,
+  external_id TEXT,
+  type TEXT,
+  name TEXT,
+  date TIMESTAMPTZ,
+  distance_km NUMERIC,
+  duration_min NUMERIC,
+  elapsed_min NUMERIC,
+  elevation_m NUMERIC,
+  avg_speed_kmh NUMERIC,
+  max_speed_kmh NUMERIC,
+  avg_hr NUMERIC,
+  max_hr NUMERIC,
+  calories NUMERIC,
+  raw_data JSONB,
   activity_date DATE,
   data JSONB NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (user_id, id)
 );
 
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS external_id TEXT;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS type TEXT;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS date TIMESTAMPTZ;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS distance_km NUMERIC;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS duration_min NUMERIC;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS elapsed_min NUMERIC;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS elevation_m NUMERIC;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS avg_speed_kmh NUMERIC;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS max_speed_kmh NUMERIC;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS avg_hr NUMERIC;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS max_hr NUMERIC;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS calories NUMERIC;
+ALTER TABLE activities ADD COLUMN IF NOT EXISTS raw_data JSONB;
+
+UPDATE activities
+SET source='strava',
+    external_id=regexp_replace(id, '^strava-', '')
+WHERE lower(source)='strava'
+  AND external_id IS NULL
+  AND id LIKE 'strava-%';
+
 CREATE INDEX IF NOT EXISTS idx_activities_user_sport_date
   ON activities (user_id, sport, activity_date DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS activities_unique_source
+  ON activities (user_id, source, external_id);
 
 CREATE TABLE IF NOT EXISTS weight_records (
   id TEXT NOT NULL,
