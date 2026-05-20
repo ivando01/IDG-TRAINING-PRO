@@ -1,7 +1,7 @@
 "use client";
 
 import TopNav from "@/components/TopNav";
-import { getCloudCollection, saveCloudCollection } from "@/lib/cloud-sync";
+import { getCloudCollection } from "@/lib/cloud-sync";
 import {
   ActivityAnalysis,
   ActivityPoint,
@@ -171,16 +171,32 @@ function apiUrl() {
 
 async function saveActivityBatchToCloud(sport: SportType, activities: ActivityAnalysis[], token: string) {
   const payload = compactActivitiesForCloud(activities);
-  const response = await fetch(`${apiUrl()}/activities/upsert`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ sport, activities: payload }),
+  const chunkSize = 4;
+  let saved = 0;
+  for (let index = 0; index < payload.length; index += chunkSize) {
+    const chunk = payload.slice(index, index + chunkSize);
+    const response = await fetch(`${apiUrl()}/activities/upsert`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ sport, activities: chunk }),
+    });
+    const data = await readJsonResponse(response);
+    if (!response.ok) throw new Error(data.error || "No se pudo guardar el lote de actividades.");
+    saved += Number(data.saved || chunk.length || 0);
+  }
+  return { ok: true, saved };
+}
+
+async function deleteActivityFromCloud(id: string, token: string) {
+  const response = await fetch(`${apiUrl()}/activities/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
   });
   const data = await readJsonResponse(response);
-  if (!response.ok) throw new Error(data.error || "No se pudo guardar el lote de actividades.");
+  if (!response.ok) throw new Error(data.error || "No se pudo eliminar la actividad en nube.");
   return data;
 }
 
@@ -304,9 +320,9 @@ function compactActivitiesForStorage(items: ActivityAnalysis[]) {
 function compactActivitiesForCloud(items: ActivityAnalysis[]) {
   return items.map((activity) => ({
     ...activity,
-    points: sampleArray(activity.points, activity.sport === "cycling" ? 140 : 170),
-    zoneTimeline: sampleArray(activity.zoneTimeline, 140),
-    aiAnalysis: activity.aiAnalysis ? activity.aiAnalysis.slice(0, 1800) : undefined,
+    points: sampleArray(activity.points, activity.sport === "cycling" ? 120 : 150),
+    zoneTimeline: sampleArray(activity.zoneTimeline, 120),
+    aiAnalysis: activity.aiAnalysis ? activity.aiAnalysis.slice(0, 1400) : undefined,
   }));
 }
 
@@ -971,11 +987,13 @@ export default function ActivityAnalysisPage({ sport }: Props) {
 
   const saveActivities = (next: ActivityAnalysis[]) => {
     const ordered = sortActivitiesBySessionDate(next);
-    const cloudPayload = compactActivitiesForCloud(ordered);
     const stored = safeSetActivities(storageKeyForSport(sport), ordered);
     setActivities(ordered);
-    saveCloudCollection("/activities", "activities", cloudPayload, { sport })
-      .catch((error) => setStatus(error instanceof Error ? `No se pudo guardar en nube: ${error.message}` : "No se pudo guardar en nube."));
+    const token = localStorage.getItem("token");
+    if (token) {
+      saveActivityBatchToCloud(sport, ordered, token)
+        .catch((error) => setStatus(error instanceof Error ? `No se pudo guardar en nube: ${error.message}` : "No se pudo guardar en nube."));
+    }
     if (stored.length !== ordered.length) {
       setStatus("Se guardaron las actividades compactadas para no superar el limite local del navegador.");
     }
@@ -1036,6 +1054,11 @@ export default function ActivityAnalysisPage({ sport }: Props) {
   const deleteActivity = (activity: ActivityAnalysis) => {
     const next = activities.filter((item) => item.id !== activity.id);
     saveActivities(next);
+    const token = localStorage.getItem("token");
+    if (token) {
+      deleteActivityFromCloud(activity.id, token)
+        .catch((error) => setStatus(error instanceof Error ? `No se pudo eliminar en nube: ${error.message}` : "No se pudo eliminar en nube."));
+    }
     setSelectedId(next[0]?.id || "");
     setStatus(`${activity.name} eliminado del historial local.`);
   };
