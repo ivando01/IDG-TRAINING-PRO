@@ -1,7 +1,7 @@
 "use client";
 
 import TopNav from "@/components/TopNav";
-import { getCloudCollection } from "@/lib/cloud-sync";
+import { getCloudCollection, getCloudProfile } from "@/lib/cloud-sync";
 import {
   ActivityAnalysis,
   ActivityPoint,
@@ -29,6 +29,9 @@ type LayerKey = keyof typeof layerLabels;
 type Props = {
   sport: SportType;
 };
+
+const PROFILE_KEY = "idg_profile_json";
+const LEGACY_PROFILE_KEY = "iv_profile";
 
 type StravaStream = { data?: unknown[] };
 
@@ -335,6 +338,28 @@ function activitySessionTime(activity: ActivityAnalysis) {
 
 function sortActivitiesBySessionDate(items: ActivityAnalysis[]) {
   return [...items].sort((a, b) => activitySessionTime(b) - activitySessionTime(a) || String(b.id).localeCompare(String(a.id)));
+}
+
+function profileTime(profile: Record<string, unknown> | null | undefined) {
+  const timestamp = Date.parse(String(profile?.updatedAt || ""));
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+async function syncCloudProfileToLocal() {
+  try {
+    const localRaw = localStorage.getItem(PROFILE_KEY) || localStorage.getItem(LEGACY_PROFILE_KEY);
+    const localProfile = localRaw ? JSON.parse(localRaw) as Record<string, unknown> : null;
+    const cloudProfile = await getCloudProfile<Record<string, unknown>>();
+    if (!cloudProfile) return localProfile;
+    const selected = profileTime(cloudProfile) >= profileTime(localProfile) ? cloudProfile : localProfile;
+    if (selected) {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(selected));
+      localStorage.setItem(LEGACY_PROFILE_KEY, JSON.stringify(selected));
+    }
+    return selected;
+  } catch {
+    return null;
+  }
 }
 
 function hydrateCloudActivity(activity: ActivityAnalysis) {
@@ -992,6 +1017,16 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     } catch {
       setActivities([]);
     }
+    syncCloudProfileToLocal()
+      .then(() => {
+        if (!alive) return;
+        setActivities((currentActivities) => {
+          const recalculated = sortActivitiesBySessionDate(currentActivities.map(hydrateCloudActivity));
+          safeSetActivities(storageKeyForSport(sport), recalculated);
+          return recalculated;
+        });
+      })
+      .catch(() => undefined);
     loadCloudActivities();
     const refreshOnFocus = () => loadCloudActivities();
     window.addEventListener("focus", refreshOnFocus);
