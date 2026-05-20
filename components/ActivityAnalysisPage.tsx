@@ -988,49 +988,24 @@ function ZoneTimeline({
   const strongest = [...liveActivity.zoneTotals].sort((a, b) => b.seconds - a.seconds)[0];
   const peaks = liveActivity.zoneTimeline.filter((item) => (item.zoneKey === "Z4" || item.zoneKey === "Z5") && item.seconds >= 12).length;
   const last = liveActivity.zoneTimeline.at(-1);
-  const hasNoZone = liveActivity.zoneTimeline.some((item) => item.zoneKey === "NA");
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-black text-slate-900">Comportamiento por zonas</h2>
         <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-slate-500">Por distancia</span>
       </div>
-      <div className="mt-5">
-        <div className="flex h-6 overflow-hidden rounded-md bg-slate-100">
-          {liveActivity.zoneTimeline.map((segment, index) => (
-            <div
-              key={`${segment.zoneKey}-${index}`}
-              className="group relative min-w-[4px]"
-              style={{ width: `${(segment.seconds / total) * 100}%`, backgroundColor: segment.color }}
-              title={`${segment.label} | ${formatDuration(segment.seconds)} | FC ${segment.avgHr || "--"} | ${segment.range} | km ${segment.startKm.toFixed(1)}-${segment.endKm.toFixed(1)}`}
-            />
-          ))}
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="rounded-lg bg-emerald-50 p-4">
+          <p className="text-xs font-bold text-emerald-700">Mayor permanencia</p>
+          <p className="mt-1 font-black text-slate-900">{strongest ? `${strongest.label} - ${Math.round((strongest.seconds / total) * 100)}%` : "--"}</p>
         </div>
-        <div className="mt-2 flex justify-between text-xs font-bold text-slate-500">
-          <span>0 km</span>
-          <span>{liveActivity.metrics.distanceKm.toFixed(1)} km</span>
+        <div className="rounded-lg bg-orange-50 p-4">
+          <p className="text-xs font-bold text-orange-700">Picos de intensidad</p>
+          <p className="mt-1 font-black text-slate-900">{peaks} entradas a Z4/Z5</p>
         </div>
-        <div className="mt-3 flex flex-wrap gap-3 text-xs font-bold text-slate-500">
-          {hasNoZone ? (
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-              Sin FC
-            </span>
-          ) : null}
-        </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-lg bg-emerald-50 p-4">
-            <p className="text-xs font-bold text-emerald-700">Mayor permanencia</p>
-            <p className="mt-1 font-black text-slate-900">{strongest ? `${strongest.label} - ${Math.round((strongest.seconds / total) * 100)}%` : "--"}</p>
-          </div>
-          <div className="rounded-lg bg-orange-50 p-4">
-            <p className="text-xs font-bold text-orange-700">Picos de intensidad</p>
-            <p className="mt-1 font-black text-slate-900">{peaks} entradas a Z4/Z5</p>
-          </div>
-          <div className="rounded-lg bg-red-50 p-4">
-            <p className="text-xs font-bold text-red-700">Ultimo tramo</p>
-            <p className="mt-1 font-black text-slate-900">{last?.label || "--"}</p>
-          </div>
+        <div className="rounded-lg bg-red-50 p-4">
+          <p className="text-xs font-bold text-red-700">Ultimo tramo</p>
+          <p className="mt-1 font-black text-slate-900">{last?.label || "--"}</p>
         </div>
       </div>
     </section>
