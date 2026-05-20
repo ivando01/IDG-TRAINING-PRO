@@ -819,7 +819,7 @@ function MapLayerControls({
 function ZoneTimeline({ activity }: { activity: ActivityAnalysis }) {
   const total = activity.zoneTimeline.reduce((sum, item) => sum + item.seconds, 0) || 1;
   const strongest = [...activity.zoneTotals].sort((a, b) => b.seconds - a.seconds)[0];
-  const peaks = activity.zoneTimeline.filter((item) => item.zoneKey === "Z4" || item.zoneKey === "Z5").length;
+  const peaks = activity.zoneTimeline.filter((item) => (item.zoneKey === "Z4" || item.zoneKey === "Z5") && item.seconds >= 12).length;
   const last = activity.zoneTimeline.at(-1);
   const hasNoZone = activity.zoneTimeline.some((item) => item.zoneKey === "NA");
   return (
