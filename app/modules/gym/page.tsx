@@ -210,6 +210,10 @@ function scaleColor(value: number) {
 function Icon({ name }: { name: "save" | "edit" | "trash" | "chart" | "spark" | "plus" | "chev" | "eye" }) {
   const common = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, strokeWidth: 1.8 };
 
+  if (name === "spark") {
+    return <img src="/icons/IA.png" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 rounded-sm object-cover" />;
+  }
+
   return (
     <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
       {name === "save" ? <path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6" {...common} /> : null}
@@ -217,7 +221,6 @@ function Icon({ name }: { name: "save" | "edit" | "trash" | "chart" | "spark" | 
       {name === "trash" ? <path d="M4 7h16M9 7V4h6v3M8 10v8M12 10v8M16 10v8M6 7l1 14h10l1-14" {...common} /> : null}
       {name === "chart" ? <path d="M5 19V9M12 19V5M19 19v-7M4 19h16" {...common} /> : null}
       {name === "eye" ? <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" {...common} /> : null}
-      {name === "spark" ? <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z" {...common} /> : null}
       {name === "plus" ? <path d="M12 5v14M5 12h14" {...common} /> : null}
       {name === "chev" ? <path d="m6 9 6 6 6-6" {...common} /> : null}
     </svg>
