@@ -149,6 +149,7 @@ export default function WeightModule() {
   const [loadingImage, setLoadingImage] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -239,6 +240,7 @@ export default function WeightModule() {
     try {
       const image = await readFileAsDataURL(file);
       setImagePreview(image);
+      setShowManualEntry(true);
       const response = await fetch("/api/weight-image-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -305,7 +307,7 @@ export default function WeightModule() {
       <main className="min-h-0 flex-1 overflow-y-auto bg-[#F8FAFC] p-4 text-slate-900 lg:p-6">
         {status ? <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">{status}</div> : null}
 
-        <section className="mb-5 grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(380px,0.7fr)]">
+        <section className={`mb-5 grid gap-5 ${showManualEntry ? "xl:grid-cols-[minmax(0,1.3fr)_minmax(380px,0.7fr)]" : ""}`}>
           <div className="rounded-lg border border-slate-200 bg-white p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
@@ -314,12 +316,19 @@ export default function WeightModule() {
                 <p className="mt-1 text-sm font-bold text-slate-500">{statusFromBMI(bmi)} {bmi ? `- IMC ${bmi}` : ""}</p>
               </div>
               <div className="flex flex-wrap gap-2">
+                <button
+                  className={`rounded-lg px-4 py-3 text-sm font-black ${showManualEntry ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700"}`}
+                  type="button"
+                  onClick={() => setShowManualEntry((open) => !open)}
+                >
+                  {showManualEntry ? "Ocultar ingreso manual" : "Ingreso manual"}
+                </button>
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-black text-white">
                   <AppIcon name="intelligence" className="h-4 w-4" />
                   {loadingImage ? "Leyendo..." : "Foto Huawei Health"}
                   <input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={onImage} />
                 </label>
-                <button className="rounded-lg bg-blue-600 px-4 py-3 text-sm font-black text-white" type="button" onClick={saveDraft}>Guardar</button>
+                {showManualEntry ? <button className="rounded-lg bg-blue-600 px-4 py-3 text-sm font-black text-white" type="button" onClick={saveDraft}>Guardar</button> : null}
               </div>
             </div>
 
@@ -377,7 +386,7 @@ export default function WeightModule() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-5">
+          {showManualEntry ? <div className="rounded-lg border border-slate-200 bg-white p-5">
             <h2 className="text-lg font-black text-slate-900">Registro rapido</h2>
             {imagePreview ? <img src={imagePreview} alt="Captura importada" className="mt-3 max-h-44 w-full rounded-lg object-cover" /> : null}
             <div className="mt-4 grid grid-cols-2 gap-3">
@@ -401,7 +410,7 @@ export default function WeightModule() {
               ))}
             </div>
             <textarea className="mt-3 min-h-20 w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm font-semibold outline-none focus:border-blue-500" placeholder="Notas del registro" value={draft.notes || ""} onChange={(event) => setField("notes", event.target.value)} />
-          </div>
+          </div> : null}
         </section>
 
         <section className="mb-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">

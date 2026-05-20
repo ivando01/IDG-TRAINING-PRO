@@ -173,6 +173,33 @@ function defaultTitle(type: SessionType, gymRoutine: string, objective: string) 
   return objective;
 }
 
+function normalizePlanSession(item: Partial<PlannedSession>): PlannedSession | null {
+  const type = (["gym", "running", "cycling", "mobility", "rest"] as SessionType[]).includes(item.type as SessionType) ? item.type as SessionType : "gym";
+  const date = String(item.date || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const objective = String(item.objective || objectives[type][0] || "Sesion");
+  const gymRoutine = type === "gym" ? String(item.gymRoutine || item.title || gymRoutines[0]) : undefined;
+  return {
+    id: String(item.id || crypto.randomUUID()),
+    date,
+    type,
+    title: String(item.title || defaultTitle(type, gymRoutine || "", objective)),
+    gymRoutine,
+    objective,
+    duration: Math.max(0, num(item.duration)),
+    targetZone: String(item.targetZone || (type === "gym" ? "RPE 7" : type === "rest" ? "" : "Z2")),
+    notes: String(item.notes || ""),
+    status: (["planned", "completed", "moved", "skipped"] as PlanStatus[]).includes(item.status as PlanStatus) ? item.status as PlanStatus : "planned",
+  };
+}
+
+function normalizePlan(items: PlannedSession[]) {
+  return items
+    .map((item) => normalizePlanSession(item))
+    .filter((item): item is PlannedSession => Boolean(item))
+    .sort((a, b) => `${a.date}-${a.type}`.localeCompare(`${b.date}-${b.type}`));
+}
+
 export default function PlanModule() {
   const [weekStart, setWeekStart] = useState(() => startOfWeek());
   const [selectedDate, setSelectedDate] = useState(() => isoDate(new Date()));
@@ -192,7 +219,7 @@ export default function PlanModule() {
   useEffect(() => {
     let alive = true;
     setMounted(true);
-    const localPlan = readJSON<PlannedSession[]>(PLAN_KEY, []);
+    const localPlan = normalizePlan(readJSON<PlannedSession[]>(PLAN_KEY, []));
     setSessions(localPlan);
     setRealSessions(getRealSessions());
 
@@ -207,14 +234,14 @@ export default function PlanModule() {
       .then(async (cloudPlan) => {
         if (!alive) return;
         if (cloudPlan.length) {
-          const sortedCloudPlan = [...cloudPlan].sort((a, b) => `${a.date}-${a.type}`.localeCompare(`${b.date}-${b.type}`));
+          const sortedCloudPlan = normalizePlan(cloudPlan);
           setSessions(sortedCloudPlan);
           localStorage.setItem(PLAN_KEY, JSON.stringify(sortedCloudPlan));
           setStatus("Plan semanal sincronizado desde la nube.");
           return;
         }
         if (localPlan.length) {
-          const sortedLocalPlan = [...localPlan].sort((a, b) => `${a.date}-${a.type}`.localeCompare(`${b.date}-${b.type}`));
+          const sortedLocalPlan = normalizePlan(localPlan);
           await saveCloudCollection("/plan", "plan", sortedLocalPlan);
           if (!alive) return;
           setSessions(sortedLocalPlan);
@@ -252,7 +279,7 @@ export default function PlanModule() {
   const completion = weekPlan.length ? Math.round((completedCount / weekPlan.length) * 100) : 0;
 
   const saveSessions = (next: PlannedSession[]) => {
-    const sorted = [...next].sort((a, b) => `${a.date}-${a.type}`.localeCompare(`${b.date}-${b.type}`));
+    const sorted = normalizePlan(next);
     setSessions(sorted);
     localStorage.setItem(PLAN_KEY, JSON.stringify(sorted));
     if (!canSyncCloud()) {

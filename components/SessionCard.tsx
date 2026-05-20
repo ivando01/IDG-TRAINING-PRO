@@ -35,12 +35,14 @@ export default function SessionCard({
   const router = useRouter();
 
   const formatDate = (dateStr: string) => {
-    const sessionDate = new Date(dateStr);
+    const cleanDate = String(dateStr || "").slice(0, 10);
+    const [year, month, day] = cleanDate.split("-").map(Number);
+    const sessionDate = Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)
+      ? new Date(year, month - 1, day)
+      : new Date(dateStr);
     return sessionDate.toLocaleDateString("es-ES", {
       month: "short",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 

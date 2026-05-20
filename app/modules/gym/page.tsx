@@ -323,14 +323,7 @@ export default function GymModule() {
 
   const routineName = routines[routine].name;
   const latest = history.find((session) => session.routine === routine);
-  const repsValue = (reps: string) => {
-    const values = String(reps || "")
-      .split(/[^0-9.]+/)
-      .map(Number)
-      .filter((value) => Number.isFinite(value) && value > 0);
-    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 1;
-  };
-  const exerciseVolume = (exercise: ExerciseDraft) => exercise.weights.reduce((sum, weight) => sum + ((Number(weight) || 0) * repsValue(exercise.reps)), 0);
+  const exerciseVolume = (exercise: ExerciseDraft) => exercise.weights.reduce((sum, weight) => sum + (Number(weight) || 0), 0);
   const sessionVolume = (session: Pick<GymSession, "exercises">) => session.exercises.reduce((sum, exercise) => sum + exerciseVolume(exercise), 0);
 
   const stats = useMemo(() => {
@@ -422,8 +415,8 @@ export default function GymModule() {
     const painText = session.painLevel > 3 ? "reduce carga y cuida el dolor reportado" : "puedes sostener progresion controlada";
 
     return top
-      ? `${session.routineName}: volumen ${sessionVolume(session).toFixed(0)} ${unit} x reps. Mayor carga en ${top.name} (${top.max} ${unit}). Intensidad ${session.intensity}/10; ${painText}.`
-      : `${session.routineName}: sin pesos registrados. El volumen se calcula como peso x repeticiones por cada serie.`;
+      ? `${session.routineName}: carga registrada ${sessionVolume(session).toFixed(0)} ${unit}. Mayor peso en ${top.name} (${top.max} ${unit}). Intensidad ${session.intensity}/10; ${painText}.`
+      : `${session.routineName}: sin pesos registrados. La carga se calcula como la suma del peso diligenciado en cada serie.`;
   };
 
   const buildDraftSession = (): GymSession => ({
@@ -444,7 +437,7 @@ export default function GymModule() {
 
   const analyzeRoutine = async () => {
     const draft = buildDraftSession();
-    setIntelligence("IDG Coach esta analizando volumen, intensidad y coherencia de carga...");
+    setIntelligence("IDG Coach esta analizando carga, intensidad y coherencia de la rutina...");
     try {
       const response = await fetch("/api/gym-analysis", {
         method: "POST",
@@ -623,7 +616,7 @@ export default function GymModule() {
                     {[
                       ["▣", stats.completedTrainingDays, "Entrenos", "text-blue-600", "bg-blue-50"],
                       ["◴", formatDurationLong(stats.weekMinutes), "Tiempo total", "text-emerald-600", "bg-emerald-50"],
-                      ["↗", `${stats.volumeDelta > 0 ? "+" : ""}${stats.volumeDelta}%`, "Volumen", "text-violet-600", "bg-violet-50"],
+                      ["↗", `${stats.volumeDelta > 0 ? "+" : ""}${stats.volumeDelta}%`, "Carga", "text-violet-600", "bg-violet-50"],
                       ["☆", stats.weeklyPercent >= 75 ? "Excelente" : "En progreso", "Consistencia", "text-green-600", "bg-green-50"],
                     ].map(([icon, value, label, color, bg]) => (
                       <article className="border-r border-slate-200 last:border-r-0" key={label}>
@@ -791,8 +784,8 @@ export default function GymModule() {
                     <p className="mt-1 text-lg font-black text-slate-900">{stats.completedSets}</p>
                   </div>
                   <div className="rounded-lg bg-white px-3 py-2">
-                    <p className="text-[10px] font-black uppercase text-slate-400">Volumen</p>
-                    <p className="mt-1 text-lg font-black text-slate-900">{stats.volume.toFixed(0)}</p>
+                    <p className="text-[10px] font-black uppercase text-slate-400">Carga</p>
+                    <p className="mt-1 text-lg font-black text-slate-900">{stats.volume.toFixed(0)} {unit}</p>
                   </div>
                   <div className="rounded-lg bg-white px-3 py-2">
                     <p className="text-[10px] font-black uppercase text-slate-400">Intensidad</p>
@@ -833,7 +826,7 @@ export default function GymModule() {
                           <strong className="block text-base font-black text-slate-900">{session.routineName}</strong>
                           <span className="mt-1 block text-sm font-semibold text-slate-500">{session.exercises.length} ejercicios - {setCount} series</span>
                         </div>
-                        <div><strong className="block text-base font-black text-slate-900">{volume.toFixed(0)} {unit}</strong><span className="text-xs font-semibold text-slate-500">Volumen</span></div>
+                        <div><strong className="block text-base font-black text-slate-900">{volume.toFixed(0)} {unit}</strong><span className="text-xs font-semibold text-slate-500">Carga</span></div>
                         <div><strong className="block text-base font-black text-slate-900">{session.intensity * 10}%</strong><span className="text-xs font-semibold text-slate-500">Intensidad</span></div>
                         <div><strong className="block text-base font-black text-slate-900">{minutesToHHMM(session.duration)}</strong><span className="text-xs font-semibold text-slate-500">Duracion</span></div>
                         <div className="h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-blue-600" style={{ width: `${session.intensity * 10}%` }} /></div>
@@ -867,7 +860,7 @@ export default function GymModule() {
 
                           <div className="mt-4 grid gap-3 md:grid-cols-4">
                             <div className="rounded-lg bg-slate-50 p-3">
-                              <p className="text-[10px] font-black uppercase text-slate-400">Volumen</p>
+                              <p className="text-[10px] font-black uppercase text-slate-400">Carga</p>
                               <p className="mt-1 text-lg font-black text-slate-900">{detailVolume.toFixed(0)} {unit}</p>
                             </div>
                             <label className="rounded-lg bg-slate-50 p-3">

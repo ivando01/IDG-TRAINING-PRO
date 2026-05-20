@@ -5,6 +5,7 @@ import KPICard from "@/components/KPICard";
 import SessionCard from "@/components/SessionCard";
 import TopNav from "@/components/TopNav";
 import { getCloudCollection, getCloudProfile } from "@/lib/cloud-sync";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type SportType = "gym" | "running" | "cycling";
@@ -361,7 +362,10 @@ export default function Dashboard() {
           </section>
 
           <section className="rounded-lg border border-slate-200 bg-white p-5">
-            <h3 className="font-black text-slate-900">IDG Intelligence</h3>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-black text-slate-900">IDG Intelligence</h3>
+              <Link className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-black text-white" href="/modules/analytics">Abrir coach</Link>
+            </div>
             <div className="mt-4 rounded-lg bg-blue-50 p-4">
               <p className="text-sm font-bold leading-6 text-blue-800">
                 {data.intelligence[0]?.title ? String(data.intelligence[0].title) : "Genera un analisis global para ver recomendaciones cruzadas."}

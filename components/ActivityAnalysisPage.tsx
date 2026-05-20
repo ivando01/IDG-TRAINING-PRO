@@ -553,8 +553,8 @@ function drawActivity(map: Map, activity: ActivityAnalysis, heatmap: boolean) {
   let currentColor = "#1D4ED8";
   let current: number[][] = [];
   for (const point of coords) {
-    const zone = activity.zones.find((item) => point.hr && point.hr >= item.min && point.hr < item.max);
-    const color = zone?.color || (point.hr ? "#EF4444" : "#64748B");
+    const zone = activity.zones.find((item) => point.hr && point.hr >= item.min && point.hr <= item.max);
+    const color = zone?.color || (point.hr ? activity.zones.at(-1)?.color || "#EF4444" : "#64748B");
     const coord = [point.lon!, point.lat!];
     if (!current.length || color === currentColor) {
       current.push(coord);

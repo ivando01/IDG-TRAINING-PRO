@@ -104,7 +104,7 @@ export const DEFAULT_ZONES: HRZone[] = [
   { key: "Z2", name: "Quema grasa", min: 114, max: 133, color: ZONE_COLORS.Z2 },
   { key: "Z3", name: "Aerobico", min: 133, max: 152, color: ZONE_COLORS.Z3 },
   { key: "Z4", name: "Anaerobico", min: 152, max: 171, color: ZONE_COLORS.Z4 },
-  { key: "Z5", name: "Extremo", min: 171, max: 240, color: ZONE_COLORS.Z5 },
+  { key: "Z5", name: "Extremo", min: 171, max: 190, color: ZONE_COLORS.Z5 },
 ];
 
 function calculatedZonesFromProfile(profile: Record<string, unknown> | null | undefined): HRZone[] {
@@ -126,7 +126,7 @@ function calculatedZonesFromProfile(profile: Record<string, unknown> | null | un
       key,
       name: DEFAULT_ZONES[index].name,
       min: index === 0 ? 0 : Math.round(min),
-      max: index === 4 ? Math.max(240, Math.round(max)) : Math.round(max),
+      max: Math.round(max),
       color: ZONE_COLORS[key],
     };
   });
@@ -146,7 +146,7 @@ function sanitizeZones(zones: HRZone[], fallback: HRZone[]) {
       key,
       name: fallbackZone.name,
       min,
-      max: index === 4 ? Math.max(max, 240) : max,
+      max,
       color: ZONE_COLORS[key],
     };
   });
