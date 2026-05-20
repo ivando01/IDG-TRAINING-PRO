@@ -310,11 +310,6 @@ function safeSetActivities(key: string, items: ActivityAnalysis[]) {
     ultraCompactActivitiesForStorage(items),
     ultraCompactActivitiesForStorage(items).slice(0, 15),
   ];
-  try {
-    localStorage.removeItem(key);
-  } catch {
-    // Continue with the write attempts even if the old cache cannot be removed.
-  }
   for (const attempt of attempts) {
     try {
       localStorage.setItem(key, JSON.stringify(attempt));
@@ -323,7 +318,6 @@ function safeSetActivities(key: string, items: ActivityAnalysis[]) {
       // Try a smaller local snapshot.
     }
   }
-  localStorage.removeItem(key);
   return [];
 }
 

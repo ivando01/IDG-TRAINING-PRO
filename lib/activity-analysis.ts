@@ -173,10 +173,10 @@ export function getStoredZones(): HRZone[] {
       });
       return sanitizeZones(stored, calculated);
     }
+    return calculated;
   } catch {
     return DEFAULT_ZONES;
   }
-  return DEFAULT_ZONES;
 }
 
 export function formatDuration(seconds: number) {

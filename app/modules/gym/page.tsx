@@ -33,8 +33,8 @@ type GymSession = {
 };
 
 const STORAGE_KEY = "idg_gym_sessions_json";
+const DRAFT_KEY = "idg_gym_current_session_json";
 const PROFILE_KEY = "idg_profile_json";
-const STRAVA_CACHE_KEYS = ["idg_cycling_activities_json", "idg_running_activities_json"];
 
 function safeSaveGymLocal(sessions: GymSession[]) {
   const compact = sessions.slice(0, 160);
@@ -42,15 +42,7 @@ function safeSaveGymLocal(sessions: GymSession[]) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(compact));
     return true;
   } catch {
-    // Heavy Strava route caches can fill the browser quota and block gym saves.
-  }
-
-  for (const key of STRAVA_CACHE_KEYS) {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      // Keep trying the remaining cleanup options.
-    }
+    // Keep Strava caches intact; fall back to a smaller gym snapshot only.
   }
 
   try {
@@ -245,6 +237,7 @@ export default function GymModule() {
   const [exercises, setExercises] = useState<ExerciseDraft[]>([]);
   const [history, setHistory] = useState<GymSession[]>([]);
   const [builderOpen, setBuilderOpen] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
   const [editingId, setEditingId] = useState("");
   const [selectedSessionId, setSelectedSessionId] = useState("");
   const [inlineEditingId, setInlineEditingId] = useState("");
@@ -279,19 +272,37 @@ export default function GymModule() {
       const saved: GymSession[] = raw ? JSON.parse(raw) : [];
       const sorted = sortSessions(saved);
       setHistory(sorted);
-      setExercises(buildExercises("4", sorted));
+      const draftRaw = localStorage.getItem(DRAFT_KEY);
+      const draft = draftRaw ? normalizeSession(JSON.parse(draftRaw) as GymSession) : null;
+      if (draft) {
+        setRoutine(draft.routine);
+        setDate(draft.date);
+        setDuration(minutesToHHMM(draft.duration || 75));
+        setIntensity(draft.intensity || 7);
+        setPainLevel(draft.painLevel || 0);
+        setPain(draft.pain || "");
+        setCalories(draft.calories || "");
+        setNotes(draft.notes || "");
+        setExercises(draft.exercises.length ? draft.exercises : buildExercises(draft.routine, sorted));
+        setEditingId(draft.id);
+        setIntelligence(`Rutina en curso recuperada: ${draft.routineName}.`);
+      } else {
+        setExercises(buildExercises("4", sorted));
+      }
       const profileRaw = localStorage.getItem(PROFILE_KEY);
       const profile = profileRaw ? JSON.parse(profileRaw) : {};
       setWeeklyTarget(Math.max(1, Math.min(7, Number(profile.gymDaysPerWeek) || 4)));
     } catch {
       setExercises(buildExercises("4", []));
+    } finally {
+      setDraftReady(true);
     }
     getCloudCollection<GymSession>("/gym/sessions", "sessions")
       .then((cloudSessions) => {
         if (!alive || !cloudSessions.length) return;
         const sorted = sortSessions(cloudSessions);
         setHistory(sorted);
-        setExercises(buildExercises("4", sorted));
+        if (!localStorage.getItem(DRAFT_KEY)) setExercises(buildExercises("4", sorted));
         safeSaveGymLocal(sorted);
       })
       .catch(() => undefined);
@@ -299,6 +310,16 @@ export default function GymModule() {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!draftReady || !date || !exercises.length || (!builderOpen && !editingId.startsWith("gym-draft"))) return;
+    const draft = buildDraftSession();
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...draft, id: editingId || draft.id, intelligence: buildIntelligence(draft) }));
+    } catch {
+      // Keep the visible routine in memory if the browser storage is full.
+    }
+  }, [draftReady, builderOpen, date, routine, duration, intensity, painLevel, pain, calories, notes, exercises, editingId]);
 
   const routineName = routines[routine].name;
   const latest = history.find((session) => session.routine === routine);
@@ -464,6 +485,7 @@ export default function GymModule() {
     setHistory(nextHistory);
     safeSaveGymLocal(nextHistory);
     saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
+    localStorage.removeItem(DRAFT_KEY);
     setIntelligence(session.intelligence);
     setBuilderOpen(false);
     setEditingId("");
@@ -472,39 +494,11 @@ export default function GymModule() {
   const saveExercise = (exerciseId: string) => {
     const exercise = exercises.find((item) => item.id === exerciseId);
     if (!exercise) return;
-    const targetSession = editingId
-      ? history.find((item) => item.id === editingId)
-      : history.find((item) => item.date === date && item.routine === routine);
-    const sessionId = targetSession?.id || editingId || `gym-${Date.now()}`;
-    const previousExercises = targetSession?.exercises ?? [];
-    const existingById = previousExercises.some((item) => item.id === exercise.id);
-    const existingByName = previousExercises.some((item) => item.name === exercise.name);
-    const nextExercises = existingById || existingByName
-      ? previousExercises.map((item) => (item.id === exercise.id || item.name === exercise.name ? exercise : item))
-      : [...previousExercises, exercise];
-    const session: GymSession = {
-      id: sessionId,
-      date,
-      routine,
-      routineName,
-      duration: hhmmToMinutes(duration),
-      intensity,
-      painLevel,
-      pain,
-      calories,
-      notes,
-      exercises: nextExercises,
-      intelligence: "",
-      updatedAt: Date.now(),
-    };
+    const session: GymSession = { ...buildDraftSession(), id: editingId || `gym-draft-${Date.now()}` };
     session.intelligence = buildIntelligence(session);
-
-    const nextHistory = sortSessions([session, ...history.filter((item) => item.id !== session.id)]);
-    setHistory(nextHistory);
-    safeSaveGymLocal(nextHistory);
-    saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
     setEditingId(session.id);
-    setIntelligence(`${exercise.name} guardado en la sesion ${date}.`);
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(session));
+    setIntelligence(`${exercise.name} guardado en la rutina actual. La sesion completa se guarda solo con "Guardar sesion".`);
   };
 
   const editSession = (session: GymSession) => {
@@ -664,12 +658,12 @@ export default function GymModule() {
             <section className="app-card gym-builder-card rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <button className="flex w-full items-center justify-between gap-4 text-left" type="button" onClick={toggleBuilder}>
                 <div>
-                  <span className="text-xs font-black uppercase tracking-wide text-slate-500">Constructor de rutina</span>
+                  <span className="text-xs font-black uppercase tracking-wide text-slate-500">Iniciar rutina</span>
                   <strong className="mt-1 block text-xl font-black text-slate-900">{routineName}</strong>
                   <small className="mt-1 block text-sm text-slate-500">{latest ? `Ultima guardada: ${latest.date}` : "Rutina base cargada desde HTML v21"}</small>
                 </div>
                 <span className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-black text-blue-600">
-                  {builderOpen ? "Cerrar registro" : "Registrar sesion"}
+                  {builderOpen ? "Cerrar rutina" : "Iniciar rutina"}
                 </span>
               </button>
 

@@ -274,11 +274,11 @@ export default function Dashboard() {
       if (!alive) return;
       const [profileResult, gymResult, runResult, bikeResult, weightResult, intelligenceResult] = results;
       if (profileResult.status === "fulfilled" && profileResult.value) localStorage.setItem("idg_profile_json", JSON.stringify(profileResult.value));
-      if (gymResult.status === "fulfilled") localStorage.setItem("idg_gym_sessions_json", JSON.stringify(gymResult.value));
-      if (runResult.status === "fulfilled") localStorage.setItem("idg_running_activities_json", JSON.stringify(runResult.value));
-      if (bikeResult.status === "fulfilled") localStorage.setItem("idg_cycling_activities_json", JSON.stringify(bikeResult.value));
-      if (weightResult.status === "fulfilled") localStorage.setItem("idg_weight_records_json", JSON.stringify(weightResult.value));
-      if (intelligenceResult.status === "fulfilled") localStorage.setItem("idg_intelligence_history_json", JSON.stringify(intelligenceResult.value));
+      if (gymResult.status === "fulfilled" && gymResult.value.length) localStorage.setItem("idg_gym_sessions_json", JSON.stringify(gymResult.value));
+      if (runResult.status === "fulfilled" && runResult.value.length) localStorage.setItem("idg_running_activities_json", JSON.stringify(runResult.value));
+      if (bikeResult.status === "fulfilled" && bikeResult.value.length) localStorage.setItem("idg_cycling_activities_json", JSON.stringify(bikeResult.value));
+      if (weightResult.status === "fulfilled" && weightResult.value.length) localStorage.setItem("idg_weight_records_json", JSON.stringify(weightResult.value));
+      if (intelligenceResult.status === "fulfilled" && intelligenceResult.value.length) localStorage.setItem("idg_intelligence_history_json", JSON.stringify(intelligenceResult.value));
       setData(loadDashboardData());
     });
     return () => {
