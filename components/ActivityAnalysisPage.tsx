@@ -337,6 +337,30 @@ function sortActivitiesBySessionDate(items: ActivityAnalysis[]) {
   return [...items].sort((a, b) => activitySessionTime(b) - activitySessionTime(a) || String(b.id).localeCompare(String(a.id)));
 }
 
+function hydrateCloudActivity(activity: ActivityAnalysis) {
+  if (!activity.points?.length) return activity;
+  if (activity.zoneTimeline?.length && activity.zoneTotals?.length && activity.zones?.length) return activity;
+  const zones = getStoredZones();
+  const rebuilt = createActivityFromPoints({
+    ...activity,
+    zones,
+    notes: activity.notes || "",
+    points: activity.points,
+  });
+  return {
+    ...rebuilt,
+    metrics: {
+      ...rebuilt.metrics,
+      calories: activity.metrics?.calories ?? rebuilt.metrics.calories,
+      avgPower: activity.metrics?.avgPower ?? rebuilt.metrics.avgPower,
+      normalizedPower: activity.metrics?.normalizedPower ?? rebuilt.metrics.normalizedPower,
+    },
+    aiAnalysis: activity.aiAnalysis,
+    aiGeneratedAt: activity.aiGeneratedAt,
+    aiAcknowledgedAt: activity.aiAcknowledgedAt,
+  };
+}
+
 function ultraCompactActivitiesForStorage(items: ActivityAnalysis[]) {
   return items.slice(0, 35).map((activity) => ({
     ...compactActivityForStorage(activity),
@@ -942,7 +966,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       getCloudCollection<ActivityAnalysis>(`/activities?sport=${sport}`, "activities")
         .then((cloudActivities) => {
           if (!alive || !cloudActivities.length) return;
-          const recalculated = sortActivitiesBySessionDate(cloudActivities);
+          const recalculated = sortActivitiesBySessionDate(cloudActivities.map(hydrateCloudActivity));
           setActivities(recalculated);
           setSelectedId((current) => current && recalculated.some((activity) => activity.id === current) ? current : recalculated[0]?.id || "");
           safeSetActivities(storageKeyForSport(sport), recalculated);

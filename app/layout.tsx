@@ -16,10 +16,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
   return (
     <html lang="es">
       <body>
-        <GoogleOAuthProvider clientId="1046758819137-ao6ablnce565uj89bifcovh2jbfltjin.apps.googleusercontent.com">
+        <GoogleOAuthProvider clientId={googleClientId}>
           {children}
         </GoogleOAuthProvider>
       </body>
