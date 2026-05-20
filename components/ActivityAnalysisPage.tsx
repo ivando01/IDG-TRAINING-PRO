@@ -169,6 +169,21 @@ function apiUrl() {
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 }
 
+async function saveActivityBatchToCloud(sport: SportType, activities: ActivityAnalysis[], token: string) {
+  const payload = compactActivitiesForCloud(activities);
+  const response = await fetch(`${apiUrl()}/activities/upsert`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ sport, activities: payload }),
+  });
+  const data = await readJsonResponse(response);
+  if (!response.ok) throw new Error(data.error || "No se pudo guardar el lote de actividades.");
+  return data;
+}
+
 function stravaActivityText(summary: StravaSyncedActivity["summary"]) {
   return `${summary.sport_type || ""} ${summary.type || ""} ${summary.name || ""}`.toLowerCase();
 }
@@ -1095,9 +1110,12 @@ export default function ActivityAnalysisPage({ sport }: Props) {
         ...imported,
         ...activities.filter((activity) => !imported.some((item: ActivityAnalysis) => item.id === activity.id)),
       ];
-      saveActivities(next);
+      const ordered = sortActivitiesBySessionDate(next);
+      safeSetActivities(storageKeyForSport(sport), ordered);
+      setActivities(ordered);
+      await saveActivityBatchToCloud(sport, imported, token);
       setSelectedId(imported[0].id);
-      setStatus(`${imported.length} actividades sincronizadas desde Strava en los ultimos ${data.days || 90} dias. Se guardan en nube y una copia compacta en este equipo.`);
+      setStatus(`${imported.length} actividades sincronizadas y guardadas en nube desde Strava.`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "No se pudo sincronizar Strava.");
     } finally {
