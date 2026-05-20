@@ -276,12 +276,23 @@ function compactActivityForStorage(activity: ActivityAnalysis): ActivityAnalysis
   return { ...activity, points };
 }
 
+function sampleArray<T>(items: T[], maxItems: number) {
+  if (items.length <= maxItems) return items;
+  const step = items.length / maxItems;
+  return Array.from({ length: maxItems }, (_, index) => items[Math.min(items.length - 1, Math.round(index * step))]);
+}
+
 function compactActivitiesForStorage(items: ActivityAnalysis[]) {
   return items.slice(0, 80).map(compactActivityForStorage);
 }
 
 function compactActivitiesForCloud(items: ActivityAnalysis[]) {
-  return items.map(compactActivityForStorage);
+  return items.map((activity) => ({
+    ...activity,
+    points: sampleArray(activity.points, activity.sport === "cycling" ? 140 : 170),
+    zoneTimeline: sampleArray(activity.zoneTimeline, 140),
+    aiAnalysis: activity.aiAnalysis ? activity.aiAnalysis.slice(0, 1800) : undefined,
+  }));
 }
 
 function activitySessionTime(activity: ActivityAnalysis) {
