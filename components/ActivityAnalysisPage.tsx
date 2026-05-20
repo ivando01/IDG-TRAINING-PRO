@@ -843,6 +843,7 @@ function HeartZoneBars({ activity }: { activity: ActivityAnalysis }) {
       zoneKey: zone.key,
       label: `${zone.key} ${zone.name}`,
       color: zone.color,
+      range: `${zone.min}-${zone.max}`,
       seconds: totalZone?.seconds || 0,
     };
   });
@@ -867,7 +868,10 @@ function HeartZoneBars({ activity }: { activity: ActivityAnalysis }) {
         return (
           <div key={zone.zoneKey}>
             <div className="mb-1 grid grid-cols-[minmax(0,1fr)_38px_48px] items-center gap-2 text-xs">
-              <span className="truncate font-black text-slate-700" title={zone.label}>{zone.label}</span>
+              <span className="min-w-0" title={`${zone.label} ${zone.range} bpm`}>
+                <span className="block truncate font-black text-slate-700">{zone.label}</span>
+                <span className="block truncate text-[10px] font-black uppercase tracking-wide text-slate-400">{zone.range} bpm</span>
+              </span>
               <span className="text-right font-black text-slate-900">{pct}%</span>
               <span className="text-right font-semibold text-slate-500">{formatDuration(zone.seconds)}</span>
             </div>
@@ -912,7 +916,7 @@ function MapLayerControls({
   );
 }
 
-function ZoneTimeline({
+function ZoneScrubber({
   activity,
   selectedIndex,
   onSelectedIndexChange,
@@ -923,10 +927,6 @@ function ZoneTimeline({
 }) {
   const liveActivity = hydrateCloudActivity(activity);
   const total = liveActivity.zoneTimeline.reduce((sum, item) => sum + item.seconds, 0) || 1;
-  const strongest = [...liveActivity.zoneTotals].sort((a, b) => b.seconds - a.seconds)[0];
-  const peaks = liveActivity.zoneTimeline.filter((item) => (item.zoneKey === "Z4" || item.zoneKey === "Z5") && item.seconds >= 12).length;
-  const last = liveActivity.zoneTimeline.at(-1);
-  const hasNoZone = liveActivity.zoneTimeline.some((item) => item.zoneKey === "NA");
   const safeIndex = clampIndex(selectedIndex, liveActivity.points.length);
   const cursor = liveActivity.points[safeIndex];
   const maxKm = liveActivity.metrics.distanceKm || liveActivity.points.at(-1)?.distanceKm || 1;
@@ -946,20 +946,57 @@ function ZoneTimeline({
     });
     onSelectedIndexChange(bestIndex);
   };
+
+  return (
+    <div className="grid gap-2">
+      <div
+        className="relative flex h-8 cursor-pointer overflow-hidden rounded-md bg-slate-100"
+        onPointerDown={moveFromPointer}
+        onPointerMove={(event) => { if (event.buttons === 1) moveFromPointer(event); }}
+      >
+        {liveActivity.zoneTimeline.map((segment, index) => (
+          <div
+            key={`${segment.zoneKey}-${index}`}
+            className="group relative min-w-[4px]"
+            style={{ width: `${(segment.seconds / total) * 100}%`, backgroundColor: segment.color }}
+            title={`${segment.label} | ${formatDuration(segment.seconds)} | FC ${segment.avgHr || "--"} | ${segment.range} | km ${segment.startKm.toFixed(1)}-${segment.endKm.toFixed(1)}`}
+          />
+        ))}
+        <div className="pointer-events-none absolute inset-y-0 w-0.5 bg-slate-950 shadow-[0_0_0_3px_rgba(15,23,42,0.18)]" style={{ left: `${cursorPct}%` }} />
+        <div className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-blue-600 shadow-md" style={{ left: `${cursorPct}%` }} />
+      </div>
+      <input
+        aria-label="Recorrer puntos sobre zonas y mapa"
+        className="w-full accent-blue-600"
+        max={Math.max(0, liveActivity.points.length - 1)}
+        min={0}
+        type="range"
+        value={safeIndex}
+        onChange={(event) => onSelectedIndexChange(Number(event.target.value))}
+      />
+    </div>
+  );
+}
+
+function ZoneTimeline({
+  activity,
+}: {
+  activity: ActivityAnalysis;
+}) {
+  const liveActivity = hydrateCloudActivity(activity);
+  const total = liveActivity.zoneTimeline.reduce((sum, item) => sum + item.seconds, 0) || 1;
+  const strongest = [...liveActivity.zoneTotals].sort((a, b) => b.seconds - a.seconds)[0];
+  const peaks = liveActivity.zoneTimeline.filter((item) => (item.zoneKey === "Z4" || item.zoneKey === "Z5") && item.seconds >= 12).length;
+  const last = liveActivity.zoneTimeline.at(-1);
+  const hasNoZone = liveActivity.zoneTimeline.some((item) => item.zoneKey === "NA");
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-black text-slate-900">Comportamiento por zonas</h2>
-        <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-slate-500">
-          {cursor?.distanceKm?.toFixed(2) || "0.00"} km · FC {cursor?.hr || "--"}
-        </span>
+        <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-slate-500">Por distancia</span>
       </div>
       <div className="mt-5">
-        <div
-          className="relative flex h-8 cursor-pointer overflow-hidden rounded-md bg-slate-100"
-          onPointerDown={moveFromPointer}
-          onPointerMove={(event) => { if (event.buttons === 1) moveFromPointer(event); }}
-        >
+        <div className="flex h-6 overflow-hidden rounded-md bg-slate-100">
           {liveActivity.zoneTimeline.map((segment, index) => (
             <div
               key={`${segment.zoneKey}-${index}`}
@@ -968,29 +1005,12 @@ function ZoneTimeline({
               title={`${segment.label} | ${formatDuration(segment.seconds)} | FC ${segment.avgHr || "--"} | ${segment.range} | km ${segment.startKm.toFixed(1)}-${segment.endKm.toFixed(1)}`}
             />
           ))}
-          <div className="pointer-events-none absolute inset-y-0 w-0.5 bg-slate-950 shadow-[0_0_0_3px_rgba(15,23,42,0.18)]" style={{ left: `${cursorPct}%` }} />
-          <div className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-blue-600 shadow-md" style={{ left: `${cursorPct}%` }} />
         </div>
         <div className="mt-2 flex justify-between text-xs font-bold text-slate-500">
           <span>0 km</span>
           <span>{liveActivity.metrics.distanceKm.toFixed(1)} km</span>
         </div>
-        <input
-          aria-label="Recorrer puntos sobre zonas y mapa"
-          className="mt-2 w-full accent-blue-600"
-          max={Math.max(0, liveActivity.points.length - 1)}
-          min={0}
-          type="range"
-          value={safeIndex}
-          onChange={(event) => onSelectedIndexChange(Number(event.target.value))}
-        />
         <div className="mt-3 flex flex-wrap gap-3 text-xs font-bold text-slate-500">
-          {liveActivity.zones.map((zone) => (
-            <span className="inline-flex items-center gap-1.5" key={zone.key}>
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: zone.color }} />
-              {zone.key} {zone.min}-{zone.max}
-            </span>
-          ))}
           {hasNoZone ? (
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
@@ -1376,6 +1396,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
                     <span className="text-xs font-black text-slate-500">{mapPoint?.distanceKm.toFixed(2) || "0.00"} km</span>
                     <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700" type="button" onClick={() => setMapPointIndex(clampIndex(safeMapPointIndex + 1, selected.points.length))}>Punto siguiente</button>
                   </div>
+                  <ZoneScrubber activity={selected} selectedIndex={safeMapPointIndex} onSelectedIndexChange={setMapPointIndex} />
                 </div>
               </section>
 
@@ -1392,7 +1413,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
               </aside>
             </div>
 
-            <ZoneTimeline activity={selected} selectedIndex={safeMapPointIndex} onSelectedIndexChange={setMapPointIndex} />
+            <ZoneTimeline activity={selected} />
 
             <section className="rounded-lg border border-[#E2E8F0] bg-white p-5">
               <h2 className="text-lg font-black text-slate-900">Notas de la actividad</h2>
