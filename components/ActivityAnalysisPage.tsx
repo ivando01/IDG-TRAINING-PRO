@@ -1040,7 +1040,10 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     };
   }, [sport]);
 
-  const selected = useMemo(() => activities.find((activity) => activity.id === selectedId) || activities[0], [activities, selectedId]);
+  const selected = useMemo(() => {
+    const activity = activities.find((item) => item.id === selectedId) || activities[0];
+    return activity ? hydrateCloudActivity(activity) : undefined;
+  }, [activities, selectedId]);
 
   useEffect(() => {
     setShowAI(!selected?.aiAcknowledgedAt);
