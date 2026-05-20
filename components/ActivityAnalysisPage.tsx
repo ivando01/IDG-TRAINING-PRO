@@ -223,7 +223,9 @@ function stravaToActivity(item: StravaSyncedActivity, sport: SportType) {
       ele: Number.isFinite(altitude[index]) ? Number(altitude[index]) : null,
       time: Number.isFinite(time[index]) ? start + Number(time[index]) * 1000 : undefined,
       distanceKm: Number.isFinite(distance[index]) ? Number(distance[index]) / 1000 : 0,
-      hr: Number.isFinite(heartrate[index]) ? Number(heartrate[index]) : null,
+      hr: Number.isFinite(heartrate[index])
+        ? Math.min(Number(heartrate[index]), Number(summary.max_heartrate) || Number(heartrate[index]))
+        : null,
       cad: normalizeCadenceValue(cad, sport, summary.name),
       speedKmh: Number.isFinite(velocity[index]) ? Number((Number(velocity[index]) * 3.6).toFixed(1)) : null,
       power: sport === "cycling" && Number.isFinite(watts[index]) ? Number(watts[index]) : null,
@@ -279,7 +281,7 @@ function compactActivitiesForStorage(items: ActivityAnalysis[]) {
 }
 
 function compactActivitiesForCloud(items: ActivityAnalysis[]) {
-  return items.map(compactActivityForStorage);
+  return items;
 }
 
 function activitySessionTime(activity: ActivityAnalysis) {
@@ -898,7 +900,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       getCloudCollection<ActivityAnalysis>(`/activities?sport=${sport}`, "activities")
         .then((cloudActivities) => {
           if (!alive || !cloudActivities.length) return;
-          const recalculated = sortActivitiesBySessionDate(cloudActivities.map(recalculateActivityZones));
+          const recalculated = sortActivitiesBySessionDate(cloudActivities);
           setActivities(recalculated);
           setSelectedId((current) => current && recalculated.some((activity) => activity.id === current) ? current : recalculated[0]?.id || "");
           safeSetActivities(storageKeyForSport(sport), recalculated);
@@ -908,7 +910,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     try {
       const saved = localStorage.getItem(storageKeyForSport(sport));
       const parsed = saved ? JSON.parse(saved) : [];
-      const recalculated = Array.isArray(parsed) ? sortActivitiesBySessionDate(parsed.map(recalculateActivityZones)) : [];
+      const recalculated = Array.isArray(parsed) ? sortActivitiesBySessionDate(parsed) : [];
       setActivities(recalculated);
       safeSetActivities(storageKeyForSport(sport), recalculated);
       setSelectedId(recalculated[0]?.id || "");
@@ -1050,16 +1052,11 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     setSyncingStrava(true);
     setStatus("Sincronizando Strava: ultimos 90 dias, sesiones y actividades de soporte nuevas...");
     try {
-      const existingStravaIds = activities
-        .filter((activity) => activity.id.startsWith("strava-"))
-        .map((activity) => activity.id.replace(/^strava-/, ""))
-        .join(",");
       const params = new URLSearchParams({
         sport,
         days: "90",
         limit: "100",
       });
-      if (existingStravaIds) params.set("exclude", existingStravaIds);
       const response = await fetch(`${apiUrl()}/strava/sync?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });

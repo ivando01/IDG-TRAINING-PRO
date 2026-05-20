@@ -226,7 +226,7 @@ function Icon({ name }: { name: "save" | "edit" | "trash" | "chart" | "spark" | 
 
 export default function GymModule() {
   const [routine, setRoutine] = useState<RoutineKey>("4");
-  const [unit, setUnit] = useState<"kg" | "lbs">("kg");
+  const [unit, setUnit] = useState<"kg" | "lbs">("lbs");
   const [date, setDate] = useState("");
   const [duration, setDuration] = useState("01:15");
   const [intensity, setIntensity] = useState(7);
@@ -323,6 +323,15 @@ export default function GymModule() {
 
   const routineName = routines[routine].name;
   const latest = history.find((session) => session.routine === routine);
+  const repsValue = (reps: string) => {
+    const values = String(reps || "")
+      .split(/[^0-9.]+/)
+      .map(Number)
+      .filter((value) => Number.isFinite(value) && value > 0);
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 1;
+  };
+  const exerciseVolume = (exercise: ExerciseDraft) => exercise.weights.reduce((sum, weight) => sum + ((Number(weight) || 0) * repsValue(exercise.reps)), 0);
+  const sessionVolume = (session: Pick<GymSession, "exercises">) => session.exercises.reduce((sum, exercise) => sum + exerciseVolume(exercise), 0);
 
   const stats = useMemo(() => {
     const currentWeek = getWeekKey(new Date());
@@ -330,11 +339,7 @@ export default function GymModule() {
     const completedTrainingDays = new Set(weekSessions.map((session) => session.date)).size;
     const weekMinutes = weekSessions.reduce((sum, session) => sum + session.duration, 0);
     const weekVolume = weekSessions.reduce(
-      (sum, session) =>
-        sum + session.exercises.reduce(
-          (sessionSum, exercise) => sessionSum + exercise.weights.reduce((acc, weight) => acc + (Number(weight) || 0), 0),
-          0,
-        ),
+      (sum, session) => sum + sessionVolume(session),
       0,
     );
     const previousWeek = new Date();
@@ -342,17 +347,10 @@ export default function GymModule() {
     const previousWeekKey = getWeekKey(previousWeek);
     const previousWeekSessions = history.filter((session) => getWeekKey(parseLocalDate(session.date)) === previousWeekKey);
     const previousWeekVolume = previousWeekSessions.reduce(
-      (sum, session) =>
-        sum + session.exercises.reduce(
-          (sessionSum, exercise) => sessionSum + exercise.weights.reduce((acc, weight) => acc + (Number(weight) || 0), 0),
-          0,
-        ),
+      (sum, session) => sum + sessionVolume(session),
       0,
     );
-    const volume = exercises.reduce((sum, exercise) => {
-      const setSum = exercise.weights.reduce((acc, weight) => acc + (Number(weight) || 0), 0);
-      return sum + setSum;
-    }, 0);
+    const volume = sessionVolume({ exercises });
     const completedSets = exercises.reduce((sum, exercise) => sum + exercise.weights.filter((weight) => Number(weight) > 0).length, 0);
 
     return {
@@ -424,8 +422,8 @@ export default function GymModule() {
     const painText = session.painLevel > 3 ? "reduce carga y cuida el dolor reportado" : "puedes sostener progresion controlada";
 
     return top
-      ? `${session.routineName}: mayor carga en ${top.name} (${top.max} ${unit}). Intensidad ${session.intensity}/10; ${painText}. Proxima sesion: aumenta solo si terminas con tecnica limpia.`
-      : `${session.routineName}: sesion guardada sin pesos. Completa pesos por serie para recomendaciones de carga.`;
+      ? `${session.routineName}: volumen ${sessionVolume(session).toFixed(0)} ${unit} x reps. Mayor carga en ${top.name} (${top.max} ${unit}). Intensidad ${session.intensity}/10; ${painText}.`
+      : `${session.routineName}: sin pesos registrados. El volumen se calcula como peso x repeticiones por cada serie.`;
   };
 
   const buildDraftSession = (): GymSession => ({
@@ -444,9 +442,21 @@ export default function GymModule() {
     updatedAt: Date.now(),
   });
 
-  const analyzeRoutine = () => {
-    const analysis = buildIntelligence(buildDraftSession());
-    setIntelligence(analysis);
+  const analyzeRoutine = async () => {
+    const draft = buildDraftSession();
+    setIntelligence("IDG Coach esta analizando volumen, intensidad y coherencia de carga...");
+    try {
+      const response = await fetch("/api/gym-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session: draft, unit, volume: sessionVolume(draft), history: history.slice(0, 8) }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No se pudo analizar la rutina.");
+      setIntelligence(data.analysis || buildIntelligence(draft));
+    } catch {
+      setIntelligence(buildIntelligence(draft));
+    }
     window.requestAnimationFrame(() => {
       document.querySelector(".gym-intelligence-card")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
@@ -671,7 +681,7 @@ export default function GymModule() {
                 <>
                   <div className="gym-toolbar mt-4 grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,1fr)_auto_150px_130px_130px]">
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Rutina<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-800" value={routine} onChange={(event) => changeRoutine(event.target.value as RoutineKey)}>{Object.entries(routines).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></label>
-                    <div className="unit-switch flex h-10 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">{(["kg", "lbs"] as const).map((value) => <button className={`min-w-12 px-3 text-sm font-black ${unit === value ? "bg-blue-600 text-white" : "text-slate-500"}`} key={value} type="button" onClick={() => setUnit(value)}>{value}</button>)}</div>
+                    <div className="unit-switch flex h-10 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">{(["kg", "lbs"] as const).map((value) => <button className={`min-w-12 px-3 text-sm font-black ${unit === value ? value === "lbs" ? "bg-orange-600 text-white" : "bg-blue-600 text-white" : "text-slate-500"}`} key={value} type="button" onClick={() => setUnit(value)}>{value}</button>)}</div>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Fecha<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Duracion HH:MM<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" value={duration} onChange={(event) => setDuration(event.target.value)} /></label>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Calorias<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" type="number" value={calories} placeholder="Opcional" onChange={(event) => setCalories(event.target.value)} /></label>
@@ -803,14 +813,14 @@ export default function GymModule() {
               </div>
               <div className="grid gap-3">
                 {history.map((session) => {
-                  const volume = session.exercises.reduce((sum, exercise) => sum + exercise.weights.reduce((acc, weight) => acc + (Number(weight) || 0), 0), 0);
+                  const volume = sessionVolume(session);
                   const date = parseLocalDate(session.date);
                   const day = date.getDate().toString().padStart(2, "0");
                   const setCount = session.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
                   const selected = selectedSessionId === session.id;
                   const isInlineEditing = inlineEditingId === session.id && inlineDraft?.id === session.id;
                   const detailSession = isInlineEditing && inlineDraft ? inlineDraft : session;
-                  const detailVolume = detailSession.exercises.reduce((sum, exercise) => sum + exercise.weights.reduce((acc, weight) => acc + (Number(weight) || 0), 0), 0);
+                  const detailVolume = sessionVolume(detailSession);
                   const detailSetCount = detailSession.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
                   return (
                     <Fragment key={session.id}>

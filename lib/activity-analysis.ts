@@ -285,28 +285,6 @@ function zoneForHr(hr: number | null | undefined, zones: HRZone[]) {
   }) || ordered.at(-1) || null;
 }
 
-function cleanHeartRateArtifacts(points: ActivityPoint[]) {
-  const validHr = (value: unknown): value is number => Number.isFinite(value) && Number(value) >= 40 && Number(value) <= 240;
-  const cleaned = points.map((point) => ({ ...point }));
-  for (let i = 0; i < cleaned.length; i += 1) {
-    const hr = cleaned[i].hr;
-    if (!validHr(hr)) {
-      cleaned[i].hr = null;
-      continue;
-    }
-    const previous = cleaned.slice(Math.max(0, i - 4), i).reverse().find((point) => validHr(point.hr))?.hr;
-    const next = cleaned.slice(i + 1, i + 5).find((point) => validHr(point.hr))?.hr;
-    if (!validHr(previous) || !validHr(next)) continue;
-
-    const isolatedSpike = hr - Math.max(previous, next) >= 24 && Math.abs(previous - next) <= 14;
-    const isolatedDrop = Math.min(previous, next) - hr >= 24 && Math.abs(previous - next) <= 14;
-    if (isolatedSpike || isolatedDrop) {
-      cleaned[i].hr = Math.round((previous + next) / 2);
-    }
-  }
-  return cleaned;
-}
-
 function estimateCalories(avgHr: number | null, durationSec: number, sport: SportType, distanceKm: number) {
   const minutes = durationSec / 60;
   if (avgHr && minutes) {
@@ -436,7 +414,16 @@ function downsample(points: ActivityPoint[], maxPoints = 2500) {
 }
 
 function buildZoneAnalytics(points: ActivityPoint[], zones: HRZone[]) {
-  const rawTimeline: ZoneTimelineSegment[] = [];
+  const totals = new Map<string, ZoneTimelineSegment>();
+  const timeline: ZoneTimelineSegment[] = [];
+  const add = (segment: ZoneTimelineSegment) => {
+    const existing = totals.get(segment.zoneKey);
+    if (existing) {
+      existing.seconds += segment.seconds;
+      existing.endKm = Math.max(existing.endKm, segment.endKm);
+      existing.avgHr = existing.avgHr && segment.avgHr ? Math.round((existing.avgHr + segment.avgHr) / 2) : existing.avgHr || segment.avgHr;
+    } else totals.set(segment.zoneKey, { ...segment, startKm: 0, endKm: segment.endKm });
+  };
   let current: ZoneTimelineSegment | null = null;
   let hrs: number[] = [];
   for (let i = 1; i < points.length; i += 1) {
@@ -450,7 +437,8 @@ function buildZoneAnalytics(points: ActivityPoint[], zones: HRZone[]) {
     if (!current || current.zoneKey !== key) {
       if (current) {
         current.avgHr = hrs.length ? Math.round(hrs.reduce((sum, value) => sum + value, 0) / hrs.length) : null;
-        rawTimeline.push(current);
+        timeline.push(current);
+        add(current);
       }
       current = { zoneKey: key, label, color, seconds: 0, startKm: prev.distanceKm, endKm: point.distanceKm, avgHr: null, range: zone ? `${zone.min}-${zone.max} bpm` : "sin datos" };
       hrs = [];
@@ -461,45 +449,10 @@ function buildZoneAnalytics(points: ActivityPoint[], zones: HRZone[]) {
   }
   if (current) {
     current.avgHr = hrs.length ? Math.round(hrs.reduce((sum, value) => sum + value, 0) / hrs.length) : null;
-    rawTimeline.push(current);
-  }
-  const timeline = mergeBriefZoneArtifacts(rawTimeline);
-  const totals = new Map<string, ZoneTimelineSegment>();
-  for (const segment of timeline) {
-    const existing = totals.get(segment.zoneKey);
-    if (existing) {
-      existing.seconds += segment.seconds;
-      existing.endKm = Math.max(existing.endKm, segment.endKm);
-      existing.avgHr = existing.avgHr && segment.avgHr ? Math.round((existing.avgHr + segment.avgHr) / 2) : existing.avgHr || segment.avgHr;
-    } else {
-      totals.set(segment.zoneKey, { ...segment, startKm: 0, endKm: segment.endKm });
-    }
+    timeline.push(current);
+    add(current);
   }
   return { zoneTotals: Array.from(totals.values()), zoneTimeline: timeline };
-}
-
-function mergeBriefZoneArtifacts(timeline: ZoneTimelineSegment[]) {
-  const cleaned: ZoneTimelineSegment[] = [];
-  const isHigh = (zoneKey: string) => zoneKey === "Z4" || zoneKey === "Z5";
-  for (let index = 0; index < timeline.length; index += 1) {
-    const segment = { ...timeline[index] };
-    const previous = cleaned.at(-1);
-    const next = timeline[index + 1];
-    const briefHigh = isHigh(segment.zoneKey) && segment.seconds < 12;
-    if (briefHigh && previous && next && previous.zoneKey === next.zoneKey && !isHigh(previous.zoneKey)) {
-      previous.seconds += segment.seconds;
-      previous.endKm = segment.endKm;
-      continue;
-    }
-    if (previous && previous.zoneKey === segment.zoneKey) {
-      previous.seconds += segment.seconds;
-      previous.endKm = segment.endKm;
-      previous.avgHr = previous.avgHr && segment.avgHr ? Math.round((previous.avgHr + segment.avgHr) / 2) : previous.avgHr || segment.avgHr;
-    } else {
-      cleaned.push(segment);
-    }
-  }
-  return cleaned;
 }
 
 function buildSegments(points: ActivityPoint[], sport: SportType) {
@@ -523,9 +476,10 @@ function buildSegments(points: ActivityPoint[], sport: SportType) {
 
 function finalizeActivity(activity: Omit<ActivityAnalysis, "metrics" | "zoneTotals" | "zoneTimeline" | "segments">): ActivityAnalysis {
   const preparedPoints = activity.sport === "cycling" ? estimateVirtualCyclingPower(activity.points) : activity.points;
-  const points = downsample(cleanHeartRateArtifacts(preparedPoints));
-  const metrics = buildMetrics(points, activity.sport);
-  const zoneAnalytics = buildZoneAnalytics(points, activity.zones);
+  const analysisPoints = preparedPoints;
+  const points = downsample(preparedPoints);
+  const metrics = buildMetrics(analysisPoints, activity.sport);
+  const zoneAnalytics = buildZoneAnalytics(analysisPoints, activity.zones);
   return {
     ...activity,
     points,
