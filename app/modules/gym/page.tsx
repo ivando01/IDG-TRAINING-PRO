@@ -325,6 +325,64 @@ export default function GymModule() {
   const latest = history.find((session) => session.routine === routine);
   const exerciseVolume = (exercise: ExerciseDraft) => exercise.weights.reduce((sum, weight) => sum + (Number(weight) || 0), 0);
   const sessionVolume = (session: Pick<GymSession, "exercises">) => session.exercises.reduce((sum, exercise) => sum + exerciseVolume(exercise), 0);
+  const completedSetsFor = (session: Pick<GymSession, "exercises">) => session.exercises.reduce((sum, exercise) => sum + exercise.weights.filter((weight) => Number(weight) > 0).length, 0);
+  const exerciseSnapshot = (session: Pick<GymSession, "exercises">) =>
+    session.exercises.map((exercise) => {
+      const weights = exercise.weights.map((weight) => Number(weight) || 0);
+      const loadedWeights = weights.filter((weight) => weight > 0);
+      return {
+        name: exercise.name,
+        setsPlanned: exercise.sets,
+        setsLoaded: loadedWeights.length,
+        reps: exercise.reps,
+        maxWeight: loadedWeights.length ? Math.max(...loadedWeights) : 0,
+        minWeight: loadedWeights.length ? Math.min(...loadedWeights) : 0,
+        totalLoad: weights.reduce((sum, weight) => sum + weight, 0),
+        restSec: exercise.rest,
+        note: exercise.note || "",
+      };
+    });
+  const buildCoachContext = (session: GymSession) => {
+    const sameRoutine = history
+      .filter((item) => item.routine === session.routine && item.id !== session.id)
+      .slice(0, 6);
+    const previous = sameRoutine[0];
+    const currentLoad = sessionVolume(session);
+    const previousLoad = previous ? sessionVolume(previous) : 0;
+    return {
+      unit,
+      current: {
+        routineName: session.routineName,
+        date: session.date,
+        durationMin: session.duration,
+        intensity: session.intensity,
+        painLevel: session.painLevel,
+        pain: session.pain,
+        calories: session.calories,
+        notes: session.notes,
+        totalLoad: currentLoad,
+        completedSets: completedSetsFor(session),
+        exercises: exerciseSnapshot(session),
+      },
+      previousSameRoutine: previous
+        ? {
+            date: previous.date,
+            totalLoad: previousLoad,
+            loadDelta: currentLoad - previousLoad,
+            loadDeltaPct: previousLoad ? Math.round(((currentLoad - previousLoad) / previousLoad) * 100) : null,
+            intensity: previous.intensity,
+            painLevel: previous.painLevel,
+            exercises: exerciseSnapshot(previous),
+          }
+        : null,
+      recentSameRoutine: sameRoutine.map((item) => ({
+        date: item.date,
+        totalLoad: sessionVolume(item),
+        intensity: item.intensity,
+        painLevel: item.painLevel,
+      })),
+    };
+  };
 
   const stats = useMemo(() => {
     const currentWeek = getWeekKey(new Date());
@@ -404,18 +462,17 @@ export default function GymModule() {
   };
 
   const buildIntelligence = (session: GymSession) => {
-    const loaded = session.exercises
-      .map((exercise) => ({
-        name: exercise.name,
-        max: Math.max(...exercise.weights.map((weight) => Number(weight) || 0)),
-      }))
-      .filter((exercise) => exercise.max > 0)
-      .sort((a, b) => b.max - a.max);
+    const context = buildCoachContext(session);
+    const loaded = context.current.exercises.filter((exercise) => exercise.maxWeight > 0).sort((a, b) => b.totalLoad - a.totalLoad);
     const top = loaded[0];
+    const previous = context.previousSameRoutine;
+    const deltaText = previous?.loadDeltaPct !== null && previous?.loadDeltaPct !== undefined
+      ? ` Frente a la misma rutina anterior: ${previous.loadDeltaPct > 0 ? "+" : ""}${previous.loadDeltaPct}% de carga.`
+      : "";
     const painText = session.painLevel > 3 ? "reduce carga y cuida el dolor reportado" : "puedes sostener progresion controlada";
 
     return top
-      ? `${session.routineName}: carga registrada ${sessionVolume(session).toFixed(0)} ${unit}. Mayor peso en ${top.name} (${top.max} ${unit}). Intensidad ${session.intensity}/10; ${painText}.`
+      ? `${session.routineName}: carga registrada ${context.current.totalLoad.toFixed(0)} ${unit}, ${context.current.completedSets} series efectivas.${deltaText} Mayor carga en ${top.name} (${top.totalLoad.toFixed(0)} ${unit}, max ${top.maxWeight} ${unit}). Intensidad ${session.intensity}/10; ${painText}.`
       : `${session.routineName}: sin pesos registrados. La carga se calcula como la suma del peso diligenciado en cada serie.`;
   };
 
@@ -442,7 +499,7 @@ export default function GymModule() {
       const response = await fetch("/api/gym-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session: draft, unit, volume: sessionVolume(draft), history: history.slice(0, 8) }),
+        body: JSON.stringify({ session: draft, unit, load: sessionVolume(draft), context: buildCoachContext(draft), history: history.slice(0, 8) }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "No se pudo analizar la rutina.");
