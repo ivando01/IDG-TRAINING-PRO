@@ -71,9 +71,9 @@ const seedProfile: AthleteProfile = {
 
 function calculateZones(fcmaxText: string) {
   const fcmax = Number(fcmaxText) || 190;
-  return zoneMeta.map((zone) => ({
+  return zoneMeta.map((zone, index) => ({
     name: zone.name,
-    min: Math.round(fcmax * zone.range[0]),
+    min: index === 0 ? 0 : Math.round(fcmax * zone.range[0]),
     max: Math.round(fcmax * zone.range[1]),
     color: zone.color,
   }));
@@ -84,8 +84,8 @@ function normalizeZones(zones: Zone[] | undefined, fcmax: string) {
   if (!zones?.length) return calculated;
   return calculated.map((zone, index) => ({
     ...zone,
-    min: Number(zones[index]?.min) || zone.min,
-    max: Number(zones[index]?.max) || zone.max,
+    min: index === 0 ? 0 : Number.isFinite(Number(zones[index]?.min)) ? Number(zones[index]?.min) : zone.min,
+    max: Number.isFinite(Number(zones[index]?.max)) ? Number(zones[index]?.max) : zone.max,
   }));
 }
 
@@ -176,7 +176,7 @@ export default function ProfilePage() {
   const completion = useMemo(() => {
     const keys: (keyof AthleteProfile)[] = ["name", "gender", "dob", "weight", "height", "fcmax", "fcrest", "lvlRun", "lvlBike", "lvlGym", "goal", "gymDaysPerWeek"];
     const done = keys.filter((key) => String(profile[key] || "").trim()).length;
-    const zonesOk = profile.zones.every((zone, index) => zone.min < zone.max && (index === 0 || zone.min > profile.zones[index - 1].min));
+    const zonesOk = profile.zones.every((zone, index) => zone.min < zone.max && (index === 0 || zone.min >= profile.zones[index - 1].max));
     return Math.round(((done + (zonesOk ? 1 : 0)) / (keys.length + 1)) * 100);
   }, [profile]);
 
@@ -185,7 +185,7 @@ export default function ProfilePage() {
     for (let index = 0; index < profile.zones.length; index += 1) {
       const zone = profile.zones[index];
       if (zone.min >= zone.max) return `${zone.name}: el minimo debe ser menor al maximo.`;
-      if (index > 0 && zone.min <= profile.zones[index - 1].min) return "Las zonas deben aumentar de forma progresiva.";
+      if (index > 0 && zone.min < profile.zones[index - 1].max) return "Las zonas deben aumentar sin solaparse con la zona anterior.";
       if (fcmax && zone.max > fcmax) return `${zone.name}: el maximo supera tu FC maxima.`;
     }
     return "";
@@ -210,7 +210,7 @@ export default function ProfilePage() {
   };
 
   const saveProfile = async () => {
-    const payload = { ...profile, updatedAt: new Date().toISOString() };
+    const payload = { ...profile, zones: normalizeZones(profile.zones, profile.fcmax), updatedAt: new Date().toISOString() };
     setProfile(payload);
     localStorage.setItem(PROFILE_KEY, JSON.stringify(payload));
     localStorage.setItem(LEGACY_PROFILE_KEY, JSON.stringify(payload));

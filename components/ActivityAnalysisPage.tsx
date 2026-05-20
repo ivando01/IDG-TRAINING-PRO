@@ -339,26 +339,7 @@ function sortActivitiesBySessionDate(items: ActivityAnalysis[]) {
 
 function hydrateCloudActivity(activity: ActivityAnalysis) {
   if (!activity.points?.length) return activity;
-  if (activity.zoneTimeline?.length && activity.zoneTotals?.length && activity.zones?.length) return activity;
-  const zones = getStoredZones();
-  const rebuilt = createActivityFromPoints({
-    ...activity,
-    zones,
-    notes: activity.notes || "",
-    points: activity.points,
-  });
-  return {
-    ...rebuilt,
-    metrics: {
-      ...rebuilt.metrics,
-      calories: activity.metrics?.calories ?? rebuilt.metrics.calories,
-      avgPower: activity.metrics?.avgPower ?? rebuilt.metrics.avgPower,
-      normalizedPower: activity.metrics?.normalizedPower ?? rebuilt.metrics.normalizedPower,
-    },
-    aiAnalysis: activity.aiAnalysis,
-    aiGeneratedAt: activity.aiGeneratedAt,
-    aiAcknowledgedAt: activity.aiAcknowledgedAt,
-  };
+  return recalculateActivityZones(activity);
 }
 
 function activityRichness(activity: ActivityAnalysis) {
@@ -433,6 +414,12 @@ function recalculateActivityZones(activity: ActivityAnalysis) {
   });
   return {
     ...recalculated,
+    metrics: {
+      ...recalculated.metrics,
+      calories: activity.metrics?.calories ?? recalculated.metrics.calories,
+      avgPower: activity.metrics?.avgPower ?? recalculated.metrics.avgPower,
+      normalizedPower: activity.metrics?.normalizedPower ?? recalculated.metrics.normalizedPower,
+    },
     activityKind: isSupportActivity(activity) ? "support" : recalculated.activityKind,
     activitySubType: activity.activitySubType || recalculated.activitySubType,
     countsTowardTraining: isSupportActivity(activity) ? false : recalculated.countsTowardTraining,
@@ -998,7 +985,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     try {
       const saved = localStorage.getItem(storageKeyForSport(sport));
       const parsed = saved ? JSON.parse(saved) : [];
-      const recalculated = Array.isArray(parsed) ? sortActivitiesBySessionDate(parsed) : [];
+      const recalculated = Array.isArray(parsed) ? sortActivitiesBySessionDate(parsed.map(hydrateCloudActivity)) : [];
       setActivities(recalculated);
       safeSetActivities(storageKeyForSport(sport), recalculated);
       setSelectedId(recalculated[0]?.id || "");
