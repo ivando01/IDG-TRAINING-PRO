@@ -281,7 +281,7 @@ function compactActivitiesForStorage(items: ActivityAnalysis[]) {
 }
 
 function compactActivitiesForCloud(items: ActivityAnalysis[]) {
-  return items;
+  return items.map(compactActivityForStorage);
 }
 
 function activitySessionTime(activity: ActivityAnalysis) {
@@ -948,7 +948,8 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     const cloudPayload = compactActivitiesForCloud(ordered);
     const stored = safeSetActivities(storageKeyForSport(sport), ordered);
     setActivities(ordered);
-    saveCloudCollection("/activities", "activities", cloudPayload, { sport }).catch(() => undefined);
+    saveCloudCollection("/activities", "activities", cloudPayload, { sport })
+      .catch((error) => setStatus(error instanceof Error ? `No se pudo guardar en nube: ${error.message}` : "No se pudo guardar en nube."));
     if (stored.length !== ordered.length) {
       setStatus("Se guardaron las actividades compactadas para no superar el limite local del navegador.");
     }
@@ -1085,7 +1086,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       ];
       saveActivities(next);
       setSelectedId(imported[0].id);
-      setStatus(`${imported.length} actividades nuevas sincronizadas desde Strava en los ultimos ${data.days || 90} dias. Las caminatas quedan como soporte y no suman al acumulado de running.`);
+      setStatus(`${imported.length} actividades sincronizadas desde Strava en los ultimos ${data.days || 90} dias. Se guardan en nube y una copia compacta en este equipo.`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "No se pudo sincronizar Strava.");
     } finally {
