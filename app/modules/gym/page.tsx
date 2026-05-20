@@ -465,15 +465,55 @@ export default function GymModule() {
     const context = buildCoachContext(session);
     const loaded = context.current.exercises.filter((exercise) => exercise.maxWeight > 0).sort((a, b) => b.totalLoad - a.totalLoad);
     const top = loaded[0];
+    const underLoaded = context.current.exercises.filter((exercise) => exercise.setsLoaded > 0 && exercise.setsLoaded < exercise.setsPlanned);
+    const noLoad = context.current.exercises.filter((exercise) => exercise.setsLoaded === 0);
     const previous = context.previousSameRoutine;
+    const previousExercises = new Map(previous?.exercises.map((exercise) => [exercise.name.toLowerCase(), exercise]) || []);
+    const progressed = context.current.exercises
+      .map((exercise) => {
+        const before = previousExercises.get(exercise.name.toLowerCase());
+        if (!before) return null;
+        const delta = exercise.totalLoad - before.totalLoad;
+        return { name: exercise.name, delta, current: exercise.totalLoad, previous: before.totalLoad };
+      })
+      .filter((item): item is { name: string; delta: number; current: number; previous: number } => item !== null && item.previous > 0 && item.delta !== 0)
+      .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+    const mainChange = progressed[0];
     const deltaText = previous?.loadDeltaPct !== null && previous?.loadDeltaPct !== undefined
       ? ` Frente a la misma rutina anterior: ${previous.loadDeltaPct > 0 ? "+" : ""}${previous.loadDeltaPct}% de carga.`
       : "";
-    const painText = session.painLevel > 3 ? "reduce carga y cuida el dolor reportado" : "puedes sostener progresion controlada";
+    const painText = session.painLevel > 3
+      ? `dolor ${session.painLevel}/10${session.pain ? ` en ${session.pain}` : ""}; baja carga en ejercicios que lo disparen`
+      : `dolor ${session.painLevel}/10; margen para progresar de forma controlada`;
+    const missingText = noLoad.length
+      ? ` Hay ${noLoad.length} ejercicios sin peso registrado: ${noLoad.slice(0, 2).map((exercise) => exercise.name).join(", ")}.`
+      : underLoaded.length
+        ? ` Series incompletas en ${underLoaded.slice(0, 2).map((exercise) => `${exercise.name} (${exercise.setsLoaded}/${exercise.setsPlanned})`).join(", ")}.`
+        : "";
+    const changeText = mainChange
+      ? ` Cambio clave: ${mainChange.name} ${mainChange.delta > 0 ? "subio" : "bajo"} ${Math.abs(mainChange.delta).toFixed(0)} ${unit}.`
+      : previous
+        ? " Sin cambios fuertes por ejercicio frente al registro comparable."
+        : " Sin historial comparable para esta rutina.";
 
     return top
-      ? `${session.routineName}: carga registrada ${context.current.totalLoad.toFixed(0)} ${unit}, ${context.current.completedSets} series efectivas.${deltaText} Mayor carga en ${top.name} (${top.totalLoad.toFixed(0)} ${unit}, max ${top.maxWeight} ${unit}). Intensidad ${session.intensity}/10; ${painText}.`
+      ? [
+          `- Lectura: ${session.routineName} registro ${context.current.totalLoad.toFixed(0)} ${unit} en ${context.current.completedSets} series efectivas.${deltaText} Mayor carga: ${top.name} (${top.totalLoad.toFixed(0)} ${unit}, max ${top.maxWeight} ${unit}).`,
+          `- Alerta: Intensidad ${session.intensity}/10 y ${painText}.${missingText}`,
+          `- Proxima: ${changeText} ${session.intensity >= 8 ? "Mantén o sube solo el ejercicio más estable; no subas todo el día." : "Sube 1 serie o 5-10 lb solo en el ejercicio mejor tolerado."}`,
+        ].join("\n")
       : `${session.routineName}: sin pesos registrados. La carga se calcula como la suma del peso diligenciado en cada serie.`;
+  };
+
+  const usableIntelligence = (value: string) => {
+    const text = String(value || "").trim();
+    if (!text) return "";
+    if (/^IDG Coach esta analizando/i.test(text)) return "";
+    if (/guardado en la rutina actual/i.test(text)) return "";
+    if (/Rutina base cargada/i.test(text)) return "";
+    if (/Pesos cargados desde/i.test(text)) return "";
+    if (/Selecciona una sesion/i.test(text)) return "";
+    return text;
   };
 
   const buildDraftSession = (): GymSession => ({
@@ -538,7 +578,7 @@ export default function GymModule() {
       intelligence: "",
       updatedAt: Date.now(),
     };
-    session.intelligence = buildIntelligence(session);
+    session.intelligence = usableIntelligence(intelligence) || buildIntelligence(session);
 
     const withoutCurrent = history.filter((item) => item.id !== session.id);
     const nextHistory = sortSessions([session, ...withoutCurrent]);
@@ -555,7 +595,7 @@ export default function GymModule() {
     const exercise = exercises.find((item) => item.id === exerciseId);
     if (!exercise) return;
     const session: GymSession = { ...buildDraftSession(), id: editingId || `gym-draft-${Date.now()}` };
-    session.intelligence = buildIntelligence(session);
+    session.intelligence = usableIntelligence(intelligence) || buildIntelligence(session);
     setEditingId(session.id);
     localStorage.setItem(DRAFT_KEY, JSON.stringify(session));
     setIntelligence(`${exercise.name} guardado en la rutina actual. La sesion completa se guarda solo con "Guardar sesion".`);
@@ -951,7 +991,7 @@ export default function GymModule() {
                               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-600 text-white"><Icon name="spark" /></span>
                               <div>
                                 <p className="text-xs font-black uppercase tracking-wide text-blue-700">Analisis IA de la rutina</p>
-                                <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{buildIntelligence(detailSession)}</p>
+                                <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-6 text-slate-700">{usableIntelligence(detailSession.intelligence) || buildIntelligence(detailSession)}</p>
                               </div>
                             </div>
                           </section>
