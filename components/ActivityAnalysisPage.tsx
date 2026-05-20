@@ -1136,9 +1136,8 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       const ordered = sortActivitiesBySessionDate(next);
       safeSetActivities(storageKeyForSport(sport), ordered);
       setActivities(ordered);
-      await saveActivityBatchToCloud(sport, imported, token);
       setSelectedId(imported[0].id);
-      setStatus(`${imported.length} actividades sincronizadas y guardadas en nube desde Strava.`);
+      setStatus(`${imported.length} actividades sincronizadas desde Strava. El backend las guardo en Supabase como filas individuales.`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "No se pudo sincronizar Strava.");
     } finally {
