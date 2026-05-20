@@ -458,6 +458,14 @@ app.put('/activities', authMiddleware, async (req, res) => {
     const userId = await getUserId(req.user.email, req.user);
     const sport = req.body?.sport === "cycling" ? "cycling" : req.body?.sport === "running" ? "running" : null;
     const activities = asArray(req.body?.activities);
+    if (!activities.length && req.body?.allowEmpty !== true) {
+      const params = sport ? [userId, sport] : [userId];
+      const result = await pool.query(
+        `SELECT data FROM activities WHERE user_id=$1 ${sport ? "AND sport=$2" : ""} ORDER BY activity_date DESC NULLS LAST, updated_at DESC`,
+        params,
+      );
+      return res.json({ ok: true, preserved: true, activities: result.rows.map((row) => row.data) });
+    }
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
