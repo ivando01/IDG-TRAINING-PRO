@@ -361,6 +361,26 @@ function hydrateCloudActivity(activity: ActivityAnalysis) {
   };
 }
 
+function activityRichness(activity: ActivityAnalysis) {
+  const points = activity.points || [];
+  const coordinates = points.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon)).length;
+  const heartRate = points.filter((point) => Number.isFinite(point.hr) && Number(point.hr) > 0).length;
+  const variableDistance = new Set(points.map((point) => Number(point.distanceKm || 0).toFixed(3))).size;
+  return coordinates * 4 + heartRate * 2 + variableDistance + points.length;
+}
+
+function mergeCloudActivities(cloudActivities: ActivityAnalysis[], currentActivities: ActivityAnalysis[]) {
+  const byId = new globalThis.Map<string, ActivityAnalysis>();
+  currentActivities.forEach((activity) => byId.set(activity.id, activity));
+  cloudActivities.map(hydrateCloudActivity).forEach((activity) => {
+    const current = byId.get(activity.id);
+    if (!current || activityRichness(activity) >= activityRichness(current)) {
+      byId.set(activity.id, activity);
+    }
+  });
+  return sortActivitiesBySessionDate(Array.from(byId.values()));
+}
+
 function ultraCompactActivitiesForStorage(items: ActivityAnalysis[]) {
   return items.slice(0, 35).map((activity) => ({
     ...compactActivityForStorage(activity),
@@ -966,10 +986,12 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       getCloudCollection<ActivityAnalysis>(`/activities?sport=${sport}`, "activities")
         .then((cloudActivities) => {
           if (!alive || !cloudActivities.length) return;
-          const recalculated = sortActivitiesBySessionDate(cloudActivities.map(hydrateCloudActivity));
-          setActivities(recalculated);
-          setSelectedId((current) => current && recalculated.some((activity) => activity.id === current) ? current : recalculated[0]?.id || "");
-          safeSetActivities(storageKeyForSport(sport), recalculated);
+          setActivities((currentActivities) => {
+            const merged = mergeCloudActivities(cloudActivities, currentActivities);
+            setSelectedId((current) => current && merged.some((activity) => activity.id === current) ? current : merged[0]?.id || "");
+            safeSetActivities(storageKeyForSport(sport), merged);
+            return merged;
+          });
         })
         .catch(() => undefined);
     };
@@ -1157,7 +1179,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
         ...imported,
         ...activities.filter((activity) => !imported.some((item: ActivityAnalysis) => item.id === activity.id)),
       ];
-      const ordered = sortActivitiesBySessionDate(next);
+      const ordered = sortActivitiesBySessionDate(next.map(hydrateCloudActivity));
       safeSetActivities(storageKeyForSport(sport), ordered);
       setActivities(ordered);
       setSelectedId(imported[0].id);
