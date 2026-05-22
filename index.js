@@ -639,16 +639,40 @@ app.put('/gym/sessions', authMiddleware, async (req, res) => {
   try {
     const userId = await getUserId(req.user.email, req.user);
     const sessions = asArray(req.body?.sessions);
-    await replaceCollection({
-      table: "gym_sessions",
-      userId,
-      items: sessions,
-      extra: (item) => ({ columns: ["session_date"], values: [itemDate(item)] }),
-    });
+    if (!sessions.length) {
+      const result = await pool.query(
+        `SELECT data FROM gym_sessions WHERE user_id=$1 ORDER BY session_date DESC NULLS LAST, updated_at DESC`,
+        [userId],
+      );
+      return res.json({ ok: true, preserved: true, sessions: result.rows.map((row) => row.data) });
+    }
+    for (const item of sessions) {
+      const id = String(item.id || `gym-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      await pool.query(
+        `INSERT INTO gym_sessions (id, user_id, session_date, data, updated_at)
+         VALUES ($1, $2, $3, $4, now())
+         ON CONFLICT (user_id, id) DO UPDATE SET
+           session_date=EXCLUDED.session_date,
+           data=EXCLUDED.data,
+           updated_at=now()`,
+        [id, userId, itemDate(item), { ...item, id }],
+      );
+    }
     res.json({ ok: true, sessions });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "No se pudieron guardar las sesiones de gimnasio" });
+  }
+});
+
+app.delete('/gym/sessions/:id', authMiddleware, async (req, res) => {
+  try {
+    const userId = await getUserId(req.user.email, req.user);
+    await pool.query(`DELETE FROM gym_sessions WHERE user_id=$1 AND id=$2`, [userId, req.params.id]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo eliminar la sesion de gimnasio" });
   }
 });
 
@@ -925,6 +949,11 @@ app.put('/intelligence', authMiddleware, async (req, res) => {
 // RedirecciÃ³n
 app.get('/auth/strava', (req, res) => {
   const { token } = req.query;
+  try {
+    jwt.verify(token, JWT_SECRET);
+  } catch {
+    return res.status(401).send("Token invalido o expirado. Inicia sesion con Google nuevamente antes de conectar Strava.");
+  }
 
   const url = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${STRAVA_REDIRECT_URI}&scope=read,activity:read_all&approval_prompt=force&state=${token}`;
 
@@ -967,7 +996,7 @@ app.get('/auth/strava/callback', async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.send("Error conectando Strava");
+    res.status(401).send("Token invalido o expirado. Inicia sesion con Google nuevamente antes de conectar Strava.");
   }
 });
 
