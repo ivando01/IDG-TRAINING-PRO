@@ -4,7 +4,7 @@ import { AppIcon, type AppIconName } from "@/components/Brand";
 import TopNav from "@/components/TopNav";
 import { getCloudCollection, saveCloudCollection } from "@/lib/cloud-sync";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type HistoryItem = {
   id: string;
@@ -263,6 +263,7 @@ function cleanCoachText(text: string) {
 }
 
 export default function AnalyticsModule() {
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
   const [period, setPeriod] = useState("Semana actual");
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -314,6 +315,10 @@ export default function AnalyticsModule() {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [chatMessages, loading]);
 
   const latestGlobal = history.find((item) => item.type === "global");
   const selected = history.find((item) => item.id === selectedId) || latestGlobal || history[0];
@@ -408,6 +413,13 @@ export default function AnalyticsModule() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const submitCoachQuestion = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const cleanQuestion = question.trim();
+    if (!cleanQuestion || loading) return;
+    runAnalysis("question", cleanQuestion);
   };
 
   const acknowledge = (item: HistoryItem) => {
@@ -734,74 +746,117 @@ export default function AnalyticsModule() {
           </div>
         </section>
 
-        <section className="mb-5 rounded-lg border border-slate-200 bg-white p-6">
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="min-w-0">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide text-blue-600">Lectura del coach</p>
-                <h2 className="mt-1 text-xl font-black text-slate-900">{selected?.title || "Sin analisis generado"}</h2>
-              </div>
-              <div className="flex flex-wrap justify-end gap-2">
-                <select className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold" value={period} onChange={(event) => setPeriod(event.target.value)}>
-                  {["Semana actual", "Ultimo mes", "Ultimos 3 meses"].map((item) => <option key={item}>{item}</option>)}
-                </select>
-                {selected ? (
-                  <button className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-black text-blue-700" type="button" onClick={() => setShowAnalysis(true)}>
-                    Ver ultimo
-                  </button>
-                ) : null}
-                <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white disabled:bg-blue-300" disabled={loading} type="button" onClick={() => runAnalysis("global")}>
-                  {loading ? "Analizando..." : "Analisis completo"}
-                </button>
+        <section className="mb-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-slate-100 p-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-blue-50">
+                <AppIcon name="intelligence" className="h-5 w-5 text-blue-700" />
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-xl font-black text-slate-900">Chat con IDG Coach</h2>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-slate-500">
+                    Powered by IDG Intelligence
+                  </span>
+                </div>
+                <p className="mt-1 text-sm font-semibold text-slate-500">Una conversacion continua: pregunta, ajusta y vuelve sobre el mismo hilo.</p>
               </div>
             </div>
-            {!selected ? (
-              <div className="mt-6 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-                <p className="text-sm font-bold text-slate-500">Genera el primer analisis para guardar una lectura global del atleta.</p>
-              </div>
-            ) : showAnalysis ? (
-              <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
-                <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{cleanCoachText(selected.analysis)}</p>
-                <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4">
-                  <button className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700" type="button" onClick={() => setShowAnalysis(false)}>Colapsar</button>
-                  <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-black text-white" type="button" onClick={() => acknowledge(selected)}>Enterado</button>
-                </div>
-              </div>
-            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <select className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold" value={period} onChange={(event) => setPeriod(event.target.value)}>
+                {["Semana actual", "Ultimo mes", "Ultimos 3 meses"].map((item) => <option key={item}>{item}</option>)}
+              </select>
+              {selected ? (
+                <button className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-black text-blue-700" type="button" onClick={() => setShowAnalysis((current) => !current)}>
+                  {showAnalysis ? "Ocultar global" : "Ver global"}
+                </button>
+              ) : null}
+              <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white disabled:bg-blue-300" disabled={loading} type="button" onClick={() => runAnalysis("global")}>
+                {loading ? "Analizando..." : "Analisis global"}
+              </button>
+            </div>
           </div>
 
-          <aside className="rounded-lg border border-blue-100 bg-slate-50 p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide text-blue-600">Chat del entrenador</p>
-                <h2 className="mt-1 text-lg font-black text-slate-900">IDG Coach</h2>
-              </div>
-              <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide text-slate-500 shadow-sm">
-                Powered by IDG Intelligence
-              </span>
-            </div>
-            <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
-              <p className="text-sm font-semibold leading-6 text-slate-600">
-                Preguntame que entrenar, como ajustar una rutina, si conviene descansar o como ordenar la semana segun tus datos.
-              </p>
-            </div>
-            <div className="mt-3 grid max-h-80 gap-3 overflow-y-auto rounded-lg border border-slate-200 bg-white p-3">
-              {chatMessages.length ? chatMessages.slice(-12).map((message) => (
-                <div className={`rounded-lg px-3 py-2 text-sm font-semibold leading-6 ${message.role === "user" ? "ml-8 bg-blue-600 text-white" : "mr-8 bg-slate-100 text-slate-700"}`} key={message.id}>
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+          {selected && showAnalysis ? (
+            <div className="border-b border-slate-100 bg-slate-50 p-5">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-blue-600">Lectura global guardada</p>
+                  <h3 className="mt-1 text-lg font-black text-slate-900">{selected.title}</h3>
                 </div>
-              )) : (
-                <p className="rounded-lg bg-slate-50 p-3 text-sm font-semibold text-slate-500">
-                  Aun no hay conversacion. Empieza con una pregunta y el Coach mantendra el hilo.
-                </p>
-              )}
+                <button className="w-fit rounded-lg bg-slate-900 px-4 py-2 text-sm font-black text-white" type="button" onClick={() => acknowledge(selected)}>Enterado</button>
+              </div>
+              <p className="mt-4 whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{cleanCoachText(selected.analysis)}</p>
             </div>
-            <textarea className="mt-3 min-h-32 w-full resize-none rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold outline-none focus:border-blue-500" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ej: Coach, que deberia entrenar manana segun mi carga, sueno y ultima sesion?" />
-            <button className="mt-3 w-full rounded-lg bg-slate-900 px-4 py-3 text-sm font-black text-white disabled:bg-slate-400" disabled={loading || !question.trim()} type="button" onClick={() => runAnalysis("question", question)}>
-              {loading ? "Consultando..." : "Enviar al coach"}
-            </button>
-          </aside>
+          ) : null}
+
+          <div className="flex h-[min(72vh,760px)] min-h-[560px] flex-col bg-slate-50/70">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 lg:px-6">
+              <div className="mx-auto grid max-w-5xl gap-4">
+                {!chatMessages.length ? (
+                  <div className="rounded-lg border border-dashed border-slate-200 bg-white p-6 text-center">
+                    <p className="text-lg font-black text-slate-900">Empieza la conversacion</p>
+                    <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-500">
+                      IDG Coach lee tus modulos de gym, running, ciclismo, sueno, peso y plan semanal. Puedes pedir ajustes, explicaciones o propuestas antes de aplicarlas.
+                    </p>
+                    <div className="mt-5 flex flex-wrap justify-center gap-2">
+                      {[
+                        "Que entreno hoy?",
+                        "Reprograma mi semana sin aplicarla todavia",
+                        "Como ajusto mi rutina de gym?",
+                      ].map((sample) => (
+                        <button className="rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700" key={sample} type="button" onClick={() => setQuestion(sample)}>
+                          {sample}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {chatMessages.map((message) => (
+                  <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`} key={message.id}>
+                    <article className={`max-w-[88%] rounded-2xl px-4 py-3 shadow-sm lg:max-w-[72%] ${message.role === "user" ? "rounded-br-md bg-blue-600 text-white" : "rounded-bl-md border border-slate-200 bg-white text-slate-700"}`}>
+                      <div className="mb-1 flex items-center gap-2">
+                        {message.role === "coach" ? <AppIcon name="intelligence" className="h-4 w-4 text-blue-600" /> : null}
+                        <span className={`text-[10px] font-black uppercase tracking-wide ${message.role === "user" ? "text-blue-100" : "text-slate-400"}`}>
+                          {message.role === "user" ? "Tu" : "IDG Coach"}
+                        </span>
+                      </div>
+                      <p className="whitespace-pre-wrap text-sm font-semibold leading-7">{cleanCoachText(message.content)}</p>
+                    </article>
+                  </div>
+                ))}
+
+                {loading ? (
+                  <div className="flex justify-start">
+                    <article className="rounded-2xl rounded-bl-md border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-500 shadow-sm">
+                      IDG Coach esta pensando...
+                    </article>
+                  </div>
+                ) : null}
+                <div ref={chatEndRef} />
+              </div>
+            </div>
+
+            <form className="border-t border-slate-200 bg-white p-3 lg:p-4" onSubmit={submitCoachQuestion}>
+              <div className="mx-auto grid max-w-5xl gap-3 lg:grid-cols-[minmax(0,1fr)_150px]">
+                <textarea
+                  className="max-h-36 min-h-14 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500"
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                      event.preventDefault();
+                      event.currentTarget.form?.requestSubmit();
+                    }
+                  }}
+                  placeholder="Escribele al coach..."
+                />
+                <button className="rounded-lg bg-slate-900 px-4 py-3 text-sm font-black text-white disabled:bg-slate-400" disabled={loading || !question.trim()} type="submit">
+                  {loading ? "Enviando..." : "Enviar"}
+                </button>
+              </div>
+            </form>
           </div>
         </section>
 
