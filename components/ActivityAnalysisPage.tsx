@@ -42,6 +42,7 @@ type StravaSyncedActivity = {
     sport_type?: string;
     type?: string;
     start_date?: string;
+    start_date_local?: string;
     moving_time?: number;
     elapsed_time?: number;
     distance?: number;
@@ -216,6 +217,11 @@ function isSupportActivity(activity: Pick<ActivityAnalysis, "activityKind" | "ac
   return isSupportActivityText(`${activity.activitySubType || ""} ${activity.name || ""}`.toLowerCase());
 }
 
+function keepActivityForSport(activity: ActivityAnalysis, sport: SportType) {
+  if (sport !== "running") return true;
+  return !isSupportActivityText(`${activity.activitySubType || ""} ${activity.name || ""}`.toLowerCase());
+}
+
 function readStream<T>(streams: Record<string, StravaStream> | null | undefined, key: string): T[] {
   const data = streams?.[key]?.data;
   return Array.isArray(data) ? (data as T[]) : [];
@@ -245,7 +251,8 @@ function stravaToActivity(item: StravaSyncedActivity, sport: SportType) {
   const velocity = readStream<number>(streams, "velocity_smooth");
   const temp = readStream<number>(streams, "temp");
   const length = Math.max(latlng.length, time.length, distance.length, altitude.length, heartrate.length, velocity.length);
-  const start = summary.start_date ? new Date(summary.start_date).getTime() : Date.now();
+  const activityDate = summary.start_date_local || summary.start_date || null;
+  const start = activityDate ? new Date(activityDate).getTime() : Date.now();
   const points: ActivityPoint[] = [];
 
   for (let index = 0; index < length; index += 1) {
@@ -284,8 +291,8 @@ function stravaToActivity(item: StravaSyncedActivity, sport: SportType) {
     countsTowardTraining: !support,
     source: "STRAVA",
     name: summary.name || (sport === "cycling" ? "Actividad de ciclismo" : support ? "Caminata de soporte" : "Actividad de running"),
-    date: summary.start_date ? summary.start_date.slice(0, 10) : new Date().toISOString().slice(0, 10),
-    startTime: summary.start_date,
+    date: activityDate ? activityDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
+    startTime: activityDate || undefined,
     points,
     zones: getStoredZones(),
     notes: "",
@@ -1035,7 +1042,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
         .then((cloudActivities) => {
           if (!alive || !cloudActivities.length) return;
           setActivities((currentActivities) => {
-            const merged = mergeCloudActivities(cloudActivities, currentActivities);
+            const merged = mergeCloudActivities(cloudActivities, currentActivities).filter((activity) => keepActivityForSport(activity, sport));
             setSelectedId((current) => current && merged.some((activity) => activity.id === current) ? current : merged[0]?.id || "");
             safeSetActivities(storageKeyForSport(sport), merged);
             return merged;
@@ -1046,7 +1053,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     try {
       const saved = localStorage.getItem(storageKeyForSport(sport));
       const parsed = saved ? JSON.parse(saved) : [];
-      const recalculated = Array.isArray(parsed) ? sortActivitiesBySessionDate(parsed.map(hydrateCloudActivity)) : [];
+      const recalculated = Array.isArray(parsed) ? sortActivitiesBySessionDate(parsed.map(hydrateCloudActivity).filter((activity) => keepActivityForSport(activity, sport))) : [];
       setActivities(recalculated);
       safeSetActivities(storageKeyForSport(sport), recalculated);
       setSelectedId(recalculated[0]?.id || "");
@@ -1057,7 +1064,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       .then(() => {
         if (!alive) return;
         setActivities((currentActivities) => {
-          const recalculated = sortActivitiesBySessionDate(currentActivities.map(hydrateCloudActivity));
+          const recalculated = sortActivitiesBySessionDate(currentActivities.map(hydrateCloudActivity).filter((activity) => keepActivityForSport(activity, sport)));
           safeSetActivities(storageKeyForSport(sport), recalculated);
           return recalculated;
         });
@@ -1093,7 +1100,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
   const mapPoint = selected?.points[safeMapPointIndex];
 
   const saveActivities = (next: ActivityAnalysis[]) => {
-    const ordered = sortActivitiesBySessionDate(next);
+    const ordered = sortActivitiesBySessionDate(next.filter((activity) => keepActivityForSport(activity, sport)));
     const stored = safeSetActivities(storageKeyForSport(sport), ordered);
     setActivities(ordered);
     const token = localStorage.getItem("token");
@@ -1207,7 +1214,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       return;
     }
     setSyncingStrava(true);
-    setStatus("Sincronizando Strava: ultimos 90 dias, sesiones y actividades de soporte nuevas...");
+    setStatus("Sincronizando Strava desde la ultima actividad guardada. Primera sincronizacion: hasta 90 dias.");
     try {
       const params = new URLSearchParams({
         sport,
@@ -1219,7 +1226,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       });
       const data = await readJsonResponse(response);
       if (!response.ok) throw new Error(data.error || "No se pudo sincronizar Strava.");
-      const imported = (data.activities || []).map((item: StravaSyncedActivity) => stravaToActivity(item, sport));
+      const imported = (data.activities || []).map((item: StravaSyncedActivity) => stravaToActivity(item, sport)).filter((activity: ActivityAnalysis) => keepActivityForSport(activity, sport));
       if (!imported.length) {
         const types = Array.isArray(data.availableTypes) && data.availableTypes.length ? ` Tipos recibidos: ${data.availableTypes.join(", ")}.` : "";
         const scanned = typeof data.scanned === "number" ? ` Revise ${data.scanned} actividades; ${data.inRange || 0} estan dentro del rango.` : "";
@@ -1233,14 +1240,15 @@ export default function ActivityAnalysisPage({ sport }: Props) {
             return `${item.start_date?.slice(0, 10) || "sin fecha"} ${item.type || "sin tipo"} ${item.name || ""} (${flags})`.trim();
           }).join(" | ")}.`
           : "";
-        setStatus(`Strava conectado: no hay sesiones nuevas de ${sport === "cycling" ? "ciclismo" : "running"} en los ultimos ${data.days || 90} dias.${scanned}${types}${recent}`);
+        const since = data.after ? ` desde ${String(data.after).slice(0, 10)}` : "";
+        setStatus(`Strava conectado: no hay sesiones nuevas de ${sport === "cycling" ? "ciclismo" : "running"}${since}. Primera sincronizacion revisa hasta ${data.days || 90} dias.${scanned}${types}${recent}`);
         return;
       }
       const next = [
         ...imported,
         ...activities.filter((activity) => !imported.some((item: ActivityAnalysis) => item.id === activity.id)),
       ];
-      const ordered = sortActivitiesBySessionDate(next.map(hydrateCloudActivity));
+      const ordered = sortActivitiesBySessionDate(next.map(hydrateCloudActivity).filter((activity) => keepActivityForSport(activity, sport)));
       safeSetActivities(storageKeyForSport(sport), ordered);
       setActivities(ordered);
       setSelectedId(imported[0].id);

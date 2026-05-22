@@ -230,8 +230,10 @@ export default function PlanModule() {
       };
     }
 
-    getCloudCollection<PlannedSession>("/plan", "plan")
-      .then(async (cloudPlan) => {
+    const loadCloudPlan = () => {
+      if (!canSyncCloud()) return;
+      getCloudCollection<PlannedSession>("/plan", "plan")
+        .then(async (cloudPlan) => {
         if (!alive) return;
         if (cloudPlan.length) {
           const sortedCloudPlan = normalizePlan(cloudPlan);
@@ -256,8 +258,15 @@ export default function PlanModule() {
         if (!alive) return;
         setStatus(error instanceof Error ? error.message : "No se pudo sincronizar el plan semanal.");
       });
+    };
+    loadCloudPlan();
+    const refreshOnFocus = () => loadCloudPlan();
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshOnFocus);
     return () => {
       alive = false;
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshOnFocus);
     };
   }, []);
 

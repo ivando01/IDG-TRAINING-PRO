@@ -1719,12 +1719,26 @@ svg {
   font-weight: 900;
 }
 
+.weight-chips[data-unit="lbs"] label {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.weight-chips[data-unit="kg"] label {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
 .weight-chips input {
   width: 48px;
   min-height: 28px;
   border: 0;
   padding: 0 4px;
   background: transparent;
+  font-size: 16px;
+  color: #0f172a;
 }
 
 .gym-row-actions {
@@ -2072,6 +2086,13 @@ svg {
 
   .weight-chips {
     flex-wrap: wrap;
+  }
+
+  .gym-exercise-row input,
+  .gym-exercise-row select,
+  .gym-exercise-row textarea,
+  .weight-chips input {
+    font-size: 16px;
   }
 }
 

@@ -849,7 +849,7 @@ export default function GymModule() {
                 <>
                   <div className="gym-toolbar mt-4 grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,1fr)_auto_150px_130px_130px]">
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Rutina<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-800" value={routine} onChange={(event) => changeRoutine(event.target.value as RoutineKey)}>{Object.entries(routines).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></label>
-                    <div className="unit-switch flex h-10 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">{(["kg", "lbs"] as const).map((value) => <button className={`min-w-12 px-3 text-sm font-black ${unit === value ? value === "lbs" ? "bg-orange-600 text-white" : "bg-blue-600 text-white" : "text-slate-500"}`} key={value} type="button" onClick={() => setUnit(value)}>{value}</button>)}</div>
+                    <div className="unit-switch flex h-10 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">{(["kg", "lbs"] as const).map((value) => <button className="min-w-12 px-3 text-sm font-black" key={value} type="button" style={unit === value ? { background: value === "lbs" ? "#ea580c" : "#2563eb", color: "#ffffff" } : undefined} onClick={() => setUnit(value)}>{value}</button>)}</div>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Fecha<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Duracion HH:MM<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" value={duration} onChange={(event) => setDuration(event.target.value)} /></label>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Calorias<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" type="number" value={calories} placeholder="Opcional" onChange={(event) => setCalories(event.target.value)} /></label>
@@ -917,7 +917,7 @@ export default function GymModule() {
                         <div className="gym-exercise-name grid grid-cols-[30px_minmax(0,1fr)] items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-green-500 text-sm font-black text-white">{index + 1}</span><input className="h-9 rounded-lg border border-slate-200 px-2 text-sm font-semibold text-slate-900" value={exercise.name} onChange={(event) => updateExercise(exercise.id, { name: event.target.value })} /></div>
                         <div className="series-ctrl"><button type="button" onClick={() => changeSets(exercise.id, -1)}>-</button><strong>{exercise.sets}</strong><button type="button" onClick={() => changeSets(exercise.id, 1)}>+</button></div>
                         <input className="compact-input reps-input h-9 rounded-lg border border-slate-200 px-2 text-center text-sm text-slate-800" value={exercise.reps} onChange={(event) => updateExercise(exercise.id, { reps: event.target.value })} />
-                        <div className="weight-chips">{exercise.weights.map((weight, setIndex) => <label key={`${exercise.id}-${setIndex}`}>S{setIndex + 1}<input type="number" value={weight} onChange={(event) => updateWeight(exercise.id, setIndex, event.target.value)} /></label>)}</div>
+                        <div className="weight-chips" data-unit={unit}>{exercise.weights.map((weight, setIndex) => <label key={`${exercise.id}-${setIndex}`}>S{setIndex + 1}<input inputMode="decimal" type="number" value={weight} onChange={(event) => updateWeight(exercise.id, setIndex, event.target.value)} /></label>)}</div>
                         <input className="compact-input rest-input h-9 rounded-lg border border-slate-200 px-2 text-center text-sm text-slate-800" value={secondsToMMSS(exercise.rest)} onChange={(event) => updateExercise(exercise.id, { rest: mmssToSeconds(event.target.value) })} />
                         <div className="gym-row-actions">
                           <button type="button" title="Guardar ejercicio" onClick={() => saveExercise(exercise.id)}><Icon name="save" /></button>
@@ -1179,12 +1179,12 @@ export default function GymModule() {
                                     </label>
                                     <div>
                                       <p className="mb-1 text-[10px] font-black uppercase text-slate-400">Peso por serie</p>
-                                      <div className="weight-chips">
+                                      <div className="weight-chips" data-unit={unit}>
                                         {exercise.weights.map((weight, setIndex) => (
                                           <label key={`${exercise.id}-${setIndex}`}>
                                             S{setIndex + 1}
                                             {isInlineEditing ? (
-                                              <input type="number" value={weight} onChange={(event) => updateInlineWeight(exercise.id, setIndex, event.target.value)} />
+                                              <input inputMode="decimal" type="number" value={weight} onChange={(event) => updateInlineWeight(exercise.id, setIndex, event.target.value)} />
                                             ) : (
                                               <span className="px-1 font-black text-slate-900">{weight || "--"}</span>
                                             )}
