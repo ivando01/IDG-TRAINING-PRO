@@ -254,13 +254,25 @@ export default function ProfilePage() {
     }
   };
 
-  const connectStrava = () => {
+  const connectStrava = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       setStatus("Inicia sesion con Google antes de conectar Strava.");
       return;
     }
-    window.location.href = `${API_URL}/auth/strava?token=${encodeURIComponent(token)}`;
+    setStravaBusy(true);
+    setStatus("Validando sesion antes de conectar Strava...");
+    try {
+      const response = await fetch(`${API_URL}/access`, { headers: { Authorization: `Bearer ${token}` } });
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        throw new Error("Tu sesion expiro. Inicia sesion de nuevo con Google y vuelve a conectar Strava.");
+      }
+      window.location.href = `${API_URL}/auth/strava?token=${encodeURIComponent(token)}`;
+    } catch (error) {
+      setStravaBusy(false);
+      setStatus(error instanceof Error ? error.message : "No se pudo validar tu sesion antes de conectar Strava.");
+    }
   };
 
   const disconnectStrava = async () => {

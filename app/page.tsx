@@ -78,13 +78,25 @@ export default function Home() {
     }
   };
 
-  const connectStrava = () => {
+  const connectStrava = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       setError("Primero inicia sesion con Google para vincular Strava.");
       return;
     }
-    window.location.href = `${API_URL}/auth/strava?token=${encodeURIComponent(token)}`;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`${API_URL}/access`, { headers: { Authorization: `Bearer ${token}` } });
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        throw new Error("Tu sesion expiro. Inicia sesion de nuevo con Google y vuelve a conectar Strava.");
+      }
+      window.location.href = `${API_URL}/auth/strava?token=${encodeURIComponent(token)}`;
+    } catch (error) {
+      setLoading(false);
+      setError(error instanceof Error ? error.message : "No se pudo validar tu sesion antes de conectar Strava.");
+    }
   };
 
   const handleEmailLogin = (event: FormEvent<HTMLFormElement>) => {

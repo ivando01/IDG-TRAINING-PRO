@@ -28,8 +28,16 @@ async function request(path: string, options: RequestInit = {}) {
     const preview = text.replace(/\s+/g, " ").slice(0, 120);
     throw new Error(`El backend no devolvio JSON para ${path}. URL llamada: ${API_URL}${path}. Respuesta: ${preview}`);
   }
+  if (response.status === 401 && typeof data.error === "string" && data.error.toLowerCase().includes("token")) {
+    localStorage.removeItem("token");
+    throw new Error("Sesion expirada. Vuelve a iniciar sesion con Google para reactivar la sincronizacion.");
+  }
   if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : `Error sincronizando ${path}`);
   return data;
+}
+
+export async function deleteCloudItem(path: string) {
+  return request(path, { method: "DELETE" });
 }
 
 export async function getCloudProfile<T>() {

@@ -1,7 +1,7 @@
 "use client";
 
 import TopNav from "@/components/TopNav";
-import { getCloudCollection, saveCloudCollection } from "@/lib/cloud-sync";
+import { deleteCloudItem, getCloudCollection, saveCloudCollection } from "@/lib/cloud-sync";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 type RoutineKey = "1" | "2" | "3" | "4" | "5" | "wod" | "custom";
@@ -772,6 +772,7 @@ export default function GymModule() {
 
   const deleteSession = (id: string) => {
     persistHistory(history.filter((session) => session.id !== id));
+    deleteCloudItem(`/gym/sessions/${encodeURIComponent(id)}`).catch(() => undefined);
   };
 
   const selectedSession = history.find((session) => session.id === selectedSessionId) || null;
