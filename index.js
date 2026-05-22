@@ -271,6 +271,7 @@ function normalizeStravaActivity(activity, userId, sport) {
   const summary = activity?.summary || activity;
   const streams = activity?.streams || null;
   const externalId = String(summary.id);
+  const activityDate = summary.start_date_local || summary.start_date || null;
   const distanceKm = summary.distance ? Number(summary.distance) / 1000 : null;
   const durationMin = summary.moving_time ? Number(summary.moving_time) / 60 : null;
   const elapsedMin = summary.elapsed_time ? Number(summary.elapsed_time) / 60 : null;
@@ -282,8 +283,8 @@ function normalizeStravaActivity(activity, userId, sport) {
     external_id: externalId,
     type: summary.sport_type || summary.type || null,
     name: summary.name || null,
-    date: summary.start_date || null,
-    activity_date: itemDate({ date: summary.start_date }),
+    date: activityDate,
+    activity_date: itemDate({ date: activityDate }),
     distance_km: numericOrNull(distanceKm, 3),
     duration_min: numericOrNull(durationMin, 2),
     elapsed_min: numericOrNull(elapsedMin, 2),
@@ -429,18 +430,8 @@ function isSportMatch(activity, sport) {
   const name = String(activity.name || "").toLowerCase();
   const text = `${sportType} ${name}`;
   if (sport === "running") {
-    return [
-      "run",
-      "trailrun",
-      "virtualrun",
-      "walk",
-      "hike",
-      "carrera",
-      "correr",
-      "caminar",
-      "caminata",
-      "senderismo",
-    ].some((keyword) => text.includes(keyword));
+    if (/\b(walk|hike|caminar|caminata|senderismo)\b/.test(text)) return false;
+    return ["run", "trailrun", "virtualrun", "carrera", "correr"].some((keyword) => text.includes(keyword));
   }
   if (sport === "cycling") {
     return [
@@ -455,6 +446,32 @@ function isSportMatch(activity, sport) {
     ].some((keyword) => text.includes(keyword));
   }
   return true;
+}
+
+function isRunningSupportActivity(activity) {
+  const text = `${activity?.sport_type || ""} ${activity?.type || ""} ${activity?.activitySubType || ""} ${activity?.name || ""}`.toLowerCase();
+  return /\b(walk|hike|caminar|caminata|senderismo)\b/.test(text);
+}
+
+async function deleteRunningSupportActivities(userId) {
+  await pool.query(
+    `DELETE FROM activities
+     WHERE user_id=$1
+       AND sport='running'
+       AND source='strava'
+       AND (
+         lower(coalesce(type, '')) LIKE '%walk%'
+         OR lower(coalesce(type, '')) LIKE '%hike%'
+         OR lower(coalesce(name, '')) LIKE '%walk%'
+         OR lower(coalesce(name, '')) LIKE '%hike%'
+         OR lower(coalesce(name, '')) LIKE '%caminar%'
+         OR lower(coalesce(name, '')) LIKE '%caminata%'
+         OR lower(coalesce(name, '')) LIKE '%senderismo%'
+         OR lower(coalesce(data->>'activitySubType', '')) LIKE '%walk%'
+         OR lower(coalesce(data->>'activitySubType', '')) LIKE '%hike%'
+       )`,
+    [userId],
+  );
 }
 
 /* ================= TEST ================= */
@@ -644,7 +661,10 @@ app.get('/activities', authMiddleware, async (req, res) => {
       `SELECT data FROM activities WHERE user_id=$1 ${sport ? "AND sport=$2" : ""} ORDER BY activity_date DESC NULLS LAST, updated_at DESC`,
       params,
     );
-    res.json({ activities: result.rows.map((row) => row.data) });
+    const activities = result.rows
+      .map((row) => row.data)
+      .filter((activity) => sport !== "running" || !isRunningSupportActivity(activity));
+    res.json({ activities });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "No se pudieron leer las actividades" });
@@ -662,7 +682,10 @@ app.put('/activities', authMiddleware, async (req, res) => {
         `SELECT data FROM activities WHERE user_id=$1 ${sport ? "AND sport=$2" : ""} ORDER BY activity_date DESC NULLS LAST, updated_at DESC`,
         params,
       );
-      return res.json({ ok: true, preserved: true, activities: result.rows.map((row) => row.data) });
+      const preserved = result.rows
+        .map((row) => row.data)
+        .filter((activity) => sport !== "running" || !isRunningSupportActivity(activity));
+      return res.json({ ok: true, preserved: true, activities: preserved });
     }
     const client = await pool.connect();
     try {
@@ -672,6 +695,7 @@ app.put('/activities', authMiddleware, async (req, res) => {
       for (const item of activities) {
         const itemSport = item?.sport === "cycling" ? "cycling" : item?.sport === "running" ? "running" : sport;
         if (!itemSport) continue;
+        if (itemSport === "running" && isRunningSupportActivity(item)) continue;
         await client.query(
           `INSERT INTO activities (id, user_id, sport, source, activity_date, data, updated_at)
            VALUES ($1, $2, $3, $4, $5, $6, now())`,
@@ -701,6 +725,7 @@ app.put('/activities/upsert', authMiddleware, async (req, res) => {
     for (const item of activities) {
       const itemSport = item?.sport === "cycling" ? "cycling" : item?.sport === "running" ? "running" : sport;
       if (!itemSport) continue;
+      if (itemSport === "running" && isRunningSupportActivity(item)) continue;
       const id = String(item.id || `${itemSport}-${Date.now()}-${Math.random().toString(36).slice(2)}`);
       const source = String(item.source || "").toLowerCase() === "strava" ? "strava" : item.source || null;
       const externalId = source === "strava"
@@ -1010,7 +1035,21 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
     const limit = Math.min(Number(req.query.limit) || 30, 100);
     const days = Math.min(Math.max(Number(req.query.days) || 90, 1), 120);
     const cutoffMs = Date.now() - days * 86400000;
-    const after = Math.floor(cutoffMs / 1000);
+    let afterMs = cutoffMs;
+    if (sport) {
+      if (sport === "running") {
+        await deleteRunningSupportActivities(userId);
+      }
+      const latestResult = await pool.query(
+        `SELECT MAX(date) AS latest_date
+         FROM activities
+         WHERE user_id=$1 AND sport=$2 AND source='strava'`,
+        [userId, sport],
+      );
+      const latestMs = latestResult.rows[0]?.latest_date ? new Date(latestResult.rows[0].latest_date).getTime() : 0;
+      if (Number.isFinite(latestMs) && latestMs > 0) afterMs = Math.max(cutoffMs, latestMs + 1000);
+    }
+    const after = Math.floor(afterMs / 1000);
     const excluded = new Set(
       String(req.query.exclude || "")
         .split(",")
@@ -1030,7 +1069,7 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
 
     const inRange = fetched.filter((activity) => {
       const dateMs = activity.start_date ? new Date(activity.start_date).getTime() : 0;
-      return dateMs >= cutoffMs;
+      return dateMs >= afterMs;
     });
 
     const candidates = fetched
@@ -1046,7 +1085,7 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
       type: activity.sport_type || activity.type,
       start_date: activity.start_date,
       distance_km: activity.distance ? Number((activity.distance / 1000).toFixed(2)) : 0,
-      in_range: activity.start_date ? new Date(activity.start_date).getTime() >= cutoffMs : false,
+      in_range: activity.start_date ? new Date(activity.start_date).getTime() >= afterMs : false,
       matched_sport: !sport || isSportMatch(activity, sport),
       already_registered: excluded.has(String(activity.id)),
     }));
@@ -1056,6 +1095,7 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
         sport,
         count: 0,
         days,
+        after: new Date(afterMs).toISOString(),
         scanned: fetched.length,
         inRange: inRange.length,
         availableTypes,
@@ -1092,7 +1132,7 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
     }
 
     const saved = await saveStravaActivities(normalizedForStorage, userId, sport);
-    res.json({ sport, days, scanned: fetched.length, inRange: inRange.length, availableTypes, recent, count: enriched.length, saved, activities: enriched });
+    res.json({ sport, days, after: new Date(afterMs).toISOString(), scanned: fetched.length, inRange: inRange.length, availableTypes, recent, count: enriched.length, saved, activities: enriched });
   } catch (error) {
     console.error(error.response?.data || error);
     res.status(500).json({ error: "No se pudo sincronizar Strava" });
