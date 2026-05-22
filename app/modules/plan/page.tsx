@@ -30,8 +30,17 @@ type RealSession = {
   load: number;
 };
 
+type GymTemplate = {
+  id: string;
+  name: string;
+  focus?: string;
+  exercises?: unknown[];
+  updatedAt?: number;
+};
+
 const PLAN_KEY = "idg_weekly_plan_json";
 const PROFILE_KEY = "idg_profile_json";
+const GYM_TEMPLATES_KEY = "idg_gym_templates_json";
 
 const gymRoutines = [
   "Dia 1 - Cuadriceps + Pantorrilla",
@@ -205,6 +214,8 @@ export default function PlanModule() {
   const [selectedDate, setSelectedDate] = useState(() => isoDate(new Date()));
   const [sessions, setSessions] = useState<PlannedSession[]>([]);
   const [realSessions, setRealSessions] = useState<RealSession[]>([]);
+  const [gymTemplates, setGymTemplates] = useState<GymTemplate[]>([]);
+  const [proposedPlan, setProposedPlan] = useState<PlannedSession[] | null>(null);
   const [mounted, setMounted] = useState(false);
   const [status, setStatus] = useState("");
   const [draft, setDraft] = useState({
@@ -215,13 +226,19 @@ export default function PlanModule() {
     targetZone: "Z2",
     notes: "",
   });
+  const gymRoutineOptions = useMemo(() => {
+    const customNames = gymTemplates.map((template) => template.name).filter(Boolean);
+    return Array.from(new Set([...gymRoutines, ...customNames]));
+  }, [gymTemplates]);
 
   useEffect(() => {
     let alive = true;
     setMounted(true);
     const localPlan = normalizePlan(readJSON<PlannedSession[]>(PLAN_KEY, []));
+    const localTemplates = readJSON<GymTemplate[]>(GYM_TEMPLATES_KEY, []).filter((template) => template.name);
     setSessions(localPlan);
     setRealSessions(getRealSessions());
+    setGymTemplates(localTemplates);
 
     if (!canSyncCloud()) {
       if (localPlan.length) setStatus("Plan cargado en este dispositivo. Inicia sesion para sincronizarlo en todos tus equipos.");
@@ -232,6 +249,13 @@ export default function PlanModule() {
 
     const loadCloudPlan = () => {
       if (!canSyncCloud()) return;
+      getCloudCollection<GymTemplate>("/gym/templates", "templates")
+        .then((templates) => {
+          if (!alive || !templates.length) return;
+          setGymTemplates(templates.filter((template) => template.name));
+          localStorage.setItem(GYM_TEMPLATES_KEY, JSON.stringify(templates));
+        })
+        .catch(() => undefined);
       getCloudCollection<PlannedSession>("/plan", "plan")
         .then(async (cloudPlan) => {
         if (!alive) return;
@@ -272,7 +296,8 @@ export default function PlanModule() {
 
   const currentWeekKey = weekKey(weekStart);
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)), [weekStart]);
-  const weekPlan = sessions.filter((session) => weekKey(parseLocalDate(session.date)) === currentWeekKey);
+  const visibleSessions = proposedPlan || sessions;
+  const weekPlan = visibleSessions.filter((session) => weekKey(parseLocalDate(session.date)) === currentWeekKey);
   const weekReal = realSessions.filter((session) => weekKey(parseLocalDate(session.date)) === currentWeekKey);
 
   const completedIds = new Set(
@@ -290,6 +315,7 @@ export default function PlanModule() {
   const saveSessions = (next: PlannedSession[]) => {
     const sorted = normalizePlan(next);
     setSessions(sorted);
+    setProposedPlan(null);
     localStorage.setItem(PLAN_KEY, JSON.stringify(sorted));
     if (!canSyncCloud()) {
       setStatus("Plan guardado solo en este dispositivo. Inicia sesion para verlo en movil y web.");
@@ -338,7 +364,7 @@ export default function PlanModule() {
     setStatus("Sesion eliminada del plan.");
   };
 
-  const generateWeek = () => {
+  const buildGeneratedWeek = () => {
     const profile = readJSON<Record<string, unknown>>(PROFILE_KEY, {});
     const gymDays = Math.min(5, Math.max(0, num(profile.gymDaysPerWeek) || 4));
     const runDays = Math.min(4, Math.max(0, num(profile.runDaysPerWeek) || 2));
@@ -351,8 +377,8 @@ export default function PlanModule() {
         id: crypto.randomUUID(),
         date: base[[0, 1, 3, 4, 5][i] || i],
         type: "gym",
-        title: gymRoutines[i % 5],
-        gymRoutine: gymRoutines[i % 5],
+        title: gymRoutineOptions[i % Math.max(1, gymRoutineOptions.length)],
+        gymRoutine: gymRoutineOptions[i % Math.max(1, gymRoutineOptions.length)],
         objective: "Rutina base",
         duration: 75,
         targetZone: "RPE 7",
@@ -386,10 +412,25 @@ export default function PlanModule() {
         status: "planned",
       });
     }
+    return generated;
+  };
 
+  const generateWeek = () => {
+    const generated = buildGeneratedWeek();
     const outsideWeek = sessions.filter((session) => weekKey(parseLocalDate(session.date)) !== currentWeekKey);
-    saveSessions([...outsideWeek, ...generated].sort((a, b) => `${a.date}-${a.type}`.localeCompare(`${b.date}-${b.type}`)));
-    setStatus("Semana generada desde tu perfil y carga reciente.");
+    setProposedPlan([...outsideWeek, ...generated].sort((a, b) => `${a.date}-${a.type}`.localeCompare(`${b.date}-${b.type}`)));
+    setStatus("IDG Coach genero una propuesta. Revisa la semana y confirma antes de modificar tu plan.");
+  };
+
+  const applyProposedPlan = () => {
+    if (!proposedPlan) return;
+    saveSessions(proposedPlan);
+    setStatus("Propuesta aplicada y sincronizada en la nube.");
+  };
+
+  const discardProposedPlan = () => {
+    setProposedPlan(null);
+    setStatus("Propuesta descartada. Tu plan actual no cambio.");
   };
 
   const selectedSessions = weekPlan.filter((session) => session.date === selectedDate);
@@ -423,7 +464,7 @@ export default function PlanModule() {
               <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700" type="button" onClick={() => setWeekStart(addDays(weekStart, -7))}>Anterior</button>
               <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700" type="button" onClick={() => setWeekStart(startOfWeek())}>Actual</button>
               <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700" type="button" onClick={() => setWeekStart(addDays(weekStart, 7))}>Siguiente</button>
-              <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white" type="button" onClick={generateWeek}>Generar semana IA</button>
+              <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white" type="button" onClick={generateWeek}>Generar propuesta IA</button>
             </div>
           </div>
 
@@ -443,6 +484,15 @@ export default function PlanModule() {
         </div>
 
         {status ? <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">{status}</div> : null}
+        {proposedPlan ? (
+          <div className="mb-4 flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 lg:flex-row lg:items-center lg:justify-between">
+            <span>Estas viendo una propuesta de IDG Coach. Nada se guarda hasta que la confirmes.</span>
+            <div className="flex flex-wrap gap-2">
+              <button className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-black text-white" type="button" onClick={applyProposedPlan}>Confirmar propuesta</button>
+              <button className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs font-black text-amber-800" type="button" onClick={discardProposedPlan}>Descartar</button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid gap-5">
           <section className="grid gap-5">
@@ -540,7 +590,7 @@ export default function PlanModule() {
                     ))}
                   </div>
                   {draft.type === "gym" ? (
-                    <label className="grid gap-1 text-xs font-black uppercase text-slate-500">Rutina<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-800" value={draft.gymRoutine} onChange={(event) => setDraft((current) => ({ ...current, gymRoutine: event.target.value }))}>{gymRoutines.map((routine) => <option key={routine}>{routine}</option>)}</select></label>
+                    <label className="grid gap-1 text-xs font-black uppercase text-slate-500">Rutina<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-800" value={draft.gymRoutine} onChange={(event) => setDraft((current) => ({ ...current, gymRoutine: event.target.value }))}>{gymRoutineOptions.map((routine) => <option key={routine}>{routine}</option>)}</select></label>
                   ) : null}
                   {draft.type !== "gym" ? (
                     <label className="grid gap-1 text-xs font-black uppercase text-slate-500">Objetivo<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-800" value={draft.objective} onChange={(event) => setDraft((current) => ({ ...current, objective: event.target.value }))}>{objectives[draft.type].map((option) => <option key={option}>{option}</option>)}</select></label>
@@ -569,7 +619,11 @@ export default function PlanModule() {
               <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{recommendation}</p>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-black text-slate-700" type="button" onClick={() => setStatus("Sugerencia: mueve una sesion intensa hacia un dia libre o cambia por movilidad.")}>Ver detalle</button>
-                <button className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-black text-white" type="button" onClick={generateWeek}>Aplicar ajuste</button>
+                {proposedPlan ? (
+                  <button className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-black text-white" type="button" onClick={applyProposedPlan}>Confirmar</button>
+                ) : (
+                  <button className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-black text-white" type="button" onClick={generateWeek}>Proponer ajuste</button>
+                )}
               </div>
             </section>
 

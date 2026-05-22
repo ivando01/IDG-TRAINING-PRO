@@ -35,8 +35,19 @@ type GymSession = {
   updatedAt: number;
 };
 
+type GymTemplate = {
+  id: string;
+  name: string;
+  focus: string;
+  routineKey: RoutineKey;
+  source: "user" | "coach";
+  exercises: ExerciseDraft[];
+  updatedAt: number;
+};
+
 const STORAGE_KEY = "idg_gym_sessions_json";
 const DRAFT_KEY = "idg_gym_current_session_json";
+const TEMPLATES_KEY = "idg_gym_templates_json";
 const PROFILE_KEY = "idg_profile_json";
 
 function safeSaveGymLocal(sessions: GymSession[]) {
@@ -207,6 +218,45 @@ function sortSessions(sessions: GymSession[]) {
   return sessions.map(normalizeSession).sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime() || b.updatedAt - a.updatedAt);
 }
 
+function cloneExercises(exercises: ExerciseDraft[]) {
+  return exercises.map((exercise, index) => ({
+    ...exercise,
+    id: `${exercise.id || exercise.name}-${Date.now()}-${index}`,
+    weights: Array.from({ length: Math.max(1, exercise.sets) }, (_, setIndex) => exercise.weights?.[setIndex] ?? ""),
+  }));
+}
+
+function normalizeTemplate(template: Partial<GymTemplate>): GymTemplate | null {
+  const name = String(template.name || "").trim();
+  const exercises = Array.isArray(template.exercises) ? template.exercises : [];
+  if (!name || !exercises.length) return null;
+  const routineKey = String(template.routineKey || "custom") as RoutineKey;
+  return {
+    id: String(template.id || `template-${Date.now()}`),
+    name,
+    focus: String(template.focus || "Plantilla personalizada"),
+    routineKey: routines[routineKey] ? routineKey : "custom",
+    source: template.source === "coach" ? "coach" : "user",
+    exercises: exercises.map((exercise, index) => ({
+      id: String(exercise.id || `template-ex-${index}`),
+      name: String(exercise.name || `Ejercicio ${index + 1}`),
+      sets: Math.max(1, Math.min(10, Number(exercise.sets) || 3)),
+      reps: String(exercise.reps || "10"),
+      rest: Math.max(0, Number(exercise.rest) || 60),
+      note: exercise.note ? String(exercise.note) : undefined,
+      weights: Array.from({ length: Math.max(1, Math.min(10, Number(exercise.sets) || 3)) }, (_, setIndex) => String(exercise.weights?.[setIndex] || "")),
+    })),
+    updatedAt: Number(template.updatedAt) || Date.now(),
+  };
+}
+
+function sortTemplates(templates: GymTemplate[]) {
+  return templates
+    .map(normalizeTemplate)
+    .filter((template): template is GymTemplate => Boolean(template))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
 function scaleColor(value: number) {
   if (value <= 3) return "#22c55e";
   if (value <= 6) return "#facc15";
@@ -247,6 +297,8 @@ export default function GymModule() {
   const [notes, setNotes] = useState("");
   const [exercises, setExercises] = useState<ExerciseDraft[]>([]);
   const [history, setHistory] = useState<GymSession[]>([]);
+  const [templates, setTemplates] = useState<GymTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [builderOpen, setBuilderOpen] = useState(false);
   const [draftReady, setDraftReady] = useState(false);
   const [editingId, setEditingId] = useState("");
@@ -277,6 +329,14 @@ export default function GymModule() {
     });
   };
 
+  const persistTemplates = (next: GymTemplate[]) => {
+    const sorted = sortTemplates(next);
+    setTemplates(sorted);
+    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(sorted));
+    saveCloudCollection("/gym/templates", "templates", sorted).catch(() => undefined);
+    return sorted;
+  };
+
   useEffect(() => {
     let alive = true;
     setDate(localISODate());
@@ -285,6 +345,8 @@ export default function GymModule() {
       const saved: GymSession[] = raw ? JSON.parse(raw) : [];
       const sorted = sortSessions(saved);
       setHistory(sorted);
+      const savedTemplates = sortTemplates(JSON.parse(localStorage.getItem(TEMPLATES_KEY) || "[]"));
+      setTemplates(savedTemplates);
       const draftRaw = localStorage.getItem(DRAFT_KEY);
       const draft = draftRaw ? normalizeSession(JSON.parse(draftRaw) as GymSession) : null;
       if (draft) {
@@ -299,6 +361,8 @@ export default function GymModule() {
         setExercises(draft.exercises.length ? draft.exercises : buildExercises(draft.routine, sorted));
         setEditingId(draft.id);
         setIntelligence(`Rutina en curso recuperada: ${draft.routineName}.`);
+        const matchingTemplate = savedTemplates.find((template) => template.name === draft.routineName);
+        if (matchingTemplate) setSelectedTemplateId(matchingTemplate.id);
       } else {
         setExercises(buildExercises("4", sorted));
       }
@@ -319,6 +383,14 @@ export default function GymModule() {
         safeSaveGymLocal(sorted);
       })
       .catch(() => undefined);
+    getCloudCollection<GymTemplate>("/gym/templates", "templates")
+      .then((cloudTemplates) => {
+        if (!alive || !cloudTemplates.length) return;
+        const sorted = sortTemplates(cloudTemplates);
+        setTemplates(sorted);
+        localStorage.setItem(TEMPLATES_KEY, JSON.stringify(sorted));
+      })
+      .catch(() => undefined);
     return () => {
       alive = false;
     };
@@ -334,8 +406,9 @@ export default function GymModule() {
     }
   }, [draftReady, builderOpen, date, routine, duration, intensity, painLevel, pain, calories, notes, exercises, editingId]);
 
-  const routineName = routines[routine].name;
-  const latest = history.find((session) => session.routine === routine);
+  const selectedTemplate = templates.find((template) => template.id === selectedTemplateId);
+  const routineName = selectedTemplate?.name || routines[routine].name;
+  const latest = history.find((session) => selectedTemplate ? session.routineName === selectedTemplate.name : session.routine === routine);
   const exerciseVolume = (exercise: ExerciseDraft) => exercise.weights.reduce((sum, weight) => sum + (Number(weight) || 0), 0);
   const sessionVolume = (session: Pick<GymSession, "exercises">) => session.exercises.reduce((sum, exercise) => sum + exerciseVolume(exercise), 0);
   const completedSetsFor = (session: Pick<GymSession, "exercises">) => session.exercises.reduce((sum, exercise) => sum + exercise.weights.filter((weight) => Number(weight) > 0).length, 0);
@@ -357,7 +430,7 @@ export default function GymModule() {
     });
   const buildCoachContext = (session: GymSession) => {
     const sameRoutine = history
-      .filter((item) => item.routine === session.routine && item.id !== session.id)
+      .filter((item) => item.routineName === session.routineName && item.id !== session.id)
       .slice(0, 6);
     const previous = sameRoutine[0];
     const currentLoad = sessionVolume(session);
@@ -432,10 +505,43 @@ export default function GymModule() {
 
   const changeRoutine = (nextRoutine: RoutineKey) => {
     setRoutine(nextRoutine);
+    setSelectedTemplateId("");
     setExercises(buildExercises(nextRoutine, history));
     setEditingId("");
     const previous = history.find((session) => session.routine === nextRoutine);
     setIntelligence(previous ? `Pesos cargados desde la sesion ${previous.date}.` : "Rutina base cargada desde IDG Training Pro v21.");
+  };
+
+  const applyTemplate = (templateId: string) => {
+    const template = templates.find((item) => item.id === templateId);
+    if (!template) {
+      setSelectedTemplateId("");
+      return;
+    }
+    setSelectedTemplateId(template.id);
+    setRoutine("custom");
+    setExercises(cloneExercises(template.exercises));
+    setEditingId("");
+    setIntelligence(`Plantilla personalizada cargada: ${template.name}. Puedes editarla y guardar una nueva version.`);
+  };
+
+  const saveCurrentTemplate = () => {
+    const name = window.prompt("Nombre de la plantilla personalizada", routineName);
+    if (!name?.trim()) return;
+    const template: GymTemplate = {
+      id: selectedTemplateId || `template-${Date.now()}`,
+      name: name.trim(),
+      focus: selectedTemplate?.focus || routines[routine].name,
+      routineKey: routine,
+      source: "user",
+      exercises: cloneExercises(exercises),
+      updatedAt: Date.now(),
+    };
+    const withoutCurrent = templates.filter((item) => item.id !== template.id);
+    persistTemplates([template, ...withoutCurrent]);
+    setSelectedTemplateId(template.id);
+    setRoutine("custom");
+    setIntelligence(`Plantilla "${template.name}" guardada. IDG Coach ya puede usar esta version personalizada como base.`);
   };
 
   const updateExercise = (id: string, patch: Partial<ExerciseDraft>) => {
@@ -682,6 +788,8 @@ export default function GymModule() {
   };
 
   const editSession = (session: GymSession) => {
+    const matchingTemplate = templates.find((template) => template.name === session.routineName);
+    setSelectedTemplateId(matchingTemplate?.id || "");
     setRoutine(session.routine);
     setDate(session.date);
     setDuration(minutesToHHMM(session.duration));
@@ -848,8 +956,9 @@ export default function GymModule() {
 
               {builderOpen ? (
                 <>
-                  <div className="gym-toolbar mt-4 grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,1fr)_auto_150px_130px_130px]">
+                  <div className="gym-toolbar mt-4 grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_auto_150px_130px_130px]">
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Rutina<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-800" value={routine} onChange={(event) => changeRoutine(event.target.value as RoutineKey)}>{Object.entries(routines).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></label>
+                    <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Plantilla usuario<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-800" value={selectedTemplateId} onChange={(event) => applyTemplate(event.target.value)}><option value="">Sin plantilla</option>{templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></label>
                     <div className="unit-switch flex h-10 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">{(["kg", "lbs"] as const).map((value) => <button className="min-w-12 px-3 text-sm font-black" key={value} type="button" style={unit === value ? { background: value === "lbs" ? "#ea580c" : "#2563eb", color: "#ffffff" } : undefined} onClick={() => setUnit(value)}>{value}</button>)}</div>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Fecha<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Duracion HH:MM<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" value={duration} onChange={(event) => setDuration(event.target.value)} /></label>
@@ -933,6 +1042,9 @@ export default function GymModule() {
                   <div className="gym-form-actions mt-3 flex justify-end gap-3">
                     <button className="ai-main-btn inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-3 font-black text-white" type="button" onClick={analyzeRoutine}>
                       <Icon name="spark" /> Analizar rutina
+                    </button>
+                    <button className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-3 font-black text-blue-700" type="button" onClick={saveCurrentTemplate}>
+                      <Icon name="save" /> Guardar plantilla
                     </button>
                     <button className="save-main-btn inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-3 font-black text-white" type="button" onClick={saveSession}>
                       <Icon name="save" /> Guardar sesion
