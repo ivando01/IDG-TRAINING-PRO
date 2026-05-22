@@ -444,10 +444,11 @@ export default function PlanModule() {
 
         {status ? <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">{status}</div> : null}
 
-        <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.7fr)_390px]">
+        <div className="grid gap-5">
           <section className="grid gap-5">
             <div className="rounded-lg border border-slate-200 bg-white p-5">
-              <div className="grid gap-3 lg:grid-cols-7">
+              <div className="overflow-x-auto pb-2">
+                <div className="grid min-w-[980px] grid-cols-7 gap-3 lg:min-w-0">
                 {weekDays.map((day) => {
                   const date = isoDate(day);
                   const planned = weekPlan.filter((session) => session.date === date);
@@ -486,6 +487,7 @@ export default function PlanModule() {
                     </button>
                   );
                 })}
+                </div>
               </div>
             </div>
 
@@ -560,7 +562,7 @@ export default function PlanModule() {
             </div>
           </section>
 
-          <aside className="grid content-start gap-5">
+          <section className="grid gap-5 xl:grid-cols-3">
             <section className="rounded-lg border border-blue-100 bg-white p-5">
               <p className="text-xs font-black uppercase tracking-wide text-blue-600">IDG Intelligence</p>
               <h2 className="mt-1 text-xl font-black text-slate-900">Ajuste recomendado</h2>
@@ -604,7 +606,7 @@ export default function PlanModule() {
               </div>
               <p className="mt-3 text-xs font-semibold leading-5 text-slate-500">La carga real se alimenta de gym, running y ciclismo guardados.</p>
             </section>
-          </aside>
+          </section>
         </div>
       </main>
     </>
