@@ -47,6 +47,14 @@ CREATE TABLE IF NOT EXISTS gym_sessions (
   PRIMARY KEY (user_id, id)
 );
 
+CREATE TABLE IF NOT EXISTS gym_templates (
+  id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  data JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, id)
+);
+
 CREATE TABLE IF NOT EXISTS activities (
   id TEXT NOT NULL,
   user_id TEXT NOT NULL,

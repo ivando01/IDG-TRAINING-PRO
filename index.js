@@ -676,6 +676,60 @@ app.delete('/gym/sessions/:id', authMiddleware, async (req, res) => {
   }
 });
 
+app.get('/gym/templates', authMiddleware, async (req, res) => {
+  try {
+    const userId = await getUserId(req.user.email, req.user);
+    const result = await pool.query(
+      `SELECT data FROM gym_templates WHERE user_id=$1 ORDER BY updated_at DESC`,
+      [userId],
+    );
+    res.json({ templates: result.rows.map((row) => row.data) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudieron leer las plantillas de gimnasio" });
+  }
+});
+
+app.put('/gym/templates', authMiddleware, async (req, res) => {
+  try {
+    const userId = await getUserId(req.user.email, req.user);
+    const templates = asArray(req.body?.templates);
+    if (!templates.length) {
+      const result = await pool.query(
+        `SELECT data FROM gym_templates WHERE user_id=$1 ORDER BY updated_at DESC`,
+        [userId],
+      );
+      return res.json({ ok: true, preserved: true, templates: result.rows.map((row) => row.data) });
+    }
+    for (const item of templates) {
+      const id = String(item.id || `template-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      await pool.query(
+        `INSERT INTO gym_templates (id, user_id, data, updated_at)
+         VALUES ($1, $2, $3, now())
+         ON CONFLICT (user_id, id) DO UPDATE SET
+           data=EXCLUDED.data,
+           updated_at=now()`,
+        [id, userId, { ...item, id }],
+      );
+    }
+    res.json({ ok: true, templates });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudieron guardar las plantillas de gimnasio" });
+  }
+});
+
+app.delete('/gym/templates/:id', authMiddleware, async (req, res) => {
+  try {
+    const userId = await getUserId(req.user.email, req.user);
+    await pool.query(`DELETE FROM gym_templates WHERE user_id=$1 AND id=$2`, [userId, req.params.id]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "No se pudo eliminar la plantilla de gimnasio" });
+  }
+});
+
 app.get('/activities', authMiddleware, async (req, res) => {
   try {
     const userId = await getUserId(req.user.email, req.user);
