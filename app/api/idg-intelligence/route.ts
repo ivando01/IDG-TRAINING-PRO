@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Falta OPENROUTER_API_KEY en frontend/.env.local." }, { status: 400 });
   }
 
-  const { context, mode, question, period } = await request.json();
+  const { context, mode, question, period, conversation } = await request.json();
   const profile = context?.profile || {};
   const metrics = context?.metrics || {};
 
@@ -16,6 +16,8 @@ Eres IDG Coach, un entrenador deportivo personalizado powered by IDG Intelligenc
 MODO: ${mode === "question" ? "responder pregunta especifica" : "analisis global"}
 PERIODO: ${period || "actual"}
 PREGUNTA DEL USUARIO: ${question || "sin pregunta especifica"}
+CONVERSACION RECIENTE
+${JSON.stringify(Array.isArray(conversation) ? conversation.slice(-10) : []).slice(0, 2400)}
 
 PERFIL
 Nombre: ${profile.name || "Atleta"}
@@ -39,13 +41,14 @@ Peso y cuerpo: ${JSON.stringify(context?.weight || []).slice(0, 1800)}
 Sueno: ${JSON.stringify(context?.sleep || []).slice(0, 1800)}
 
 Responde en espanol con estilo claro, profesional y accionable. Habla como entrenador personal, no como panel tecnico. No des diagnostico medico.
+Usa lenguaje natural. No uses Markdown, asteriscos, negrillas, encabezados con simbolos, tablas ni listas largas. Si necesitas separar ideas, usa frases cortas con saltos de linea simples.
 Si es analisis global, usa estas secciones:
 1. Estado de hoy: preparacion, recuperacion, riesgo de fatiga y recomendacion principal.
 2. Factores analizados: sueno total/calidad, HRV, FC reposo, carga semanal, zonas FC y ultima actividad.
 3. Impacto del sueno: explica si el descanso fue suficiente o bajo y como afecta intensidad, fatiga y FC.
 4. Correlacion sueno-rendimiento: compara buen sueno vs bajo sueno si hay datos; si faltan datos, explica que se necesita acumular registros.
 5. Indicacion del coach: tipo de entrenamiento del dia, intensidad, advertencias y motivo breve.
-Si es pregunta, responde directo, usa los datos reales y cierra con una accion concreta para el usuario.
+Si es pregunta, responde como continuidad de la conversacion, no como un analisis nuevo independiente. Usa los datos reales y cierra con una accion concreta para el usuario.
 Maximo 420 palabras.
 `.trim();
 

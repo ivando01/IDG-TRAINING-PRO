@@ -9,11 +9,19 @@ import { useEffect, useMemo, useState } from "react";
 type HistoryItem = {
   id: string;
   date: string;
-  type: "global" | "question";
+  type: "global" | "question" | "chat";
   period: string;
   title: string;
   analysis: string;
+  messages?: ChatMessage[];
   acknowledgedAt?: string;
+};
+
+type ChatMessage = {
+  id: string;
+  role: "user" | "coach";
+  content: string;
+  date: string;
 };
 
 type SleepRecord = {
@@ -38,6 +46,7 @@ type SleepRecord = {
 };
 
 const HISTORY_KEY = "idg_intelligence_history_json";
+const CHAT_KEY = "idg_coach_chat_json";
 const SLEEP_KEY = "idg_sleep_records_json";
 
 function readJSON(key: string, fallback: unknown = [], allowBrowser = true) {
@@ -245,6 +254,14 @@ function readinessLabel(score: number) {
   return "Priorizar recuperacion";
 }
 
+function cleanCoachText(text: string) {
+  return String(text || "")
+    .replace(/\*\*/g, "")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .trim();
+}
+
 export default function AnalyticsModule() {
   const [period, setPeriod] = useState("Semana actual");
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -252,6 +269,7 @@ export default function AnalyticsModule() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [question, setQuestion] = useState("");
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [context, setContext] = useState(() => buildContext(false));
   const [todayLabel, setTodayLabel] = useState("");
@@ -271,7 +289,10 @@ export default function AnalyticsModule() {
 
   useEffect(() => {
     let alive = true;
-    setHistory(readJSON(HISTORY_KEY, []) as HistoryItem[]);
+    const localHistory = readJSON(HISTORY_KEY, []) as HistoryItem[];
+    const chatEntry = localHistory.find((entry) => entry.type === "chat" && Array.isArray(entry.messages));
+    setHistory(localHistory);
+    setChatMessages((chatEntry?.messages || readJSON(CHAT_KEY, []) || []) as ChatMessage[]);
     setContext(buildContext());
     setTodayLabel(new Date().toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }));
     setSleepForm((current) => ({ ...current, date: localISODate() }));
@@ -279,7 +300,12 @@ export default function AnalyticsModule() {
       .then((entries) => {
         if (!alive || !entries.length) return;
         const latestGlobal = entries.find((entry) => entry.type === "global");
+        const cloudChat = entries.find((entry) => entry.type === "chat" && Array.isArray(entry.messages));
         setHistory(entries);
+        if (cloudChat?.messages?.length) {
+          setChatMessages(cloudChat.messages);
+          localStorage.setItem(CHAT_KEY, JSON.stringify(cloudChat.messages));
+        }
         setSelectedId(latestGlobal?.id || entries[0]?.id || "");
         localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
       })
@@ -318,26 +344,58 @@ export default function AnalyticsModule() {
     saveCloudCollection("/intelligence", "entries", next).catch(() => undefined);
   };
 
+  const saveChat = (messages: ChatMessage[]) => {
+    const clean = messages.slice(-80);
+    setChatMessages(clean);
+    localStorage.setItem(CHAT_KEY, JSON.stringify(clean));
+    const transcript = clean.map((message) => `${message.role === "user" ? "Usuario" : "Coach"}: ${message.content}`).join("\n\n");
+    const chatEntry: HistoryItem = {
+      id: "coach-chat",
+      date: clean[clean.length - 1]?.date || new Date().toISOString(),
+      type: "chat",
+      period,
+      title: "Conversacion con IDG Coach",
+      analysis: transcript,
+      messages: clean,
+    };
+    const next = [chatEntry, ...history.filter((item) => item.id !== "coach-chat")];
+    saveHistory(next);
+  };
+
   const runAnalysis = async (mode: "global" | "question", customQuestion = "") => {
     setLoading(true);
     setStatus("IDG Coach esta leyendo tus modulos...");
     try {
       const freshContext = buildContext();
       setContext(freshContext);
+      const userMessage: ChatMessage | null = mode === "question"
+        ? { id: crypto.randomUUID(), role: "user", content: customQuestion.trim(), date: new Date().toISOString() }
+        : null;
+      const conversation = userMessage ? [...chatMessages, userMessage] : chatMessages;
       const response = await fetch("/api/idg-intelligence", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ context: freshContext, mode, question: customQuestion, period }),
+        body: JSON.stringify({ context: freshContext, mode, question: customQuestion, period, conversation }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "No se pudo generar el analisis.");
+      const analysis = cleanCoachText(data.analysis);
+      if (mode === "question" && userMessage) {
+        const coachMessage: ChatMessage = { id: crypto.randomUUID(), role: "coach", content: analysis, date: new Date().toISOString() };
+        saveChat([...conversation, coachMessage]);
+        setSelectedId("coach-chat");
+        setShowAnalysis(false);
+        setStatus("Coach respondio en la conversacion.");
+        setQuestion("");
+        return;
+      }
       const item: HistoryItem = {
         id: crypto.randomUUID(),
         date: new Date().toISOString(),
         type: mode,
         period,
         title: mode === "question" ? customQuestion.slice(0, 80) || "Pregunta a IDG Coach" : "Analisis global",
-        analysis: data.analysis,
+        analysis,
       };
       const next = [item, ...history];
       saveHistory(next);
@@ -466,7 +524,7 @@ export default function AnalyticsModule() {
               <p className="mt-2 text-lg font-black text-slate-900">{metrics.readiness >= 80 ? "Alta" : metrics.readiness >= 65 ? "Media" : "Baja"}</p>
             </div>
             <div className="px-0 lg:px-8">
-              <p className="text-sm font-black text-slate-900">Indicacion del coach</p>
+              <p className="text-sm font-black text-slate-900">Senal sugerida</p>
               <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">Hoy estas en condicion para {action.toLowerCase()}. Ajusta intensidad segun recuperacion y evita esfuerzos maximos si aparece fatiga.</p>
               <span className="mt-4 inline-flex rounded-lg bg-emerald-500 px-4 py-2 text-sm font-black text-white">{action}</span>
             </div>
@@ -638,7 +696,7 @@ export default function AnalyticsModule() {
         <section className="mb-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-700"><AppIcon name="plan" className="h-4 w-4" /></span>
-            <h2 className="text-sm font-black uppercase tracking-wide text-blue-700">Indicacion del coach</h2>
+            <h2 className="text-sm font-black uppercase tracking-wide text-blue-700">Resumen automatico de hoy</h2>
           </div>
           <div className="grid gap-4 lg:grid-cols-4">
             <div className="rounded-lg border border-emerald-100 bg-emerald-50/70 p-5">
@@ -704,7 +762,7 @@ export default function AnalyticsModule() {
               </div>
             ) : showAnalysis ? (
               <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
-                <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{selected.analysis}</p>
+                <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{cleanCoachText(selected.analysis)}</p>
                 <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4">
                   <button className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700" type="button" onClick={() => setShowAnalysis(false)}>Colapsar</button>
                   <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-black text-white" type="button" onClick={() => acknowledge(selected)}>Enterado</button>
@@ -728,6 +786,17 @@ export default function AnalyticsModule() {
                 Preguntame que entrenar, como ajustar una rutina, si conviene descansar o como ordenar la semana segun tus datos.
               </p>
             </div>
+            <div className="mt-3 grid max-h-80 gap-3 overflow-y-auto rounded-lg border border-slate-200 bg-white p-3">
+              {chatMessages.length ? chatMessages.slice(-12).map((message) => (
+                <div className={`rounded-lg px-3 py-2 text-sm font-semibold leading-6 ${message.role === "user" ? "ml-8 bg-blue-600 text-white" : "mr-8 bg-slate-100 text-slate-700"}`} key={message.id}>
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+                </div>
+              )) : (
+                <p className="rounded-lg bg-slate-50 p-3 text-sm font-semibold text-slate-500">
+                  Aun no hay conversacion. Empieza con una pregunta y el Coach mantendra el hilo.
+                </p>
+              )}
+            </div>
             <textarea className="mt-3 min-h-32 w-full resize-none rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold outline-none focus:border-blue-500" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ej: Coach, que deberia entrenar manana segun mi carga, sueno y ultima sesion?" />
             <button className="mt-3 w-full rounded-lg bg-slate-900 px-4 py-3 text-sm font-black text-white disabled:bg-slate-400" disabled={loading || !question.trim()} type="button" onClick={() => runAnalysis("question", question)}>
               {loading ? "Consultando..." : "Enviar al coach"}
@@ -740,9 +809,9 @@ export default function AnalyticsModule() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-wide text-blue-600">Archivo del coach</p>
-              <h2 className="text-lg font-black text-slate-900">Historial de conversaciones y analisis</h2>
+              <h2 className="text-lg font-black text-slate-900">Temas, conversaciones y analisis</h2>
             </div>
-            <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{history.length} lecturas</span>
+            <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{history.length} temas</span>
           </div>
           <div className="mt-4 grid gap-2 xl:grid-cols-2">
               {history.map((item) => (
