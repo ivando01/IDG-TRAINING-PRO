@@ -2,7 +2,7 @@
 
 import { AppIcon } from "@/components/Brand";
 import { clearStoredAccess } from "@/lib/access";
-import { getSyncStatus } from "@/lib/cloud-sync";
+import { getSyncStatus, retryPendingSyncs } from "@/lib/cloud-sync";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -22,7 +22,9 @@ export default function TopNav({ title }: { title: string }) {
     lastErrorAt: null as string | null,
     lastPath: "",
     lastError: "",
+    pendingCount: 0,
   });
+  const [retryingSync, setRetryingSync] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -44,6 +46,16 @@ export default function TopNav({ title }: { title: string }) {
     router.push("/");
   };
 
+  const handleRetrySync = async () => {
+    setRetryingSync(true);
+    try {
+      await retryPendingSyncs();
+      setSyncStatus(getSyncStatus());
+    } finally {
+      setRetryingSync(false);
+    }
+  };
+
   const getInitials = (name: string) =>
     name
       .split(" ")
@@ -61,13 +73,15 @@ export default function TopNav({ title }: { title: string }) {
           className={`hidden rounded-lg border px-3 py-2 text-[11px] font-black sm:block ${
             syncStatus.lastError
               ? "border-red-100 bg-red-50 text-red-600"
-              : syncStatus.cloud
+              : syncStatus.pendingCount
+                ? "border-amber-100 bg-amber-50 text-amber-700"
+                : syncStatus.cloud
                 ? "border-emerald-100 bg-emerald-50 text-emerald-700"
                 : "border-slate-200 bg-slate-50 text-slate-500"
           }`}
           title={syncStatus.lastError || (syncStatus.lastSyncAt ? `Ultima sincronizacion: ${new Date(syncStatus.lastSyncAt).toLocaleString("es-CO")}` : "Sin sincronizacion reciente")}
         >
-          {syncStatus.lastError ? "Nube con alerta" : syncStatus.cloud ? "Nube activa" : "Solo local"}
+          {syncStatus.lastError ? "Nube con alerta" : syncStatus.pendingCount ? `${syncStatus.pendingCount} pendientes` : syncStatus.cloud ? "Nube activa" : "Solo local"}
         </div>
         <button className="relative rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900" aria-label="Notificaciones">
           <AppIcon name="bell" className="h-5 w-5" />
@@ -98,10 +112,22 @@ export default function TopNav({ title }: { title: string }) {
                 <p className={`mt-2 text-xs font-black ${syncStatus.lastError ? "text-red-600" : "text-emerald-700"}`}>
                   {syncStatus.lastError
                     ? `Alerta: ${syncStatus.lastPath || "nube"}`
+                    : syncStatus.pendingCount
+                      ? `${syncStatus.pendingCount} pendiente(s) por subir`
                     : syncStatus.lastSyncAt
                       ? `Sync: ${new Date(syncStatus.lastSyncAt).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}`
                       : "Sync pendiente"}
                 </p>
+                {syncStatus.pendingCount || syncStatus.lastError ? (
+                  <button
+                    className="mt-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-black text-white disabled:opacity-60"
+                    disabled={retryingSync}
+                    type="button"
+                    onClick={handleRetrySync}
+                  >
+                    {retryingSync ? "Reintentando..." : "Reintentar sync"}
+                  </button>
+                ) : null}
               </div>
               <button
                 onClick={() => {

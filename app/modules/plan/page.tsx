@@ -2,7 +2,7 @@
 
 import { AppIcon, AppIconName } from "@/components/Brand";
 import TopNav from "@/components/TopNav";
-import { canSyncCloud, getCloudCollection, saveCloudCollection } from "@/lib/cloud-sync";
+import { canSyncCloud, getCloudCollection, loadCloudBackedCollection, saveCloudBackedCollection } from "@/lib/cloud-sync";
 import { useEffect, useMemo, useState } from "react";
 
 type SessionType = "gym" | "running" | "cycling" | "mobility" | "rest";
@@ -219,8 +219,8 @@ function normalizePlan(items: PlannedSession[]) {
 }
 
 export default function PlanModule() {
-  const [weekStart, setWeekStart] = useState(() => startOfWeek());
-  const [selectedDate, setSelectedDate] = useState(() => isoDate(new Date()));
+  const [weekStart, setWeekStart] = useState(() => new Date(0));
+  const [selectedDate, setSelectedDate] = useState("");
   const [sessions, setSessions] = useState<PlannedSession[]>([]);
   const [realSessions, setRealSessions] = useState<RealSession[]>([]);
   const [gymTemplates, setGymTemplates] = useState<GymTemplate[]>([]);
@@ -242,6 +242,9 @@ export default function PlanModule() {
 
   useEffect(() => {
     let alive = true;
+    const today = new Date();
+    setWeekStart(startOfWeek(today));
+    setSelectedDate(isoDate(today));
     setMounted(true);
     const localPlan = normalizePlan(readJSON<PlannedSession[]>(PLAN_KEY, []));
     const localTemplates = readJSON<GymTemplate[]>(GYM_TEMPLATES_KEY, []).filter((template) => template.name);
@@ -265,27 +268,18 @@ export default function PlanModule() {
           localStorage.setItem(GYM_TEMPLATES_KEY, JSON.stringify(templates));
         })
         .catch(() => undefined);
-      getCloudCollection<PlannedSession>("/plan", "plan")
-        .then(async (cloudPlan) => {
+      loadCloudBackedCollection<PlannedSession>({
+        path: "/plan",
+        key: "plan",
+        cacheKey: PLAN_KEY,
+        fallback: localPlan,
+        onStatus: setStatus,
+      })
+        .then(({ items: cloudPlan }) => {
         if (!alive) return;
-        if (cloudPlan.length) {
-          const sortedCloudPlan = normalizePlan(cloudPlan);
-          setSessions(sortedCloudPlan);
-          localStorage.setItem(PLAN_KEY, JSON.stringify(sortedCloudPlan));
-          setStatus("Plan semanal sincronizado desde la nube.");
-          return;
-        }
-        if (localPlan.length) {
-          const sortedLocalPlan = normalizePlan(localPlan);
-          await saveCloudCollection("/plan", "plan", sortedLocalPlan);
-          if (!alive) return;
-          setSessions(sortedLocalPlan);
-          localStorage.setItem(PLAN_KEY, JSON.stringify(sortedLocalPlan));
-          setStatus("Plan local subido a la nube. Ya debe verse en movil y web.");
-          return;
-        }
-        setSessions(cloudPlan);
-        localStorage.setItem(PLAN_KEY, JSON.stringify(cloudPlan));
+        const sortedPlan = normalizePlan(cloudPlan);
+        setSessions(sortedPlan);
+        localStorage.setItem(PLAN_KEY, JSON.stringify(sortedPlan));
       })
       .catch((error) => {
         if (!alive) return;
@@ -325,14 +319,7 @@ export default function PlanModule() {
     const sorted = normalizePlan(next);
     setSessions(sorted);
     setProposedPlan(null);
-    localStorage.setItem(PLAN_KEY, JSON.stringify(sorted));
-    if (!canSyncCloud()) {
-      setStatus("Plan guardado solo en este dispositivo. Inicia sesion para verlo en movil y web.");
-    } else {
-      saveCloudCollection("/plan", "plan", sorted)
-        .then(() => setStatus("Plan sincronizado en la nube."))
-        .catch((error) => setStatus(error instanceof Error ? error.message : "No se pudo sincronizar el plan semanal."));
-    }
+    saveCloudBackedCollection({ path: "/plan", key: "plan", cacheKey: PLAN_KEY, items: sorted, onStatus: setStatus });
     setRealSessions(getRealSessions());
   };
 
