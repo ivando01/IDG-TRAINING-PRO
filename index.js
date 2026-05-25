@@ -67,6 +67,8 @@ async function ensureWeeklyPlanTable() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `);
+  await pool.query(`ALTER TABLE weekly_plan ADD COLUMN IF NOT EXISTS data JSONB NOT NULL DEFAULT '[]'::jsonb`);
+  await pool.query(`ALTER TABLE weekly_plan ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`);
 }
 
 async function getUserId(email, fallback = {}) {
@@ -953,7 +955,7 @@ app.get('/plan', authMiddleware, async (req, res) => {
   try {
     const userId = await getUserId(req.user.email, req.user);
     await ensureWeeklyPlanTable();
-    const result = await pool.query(`SELECT data, updated_at FROM weekly_plan WHERE user_id=$1`, [userId]);
+    const result = await pool.query(`SELECT data, updated_at FROM weekly_plan WHERE user_id=$1 ORDER BY updated_at DESC LIMIT 1`, [userId]);
     res.json({ plan: result.rows[0]?.data || [], updatedAt: result.rows[0]?.updated_at || null });
   } catch (error) {
     console.error(error);
@@ -966,12 +968,22 @@ app.put('/plan', authMiddleware, async (req, res) => {
     const userId = await getUserId(req.user.email, req.user);
     await ensureWeeklyPlanTable();
     const plan = asArray(req.body?.plan);
-    await pool.query(
-      `INSERT INTO weekly_plan (user_id, data, updated_at)
-       VALUES ($1, $2, now())
-       ON CONFLICT (user_id) DO UPDATE SET data=EXCLUDED.data, updated_at=now()`,
-      [userId, plan],
-    );
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(`DELETE FROM weekly_plan WHERE user_id=$1`, [userId]);
+      await client.query(
+        `INSERT INTO weekly_plan (user_id, data, updated_at)
+         VALUES ($1, $2, now())`,
+        [userId, JSON.stringify(plan)],
+      );
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
     res.json({ ok: true, plan });
   } catch (error) {
     console.error(error);
