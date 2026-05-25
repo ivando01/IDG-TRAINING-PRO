@@ -299,6 +299,7 @@ export default function GymModule() {
   const [history, setHistory] = useState<GymSession[]>([]);
   const [templates, setTemplates] = useState<GymTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [customRoutineName, setCustomRoutineName] = useState("");
   const [builderOpen, setBuilderOpen] = useState(false);
   const [draftReady, setDraftReady] = useState(false);
   const [editingId, setEditingId] = useState("");
@@ -351,6 +352,7 @@ export default function GymModule() {
       const draft = draftRaw ? normalizeSession(JSON.parse(draftRaw) as GymSession) : null;
       if (draft) {
         setRoutine(draft.routine);
+        if (draft.routine === "custom") setCustomRoutineName(draft.routineName);
         setDate(draft.date);
         setDuration(minutesToHHMM(draft.duration || 75));
         setIntensity(draft.intensity || 7);
@@ -404,10 +406,10 @@ export default function GymModule() {
     } catch {
       // Keep the visible routine in memory if the browser storage is full.
     }
-  }, [draftReady, builderOpen, date, routine, duration, intensity, painLevel, pain, calories, notes, exercises, editingId]);
+  }, [draftReady, builderOpen, date, routine, customRoutineName, selectedTemplateId, duration, intensity, painLevel, pain, calories, notes, exercises, editingId]);
 
   const selectedTemplate = templates.find((template) => template.id === selectedTemplateId);
-  const routineName = selectedTemplate?.name || routines[routine].name;
+  const routineName = selectedTemplate?.name || (routine === "custom" && customRoutineName ? customRoutineName : routines[routine].name);
   const latest = history.find((session) => selectedTemplate ? session.routineName === selectedTemplate.name : session.routine === routine);
   const exerciseVolume = (exercise: ExerciseDraft) => exercise.weights.reduce((sum, weight) => sum + (Number(weight) || 0), 0);
   const sessionVolume = (session: Pick<GymSession, "exercises">) => session.exercises.reduce((sum, exercise) => sum + exerciseVolume(exercise), 0);
@@ -506,6 +508,7 @@ export default function GymModule() {
   const changeRoutine = (nextRoutine: RoutineKey) => {
     setRoutine(nextRoutine);
     setSelectedTemplateId("");
+    setCustomRoutineName(nextRoutine === "custom" ? "Personalizado" : "");
     setExercises(buildExercises(nextRoutine, history));
     setEditingId("");
     const previous = history.find((session) => session.routine === nextRoutine);
@@ -519,10 +522,27 @@ export default function GymModule() {
       return;
     }
     setSelectedTemplateId(template.id);
+    setCustomRoutineName(template.name);
     setRoutine("custom");
     setExercises(cloneExercises(template.exercises));
     setEditingId("");
     setIntelligence(`Plantilla personalizada cargada: ${template.name}. Puedes editarla y guardar una nueva version.`);
+  };
+
+  const startNewRoutine = () => {
+    const name = window.prompt("Nombre de la nueva rutina", "Funcional / CrossFit");
+    if (!name?.trim()) return;
+    setRoutine("custom");
+    setSelectedTemplateId("");
+    setCustomRoutineName(name.trim());
+    setExercises([
+      { id: `custom-${Date.now()}-1`, name: "Ejercicio 1", sets: 3, reps: "10", weights: ["", "", ""], rest: 60 },
+      { id: `custom-${Date.now()}-2`, name: "Ejercicio 2", sets: 3, reps: "10", weights: ["", "", ""], rest: 60 },
+      { id: `custom-${Date.now()}-3`, name: "Ejercicio 3", sets: 3, reps: "10", weights: ["", "", ""], rest: 60 },
+    ]);
+    setEditingId("");
+    setBuilderOpen(true);
+    setIntelligence(`Nueva rutina "${name.trim()}" creada. Agrega ejercicios, series y pesos; luego guardala como plantilla para usarla en Gym y Plan.`);
   };
 
   const saveCurrentTemplate = () => {
@@ -540,6 +560,7 @@ export default function GymModule() {
     const withoutCurrent = templates.filter((item) => item.id !== template.id);
     persistTemplates([template, ...withoutCurrent]);
     setSelectedTemplateId(template.id);
+    setCustomRoutineName(template.name);
     setRoutine("custom");
     setIntelligence(`Plantilla "${template.name}" guardada. IDG Coach ya puede usar esta version personalizada como base.`);
   };
@@ -790,6 +811,7 @@ export default function GymModule() {
   const editSession = (session: GymSession) => {
     const matchingTemplate = templates.find((template) => template.name === session.routineName);
     setSelectedTemplateId(matchingTemplate?.id || "");
+    setCustomRoutineName(matchingTemplate ? matchingTemplate.name : session.routine === "custom" ? session.routineName : "");
     setRoutine(session.routine);
     setDate(session.date);
     setDuration(minutesToHHMM(session.duration));
@@ -943,16 +965,21 @@ export default function GymModule() {
             </section>
 
             <section className="app-card gym-builder-card rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <button className="flex w-full items-center justify-between gap-4 text-left" type="button" onClick={toggleBuilder}>
+              <div className="flex w-full items-center justify-between gap-4 text-left">
                 <div>
                   <span className="text-xs font-black uppercase tracking-wide text-slate-500">Iniciar rutina</span>
                   <strong className="mt-1 block text-xl font-black text-slate-900">{routineName}</strong>
                   <small className="mt-1 block text-sm text-slate-500">{latest ? `Ultima guardada: ${latest.date}` : "Rutina base cargada desde HTML v21"}</small>
                 </div>
-                <span className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-black text-blue-600">
-                  {builderOpen ? "Cerrar rutina" : "Iniciar rutina"}
+                <span className="flex flex-wrap justify-end gap-2">
+                  <button className="rounded-lg bg-white px-3 py-2 text-sm font-black text-blue-600 ring-1 ring-blue-100" type="button" onClick={startNewRoutine}>
+                    Nueva rutina
+                  </button>
+                  <button className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-black text-blue-600" type="button" onClick={toggleBuilder}>
+                    {builderOpen ? "Cerrar rutina" : "Iniciar rutina"}
+                  </button>
                 </span>
-              </button>
+              </div>
 
               {builderOpen ? (
                 <>
@@ -964,6 +991,9 @@ export default function GymModule() {
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Duracion HH:MM<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" value={duration} onChange={(event) => setDuration(event.target.value)} /></label>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Calorias<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" type="number" value={calories} placeholder="Opcional" onChange={(event) => setCalories(event.target.value)} /></label>
                   </div>
+                  {routine === "custom" ? (
+                    <label className="mt-3 grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Nombre de rutina<input className="h-10 rounded-lg border border-blue-200 bg-blue-50/40 px-3 text-sm font-semibold normal-case text-slate-900" value={customRoutineName} placeholder="Funcional, CrossFit, Core, movilidad..." onChange={(event) => setCustomRoutineName(event.target.value)} /></label>
+                  ) : null}
 
                   <div className="my-3 grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
                     <div className="grid gap-2">

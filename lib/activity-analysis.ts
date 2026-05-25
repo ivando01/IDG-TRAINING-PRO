@@ -351,12 +351,12 @@ function normalizedPower(points: ActivityPoint[]) {
 function estimateRunningVo2(avgSpeedKmh: number | null, avgHr: number | null, maxHr: number | null) {
   if (!avgSpeedKmh || avgSpeedKmh <= 0) return null;
   const metersPerMinute = (avgSpeedKmh * 1000) / 60;
-  const oxygenCost = 3.5 + 0.2 * metersPerMinute;
-  const reserveRatio = avgHr && maxHr && avgHr > 50 && maxHr > avgHr
-    ? Math.max(0.72, Math.min(0.94, avgHr / maxHr))
-    : 0.82;
-  const estimate = oxygenCost / reserveRatio;
-  return Math.round(Math.max(25, Math.min(75, estimate)));
+  const runningEconomyVo2 = -4.6 + 0.182258 * metersPerMinute + 0.000104 * metersPerMinute ** 2;
+  const hrRatio = avgHr && maxHr && avgHr > 70 && maxHr > avgHr
+    ? Math.max(0.72, Math.min(0.96, avgHr / maxHr))
+    : null;
+  const estimate = hrRatio ? runningEconomyVo2 / hrRatio : runningEconomyVo2;
+  return Math.round(Math.max(20, Math.min(80, estimate)));
 }
 
 function buildMetrics(points: ActivityPoint[], sport: SportType): ActivityMetrics {

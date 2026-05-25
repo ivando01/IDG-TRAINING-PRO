@@ -497,8 +497,8 @@ export default function PlanModule() {
         <div className="grid gap-5">
           <section className="grid gap-5">
             <div className="rounded-lg border border-slate-200 bg-white p-5">
-              <div className="overflow-x-auto pb-2">
-                <div className="grid min-w-[980px] grid-cols-7 gap-3 lg:min-w-0">
+              <div className="pb-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7">
                 {weekDays.map((day) => {
                   const date = isoDate(day);
                   const planned = weekPlan.filter((session) => session.date === date);
@@ -506,7 +506,7 @@ export default function PlanModule() {
                   const selected = selectedDate === date;
                   return (
                     <button
-                      className={`min-h-44 rounded-lg border p-3 text-left transition ${selected ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white hover:bg-slate-50"}`}
+                      className={`min-h-36 rounded-lg border p-3 text-left transition lg:min-h-44 ${selected ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white hover:bg-slate-50"}`}
                       key={date}
                       type="button"
                       onClick={() => setSelectedDate(date)}
