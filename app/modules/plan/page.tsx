@@ -70,11 +70,20 @@ const typeMeta: Record<SessionType, { label: string; icon: AppIconName; color: s
 
 function readJSON<T>(key: string, fallback: T): T {
   try {
+    if (typeof window === "undefined") return fallback;
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) as T : fallback;
   } catch {
     return fallback;
   }
+}
+
+function makeId(prefix = "plan") {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function num(value: unknown) {
@@ -140,7 +149,7 @@ function getRealSessions(): RealSession[] {
   const cycling = readJSON<Array<Record<string, unknown>>>("idg_cycling_activities_json", []);
 
   const gymSessions = gym.map((item) => ({
-    id: String(item.id || crypto.randomUUID()),
+    id: String(item.id || makeId("real-gym")),
     date: String(item.date || "").slice(0, 10),
     type: "gym" as const,
     title: String(item.routineName || "Gym"),
@@ -151,7 +160,7 @@ function getRealSessions(): RealSession[] {
   const runSessions = running.map((item) => {
     const metrics = (item.metrics || {}) as Record<string, unknown>;
     return {
-      id: String(item.id || crypto.randomUUID()),
+      id: String(item.id || makeId("real-run")),
       date: String(item.date || item.startTime || "").slice(0, 10),
       type: "running" as const,
       title: String(item.name || "Running"),
@@ -163,7 +172,7 @@ function getRealSessions(): RealSession[] {
   const bikeSessions = cycling.map((item) => {
     const metrics = (item.metrics || {}) as Record<string, unknown>;
     return {
-      id: String(item.id || crypto.randomUUID()),
+      id: String(item.id || makeId("real-bike")),
       date: String(item.date || item.startTime || "").slice(0, 10),
       type: "cycling" as const,
       title: String(item.name || "Ciclismo"),
@@ -189,7 +198,7 @@ function normalizePlanSession(item: Partial<PlannedSession>): PlannedSession | n
   const objective = String(item.objective || objectives[type][0] || "Sesion");
   const gymRoutine = type === "gym" ? String(item.gymRoutine || item.title || gymRoutines[0]) : undefined;
   return {
-    id: String(item.id || crypto.randomUUID()),
+    id: String(item.id || makeId("plan-session")),
     date,
     type,
     title: String(item.title || defaultTitle(type, gymRoutine || "", objective)),
@@ -340,7 +349,7 @@ export default function PlanModule() {
   const addSession = () => {
     const objective = draft.type === "gym" ? "Rutina base" : draft.objective;
     const nextSession: PlannedSession = {
-      id: crypto.randomUUID(),
+      id: makeId("plan-session"),
       date: selectedDate,
       type: draft.type,
       title: defaultTitle(draft.type, draft.gymRoutine, objective),
@@ -374,7 +383,7 @@ export default function PlanModule() {
 
     for (let i = 0; i < gymDays; i += 1) {
       generated.push({
-        id: crypto.randomUUID(),
+        id: makeId("plan-session"),
         date: base[[0, 1, 3, 4, 5][i] || i],
         type: "gym",
         title: gymRoutineOptions[i % Math.max(1, gymRoutineOptions.length)],
@@ -388,7 +397,7 @@ export default function PlanModule() {
     }
     for (let i = 0; i < runDays; i += 1) {
       generated.push({
-        id: crypto.randomUUID(),
+        id: makeId("plan-session"),
         date: base[[2, 6, 4, 1][i] || i],
         type: "running",
         title: i === 0 ? "Z2 base aerobica" : "Fondo suave",
@@ -401,7 +410,7 @@ export default function PlanModule() {
     }
     for (let i = 0; i < bikeDays; i += 1) {
       generated.push({
-        id: crypto.randomUUID(),
+        id: makeId("plan-session"),
         date: base[[5, 2, 6, 3][i] || i],
         type: "cycling",
         title: i === 0 ? "Z2 endurance" : "Fondo",
