@@ -59,6 +59,16 @@ async function initDatabase() {
   await pool.query(schema);
 }
 
+async function ensureWeeklyPlanTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS weekly_plan (
+      user_id TEXT PRIMARY KEY,
+      data JSONB NOT NULL DEFAULT '[]'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+}
+
 async function getUserId(email, fallback = {}) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
   await pool.query(
@@ -942,6 +952,7 @@ app.put('/goals', authMiddleware, async (req, res) => {
 app.get('/plan', authMiddleware, async (req, res) => {
   try {
     const userId = await getUserId(req.user.email, req.user);
+    await ensureWeeklyPlanTable();
     const result = await pool.query(`SELECT data, updated_at FROM weekly_plan WHERE user_id=$1`, [userId]);
     res.json({ plan: result.rows[0]?.data || [], updatedAt: result.rows[0]?.updated_at || null });
   } catch (error) {
@@ -953,6 +964,7 @@ app.get('/plan', authMiddleware, async (req, res) => {
 app.put('/plan', authMiddleware, async (req, res) => {
   try {
     const userId = await getUserId(req.user.email, req.user);
+    await ensureWeeklyPlanTable();
     const plan = asArray(req.body?.plan);
     await pool.query(
       `INSERT INTO weekly_plan (user_id, data, updated_at)
