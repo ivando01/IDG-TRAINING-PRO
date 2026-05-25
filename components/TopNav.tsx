@@ -16,7 +16,13 @@ export default function TopNav({ title }: { title: string }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [showMenu, setShowMenu] = useState(false);
-  const [syncStatus, setSyncStatus] = useState(() => getSyncStatus());
+  const [syncStatus, setSyncStatus] = useState({
+    cloud: false,
+    lastSyncAt: null as string | null,
+    lastErrorAt: null as string | null,
+    lastPath: "",
+    lastError: "",
+  });
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
