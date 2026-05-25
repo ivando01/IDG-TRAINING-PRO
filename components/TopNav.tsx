@@ -2,6 +2,7 @@
 
 import { AppIcon } from "@/components/Brand";
 import { clearStoredAccess } from "@/lib/access";
+import { getSyncStatus } from "@/lib/cloud-sync";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -15,10 +16,19 @@ export default function TopNav({ title }: { title: string }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [syncStatus, setSyncStatus] = useState(() => getSyncStatus());
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) setUser(JSON.parse(userData));
+    const refreshSyncStatus = () => setSyncStatus(getSyncStatus());
+    refreshSyncStatus();
+    window.addEventListener("idg-sync-status", refreshSyncStatus);
+    window.addEventListener("storage", refreshSyncStatus);
+    return () => {
+      window.removeEventListener("idg-sync-status", refreshSyncStatus);
+      window.removeEventListener("storage", refreshSyncStatus);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -40,7 +50,19 @@ export default function TopNav({ title }: { title: string }) {
     <div className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
       <h1 className="text-xl font-black text-slate-900">{title}</h1>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div
+          className={`hidden rounded-lg border px-3 py-2 text-[11px] font-black sm:block ${
+            syncStatus.lastError
+              ? "border-red-100 bg-red-50 text-red-600"
+              : syncStatus.cloud
+                ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                : "border-slate-200 bg-slate-50 text-slate-500"
+          }`}
+          title={syncStatus.lastError || (syncStatus.lastSyncAt ? `Ultima sincronizacion: ${new Date(syncStatus.lastSyncAt).toLocaleString("es-CO")}` : "Sin sincronizacion reciente")}
+        >
+          {syncStatus.lastError ? "Nube con alerta" : syncStatus.cloud ? "Nube activa" : "Solo local"}
+        </div>
         <button className="relative rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900" aria-label="Notificaciones">
           <AppIcon name="bell" className="h-5 w-5" />
         </button>
@@ -67,6 +89,13 @@ export default function TopNav({ title }: { title: string }) {
               <div className="border-b border-slate-100 p-3">
                 <p className="text-sm font-black text-slate-900">{user?.name}</p>
                 <p className="text-xs font-semibold text-slate-500">{user?.email}</p>
+                <p className={`mt-2 text-xs font-black ${syncStatus.lastError ? "text-red-600" : "text-emerald-700"}`}>
+                  {syncStatus.lastError
+                    ? `Alerta: ${syncStatus.lastPath || "nube"}`
+                    : syncStatus.lastSyncAt
+                      ? `Sync: ${new Date(syncStatus.lastSyncAt).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}`
+                      : "Sync pendiente"}
+                </p>
               </div>
               <button
                 onClick={() => {

@@ -2283,6 +2283,12 @@ svg {
 }
 
 @media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
   .login-layout {
     padding: 20px 16px;
   }

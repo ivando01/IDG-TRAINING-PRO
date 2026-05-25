@@ -492,7 +492,16 @@ export default function PlanModule() {
           </div>
         </div>
 
-        {status ? <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">{status}</div> : null}
+        {status ? (
+          <div className="mb-4 flex flex-col gap-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700 sm:flex-row sm:items-center sm:justify-between">
+            <span>{status}</span>
+            {/no se pudo|error|backend|nube/i.test(status) ? (
+              <button className="w-fit rounded-lg bg-white px-3 py-2 text-xs font-black text-blue-700 ring-1 ring-blue-100" type="button" onClick={() => window.location.reload()}>
+                Reintentar
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         {proposedPlan ? (
           <div className="mb-4 flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 lg:flex-row lg:items-center lg:justify-between">
             <span>Estas viendo una propuesta de IDG Coach. Nada se guarda hasta que la confirmes.</span>
