@@ -297,8 +297,8 @@ export default function PlanModule() {
     };
   }, []);
 
-  const currentWeekKey = weekKey(weekStart);
-  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)), [weekStart]);
+  const currentWeekKey = mounted ? weekKey(weekStart) : "";
+  const weekDays = mounted ? Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)) : [];
   const visibleSessions = proposedPlan || sessions;
   const weekPlan = visibleSessions.filter((session) => weekKey(parseLocalDate(session.date)) === currentWeekKey);
   const weekReal = realSessions.filter((session) => weekKey(parseLocalDate(session.date)) === currentWeekKey);
@@ -444,6 +444,21 @@ export default function PlanModule() {
       : weekPlan.length === 0
         ? "Genera o agrega sesiones para que IDG pueda comparar plan vs real."
         : "Aun hay margen de cumplimiento. Reprograma pendientes sin concentrar demasiada carga en un solo dia.";
+
+  if (!mounted) {
+    return (
+      <>
+        <TopNav title="Plan Semanal" />
+        <main className="min-h-0 flex-1 overflow-y-auto bg-[#F8FAFC] p-4 text-[#0F172A] lg:p-6">
+          <div className="rounded-lg border border-slate-200 bg-white p-6">
+            <p className="text-sm font-black uppercase tracking-wide text-blue-600">Planificacion deportiva</p>
+            <h1 className="mt-2 text-2xl font-black text-slate-900">Cargando plan semanal</h1>
+            <p className="mt-2 text-sm font-semibold text-slate-500">Preparando tu semana y sincronizando datos del dispositivo.</p>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   return (
     <>
