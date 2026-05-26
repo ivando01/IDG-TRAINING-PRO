@@ -4,7 +4,7 @@ import { AppIcon } from "@/components/Brand";
 import KPICard from "@/components/KPICard";
 import SessionCard from "@/components/SessionCard";
 import TopNav from "@/components/TopNav";
-import { getCloudCollection, getCloudProfile } from "@/lib/cloud-sync";
+import { getCloudCollection, getCloudProfile, getSyncStatus, retryPendingSyncs } from "@/lib/cloud-sync";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -30,6 +30,8 @@ type DashboardData = {
   weight: Array<Record<string, unknown>>;
   intelligence: Array<Record<string, unknown>>;
 };
+
+type DashboardSyncStatus = ReturnType<typeof getSyncStatus>;
 
 function readJSON(key: string, fallback: unknown = []) {
   try {
@@ -258,8 +260,81 @@ function ZoneSummary({ sessions }: { sessions: DashboardSession[] }) {
   );
 }
 
+function formatSyncTime(value: string | null) {
+  if (!value) return "Aun sin sync";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Aun sin sync";
+  return date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" });
+}
+
+function DashboardSyncCenter({ status, onRetry }: { status: DashboardSyncStatus; onRetry: () => void }) {
+  const hasError = Boolean(status.lastError);
+  const isCloudReady = status.cloud && !hasError;
+  const stateLabel = isCloudReady ? "Nube activa" : status.cloud ? "Nube con alerta" : "Solo local";
+  const stateClass = isCloudReady
+    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+    : status.cloud
+      ? "border-amber-200 bg-amber-50 text-amber-700"
+      : "border-slate-200 bg-slate-50 text-slate-600";
+  const dotClass = isCloudReady ? "bg-emerald-500" : status.cloud ? "bg-amber-500" : "bg-slate-400";
+
+  return (
+    <section className="mb-6 rounded-lg border border-blue-100 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-extrabold ${stateClass}`}>
+              <span className={`h-2 w-2 rounded-full ${dotClass}`} />
+              {stateLabel}
+            </span>
+            {status.pendingCount ? (
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-extrabold text-amber-700">
+                {status.pendingCount} pendientes
+              </span>
+            ) : (
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-extrabold text-slate-600">
+                0 pendientes
+              </span>
+            )}
+          </div>
+          <h2 className="mt-3 text-xl font-extrabold text-slate-900">Centro de sincronizacion</h2>
+          <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
+            Estado de nube, cache local y sincronizacion entre tus dispositivos.
+          </p>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[520px]">
+          <div className="rounded-lg bg-slate-50 px-3 py-2">
+            <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">Ultima sync</p>
+            <p className="mt-1 text-sm font-extrabold text-slate-900">{formatSyncTime(status.lastSyncAt)}</p>
+          </div>
+          <div className="rounded-lg bg-slate-50 px-3 py-2">
+            <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">Ultima ruta</p>
+            <p className="mt-1 truncate text-sm font-extrabold text-slate-900">{status.lastPath || "Sin actividad"}</p>
+          </div>
+          <button
+            className="rounded-lg bg-slate-900 px-4 py-3 text-sm font-extrabold text-white disabled:bg-slate-300"
+            disabled={!status.cloud && !status.pendingCount}
+            type="button"
+            onClick={onRetry}
+          >
+            Reintentar sync
+          </button>
+        </div>
+      </div>
+
+      {hasError ? (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-800">
+          <strong className="font-extrabold">Ultima alerta:</strong> {status.lastError}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData>({ profile: {}, sessions: [], weight: [], intelligence: [] });
+  const [syncStatus, setSyncStatus] = useState<DashboardSyncStatus>(() => getSyncStatus());
 
   useEffect(() => {
     let alive = true;
@@ -287,6 +362,26 @@ export default function Dashboard() {
     };
   }, []);
 
+  useEffect(() => {
+    const refresh = () => setSyncStatus(getSyncStatus());
+    refresh();
+    window.addEventListener("idg-sync-status", refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener("idg-sync-status", refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
+
+  async function handleRetrySync() {
+    try {
+      await retryPendingSyncs();
+    } finally {
+      setSyncStatus(getSyncStatus());
+      setData(loadDashboardData());
+    }
+  }
+
   const weekSessions = useMemo(() => data.sessions.filter((session) => inCurrentWeek(session.date)), [data.sessions]);
   const totalLoad = weekSessions.reduce((sum, item) => sum + item.load, 0);
   const totalMinutes = weekSessions.reduce((sum, item) => sum + item.duration, 0);
@@ -307,6 +402,8 @@ export default function Dashboard() {
     <>
       <TopNav title="Dashboard" />
       <main className="min-h-0 flex-1 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-6">
+        <DashboardSyncCenter status={syncStatus} onRetry={handleRetrySync} />
+
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <KPICard label="Carga Semanal" value={totalLoad || "--"} icon={<AppIcon name="analytics" className="h-5 w-5" />} trend={{ value: Math.max(0, consistency), direction: "up" }} color="blue" />
           <KPICard label="Estado Fisico" value={`${readiness}%`} icon={<AppIcon name="intelligence" className="h-5 w-5" />} trend={{ value: hardSessions, direction: hardSessions > 2 ? "down" : "up" }} color={hardSessions > 2 ? "orange" : "green"} />
