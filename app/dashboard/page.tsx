@@ -303,14 +303,10 @@ function DashboardSyncCenter({ status, onRetry }: { status: DashboardSyncStatus;
           </p>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[520px]">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px] lg:min-w-[390px]">
           <div className="rounded-lg bg-slate-50 px-3 py-2">
             <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">Ultima sync</p>
             <p className="mt-1 text-sm font-extrabold text-slate-900">{formatSyncTime(status.lastSyncAt)}</p>
-          </div>
-          <div className="rounded-lg bg-slate-50 px-3 py-2">
-            <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">Ultima ruta</p>
-            <p className="mt-1 truncate text-sm font-extrabold text-slate-900">{status.lastPath || "Sin actividad"}</p>
           </div>
           <button
             className="rounded-lg bg-slate-900 px-4 py-3 text-sm font-extrabold text-white disabled:bg-slate-300"
