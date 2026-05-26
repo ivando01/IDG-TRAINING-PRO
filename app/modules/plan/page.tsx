@@ -41,6 +41,7 @@ type GymTemplate = {
 const PLAN_KEY = "idg_weekly_plan_json";
 const PROFILE_KEY = "idg_profile_json";
 const GYM_TEMPLATES_KEY = "idg_gym_templates_json";
+const MAX_PLAN_SUPPORT_CACHE_BYTES = 750_000;
 
 const gymRoutines = [
   "Dia 1 - Cuadriceps + Pantorrilla",
@@ -73,6 +74,17 @@ function readJSON<T>(key: string, fallback: T): T {
     if (typeof window === "undefined") return fallback;
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) as T : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function readSupportJSON<T>(key: string, fallback: T): T {
+  try {
+    if (typeof window === "undefined") return fallback;
+    const raw = localStorage.getItem(key);
+    if (!raw || raw.length > MAX_PLAN_SUPPORT_CACHE_BYTES) return fallback;
+    return JSON.parse(raw) as T;
   } catch {
     return fallback;
   }
@@ -137,6 +149,10 @@ function minutesFromActivity(activity: Record<string, unknown>) {
   return Math.round(num((activity.metrics as Record<string, unknown> | undefined)?.durationSec) / 60);
 }
 
+function activityDate(item: Record<string, unknown>) {
+  return String(item.date || item.startTime || item.start_date || item.startDate || item.activity_date || "").slice(0, 10);
+}
+
 function isTrainingActivity(item: Record<string, unknown>) {
   if (item.countsTowardTraining === false || item.activityKind === "support") return false;
   const text = `${String(item.activitySubType || "")} ${String(item.name || "")}`.toLowerCase();
@@ -144,9 +160,9 @@ function isTrainingActivity(item: Record<string, unknown>) {
 }
 
 function getRealSessions(): RealSession[] {
-  const gym = readJSON<Array<Record<string, unknown>>>("idg_gym_sessions_json", []);
-  const running = readJSON<Array<Record<string, unknown>>>("idg_running_activities_json", []).filter(isTrainingActivity);
-  const cycling = readJSON<Array<Record<string, unknown>>>("idg_cycling_activities_json", []);
+  const gym = readSupportJSON<Array<Record<string, unknown>>>("idg_gym_sessions_json", []);
+  const running = readSupportJSON<Array<Record<string, unknown>>>("idg_running_activities_json", []).filter(isTrainingActivity);
+  const cycling = readSupportJSON<Array<Record<string, unknown>>>("idg_cycling_activities_json", []);
 
   const gymSessions = gym.map((item) => ({
     id: String(item.id || makeId("real-gym")),
@@ -161,7 +177,7 @@ function getRealSessions(): RealSession[] {
     const metrics = (item.metrics || {}) as Record<string, unknown>;
     return {
       id: String(item.id || makeId("real-run")),
-      date: String(item.date || item.startTime || "").slice(0, 10),
+      date: activityDate(item),
       type: "running" as const,
       title: String(item.name || "Running"),
       duration: minutesFromActivity(item),
@@ -173,7 +189,7 @@ function getRealSessions(): RealSession[] {
     const metrics = (item.metrics || {}) as Record<string, unknown>;
     return {
       id: String(item.id || makeId("real-bike")),
-      date: String(item.date || item.startTime || "").slice(0, 10),
+      date: activityDate(item),
       type: "cycling" as const,
       title: String(item.name || "Ciclismo"),
       duration: minutesFromActivity(item),
