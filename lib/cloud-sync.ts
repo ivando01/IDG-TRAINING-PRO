@@ -150,7 +150,8 @@ export async function saveCloudProfile<T>(profile: T) {
 
 export async function getCloudCollection<T>(path: string, key: string) {
   const data = await request(path);
-  return (data?.[key] || []) as T[];
+  const collection = data?.[key];
+  return (Array.isArray(collection) ? collection : []) as T[];
 }
 
 export async function saveCloudCollection<T>(path: string, key: string, items: T[], extra: Record<string, unknown> = {}, cacheKey?: string) {
@@ -166,7 +167,8 @@ export async function loadCloudBackedCollection<T>(options: {
   fallback?: T[];
   onStatus?: (message: string) => void;
 }) {
-  const localItems = readCache<T[]>(options.cacheKey, options.fallback || []);
+  const cachedItems = readCache<unknown>(options.cacheKey, options.fallback || []);
+  const localItems = Array.isArray(cachedItems) ? cachedItems as T[] : options.fallback || [];
   if (!canSyncCloud()) {
     options.onStatus?.(localItems.length ? "Datos cargados desde este dispositivo. Inicia sesion para sincronizar en la nube." : "");
     return { items: localItems, source: "local" as const };

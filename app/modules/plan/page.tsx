@@ -227,8 +227,9 @@ function normalizePlanSession(item: Partial<PlannedSession>): PlannedSession | n
   };
 }
 
-function normalizePlan(items: PlannedSession[]) {
-  return items
+function normalizePlan(items: unknown) {
+  const list = Array.isArray(items) ? items : [];
+  return list
     .map((item) => normalizePlanSession(item))
     .filter((item): item is PlannedSession => Boolean(item))
     .sort((a, b) => `${a.date}-${a.type}`.localeCompare(`${b.date}-${b.type}`));
