@@ -11,6 +11,7 @@ type ExerciseDraft = {
   name: string;
   sets: number;
   reps: string;
+  repsBySet?: string[];
   weights: string[];
   rest: number;
   note?: string;
@@ -194,6 +195,22 @@ function shortMonth(dateText: string) {
   return date.toLocaleDateString("es-CO", { month: "short" }).replace(".", "").toUpperCase();
 }
 
+function normalizeExerciseDraft(exercise: Partial<ExerciseDraft>, index = 0): ExerciseDraft {
+  const sets = Math.max(1, Math.min(10, Number(exercise.sets) || 3));
+  const baseReps = String(exercise.reps || "10");
+  const repsBySet = Array.isArray(exercise.repsBySet) ? exercise.repsBySet : [];
+  return {
+    id: String(exercise.id || `exercise-${index}`),
+    name: String(exercise.name || `Ejercicio ${index + 1}`),
+    sets,
+    reps: baseReps,
+    repsBySet: Array.from({ length: sets }, (_, setIndex) => String(repsBySet[setIndex] ?? baseReps)),
+    weights: Array.from({ length: sets }, (_, setIndex) => String(exercise.weights?.[setIndex] ?? "")),
+    rest: Math.max(0, Number(exercise.rest) || 60),
+    note: exercise.note ? String(exercise.note) : undefined,
+  };
+}
+
 function normalizeSession(session: GymSession): GymSession {
   const routineKey = String(session.routine || "4") as RoutineKey;
   const validRoutine = routines[routineKey] ? routineKey : "custom";
@@ -205,7 +222,7 @@ function normalizeSession(session: GymSession): GymSession {
     duration: Number(session.duration) || 0,
     intensity: Number(session.intensity) || 0,
     painLevel: Number(session.painLevel) || 0,
-    exercises: Array.isArray(session.exercises) ? session.exercises : [],
+    exercises: Array.isArray(session.exercises) ? session.exercises.map(normalizeExerciseDraft) : [],
     intelligence: String(session.intelligence || ""),
     aiAnalysis: String(session.aiAnalysis || ""),
     aiGeneratedAt: session.aiGeneratedAt ? String(session.aiGeneratedAt) : undefined,
@@ -220,9 +237,8 @@ function sortSessions(sessions: GymSession[]) {
 
 function cloneExercises(exercises: ExerciseDraft[]) {
   return exercises.map((exercise, index) => ({
-    ...exercise,
+    ...normalizeExerciseDraft(exercise, index),
     id: `${exercise.id || exercise.name}-${Date.now()}-${index}`,
-    weights: Array.from({ length: Math.max(1, exercise.sets) }, (_, setIndex) => exercise.weights?.[setIndex] ?? ""),
   }));
 }
 
@@ -237,15 +253,7 @@ function normalizeTemplate(template: Partial<GymTemplate>): GymTemplate | null {
     focus: String(template.focus || "Plantilla personalizada"),
     routineKey: routines[routineKey] ? routineKey : "custom",
     source: template.source === "coach" ? "coach" : "user",
-    exercises: exercises.map((exercise, index) => ({
-      id: String(exercise.id || `template-ex-${index}`),
-      name: String(exercise.name || `Ejercicio ${index + 1}`),
-      sets: Math.max(1, Math.min(10, Number(exercise.sets) || 3)),
-      reps: String(exercise.reps || "10"),
-      rest: Math.max(0, Number(exercise.rest) || 60),
-      note: exercise.note ? String(exercise.note) : undefined,
-      weights: Array.from({ length: Math.max(1, Math.min(10, Number(exercise.sets) || 3)) }, (_, setIndex) => String(exercise.weights?.[setIndex] || "")),
-    })),
+    exercises: exercises.map(normalizeExerciseDraft),
     updatedAt: Number(template.updatedAt) || Date.now(),
   };
 }
@@ -324,6 +332,7 @@ export default function GymModule() {
         ...exercise,
         sets,
         reps: old?.reps ?? exercise.reps,
+        repsBySet: Array.from({ length: sets }, (_, setIndex) => old?.repsBySet?.[setIndex] ?? old?.reps ?? exercise.reps),
         rest: old?.rest ?? exercise.rest,
         weights: Array.from({ length: sets }, (_, setIndex) => old?.weights[setIndex] ?? ""),
       };
@@ -422,7 +431,7 @@ export default function GymModule() {
         name: exercise.name,
         setsPlanned: exercise.sets,
         setsLoaded: loadedWeights.length,
-        reps: exercise.reps,
+        reps: exercise.repsBySet?.length ? exercise.repsBySet.join("/") : exercise.reps,
         maxWeight: loadedWeights.length ? Math.max(...loadedWeights) : 0,
         minWeight: loadedWeights.length ? Math.min(...loadedWeights) : 0,
         totalLoad: weights.reduce((sum, weight) => sum + weight, 0),
@@ -536,9 +545,9 @@ export default function GymModule() {
     setSelectedTemplateId("");
     setCustomRoutineName(name.trim());
     setExercises([
-      { id: `custom-${Date.now()}-1`, name: "Ejercicio 1", sets: 3, reps: "10", weights: ["", "", ""], rest: 60 },
-      { id: `custom-${Date.now()}-2`, name: "Ejercicio 2", sets: 3, reps: "10", weights: ["", "", ""], rest: 60 },
-      { id: `custom-${Date.now()}-3`, name: "Ejercicio 3", sets: 3, reps: "10", weights: ["", "", ""], rest: 60 },
+      { id: `custom-${Date.now()}-1`, name: "Ejercicio 1", sets: 3, reps: "10", repsBySet: ["10", "10", "10"], weights: ["", "", ""], rest: 60 },
+      { id: `custom-${Date.now()}-2`, name: "Ejercicio 2", sets: 3, reps: "10", repsBySet: ["10", "10", "10"], weights: ["", "", ""], rest: 60 },
+      { id: `custom-${Date.now()}-3`, name: "Ejercicio 3", sets: 3, reps: "10", repsBySet: ["10", "10", "10"], weights: ["", "", ""], rest: 60 },
     ]);
     setEditingId("");
     setBuilderOpen(true);
@@ -574,7 +583,23 @@ export default function GymModule() {
       current.map((exercise) => {
         if (exercise.id !== id) return exercise;
         const sets = Math.max(1, Math.min(10, exercise.sets + delta));
-        return { ...exercise, sets, weights: Array.from({ length: sets }, (_, index) => exercise.weights[index] ?? "") };
+        return {
+          ...exercise,
+          sets,
+          repsBySet: Array.from({ length: sets }, (_, index) => exercise.repsBySet?.[index] ?? exercise.reps),
+          weights: Array.from({ length: sets }, (_, index) => exercise.weights[index] ?? ""),
+        };
+      }),
+    );
+  };
+
+  const updateSetReps = (id: string, index: number, value: string) => {
+    setExercises((current) =>
+      current.map((exercise) => {
+        if (exercise.id !== id) return exercise;
+        const repsBySet = Array.from({ length: exercise.sets }, (_, setIndex) => exercise.repsBySet?.[setIndex] ?? exercise.reps);
+        repsBySet[index] = value;
+        return { ...exercise, reps: repsBySet[0] || exercise.reps, repsBySet };
       }),
     );
   };
@@ -593,7 +618,7 @@ export default function GymModule() {
   const addExercise = () => {
     setExercises((current) => [
       ...current,
-      { id: `custom-${Date.now()}`, name: `Ejercicio ${current.length + 1}`, sets: 3, reps: "10", weights: ["", "", ""], rest: 60 },
+      { id: `custom-${Date.now()}`, name: `Ejercicio ${current.length + 1}`, sets: 3, reps: "10", repsBySet: ["10", "10", "10"], weights: ["", "", ""], rest: 60 },
     ]);
   };
 
@@ -864,7 +889,28 @@ export default function GymModule() {
             exercises: current.exercises.map((exercise) => {
               if (exercise.id !== id) return exercise;
               const sets = Math.max(1, Math.min(10, exercise.sets + delta));
-              return { ...exercise, sets, weights: Array.from({ length: sets }, (_, index) => exercise.weights[index] ?? "") };
+              return {
+                ...exercise,
+                sets,
+                repsBySet: Array.from({ length: sets }, (_, index) => exercise.repsBySet?.[index] ?? exercise.reps),
+                weights: Array.from({ length: sets }, (_, index) => exercise.weights[index] ?? ""),
+              };
+            }),
+          }
+        : current,
+    );
+  };
+
+  const updateInlineSetReps = (id: string, index: number, value: string) => {
+    setInlineDraft((current) =>
+      current
+        ? {
+            ...current,
+            exercises: current.exercises.map((exercise) => {
+              if (exercise.id !== id) return exercise;
+              const repsBySet = Array.from({ length: exercise.sets }, (_, setIndex) => exercise.repsBySet?.[setIndex] ?? exercise.reps);
+              repsBySet[index] = value;
+              return { ...exercise, reps: repsBySet[0] || exercise.reps, repsBySet };
             }),
           }
         : current,
@@ -1047,17 +1093,16 @@ export default function GymModule() {
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Notas<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" value={notes} placeholder="Sensaciones o ajustes" onChange={(event) => setNotes(event.target.value)} /></label>
                   </div>
 
-                  <div className="gym-exercise-head mt-4 hidden grid-cols-[minmax(170px,1fr)_92px_54px_minmax(280px,1.5fr)_72px_108px] gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-black uppercase tracking-wide text-blue-100 min-[900px]:grid">
-                    <span>Ejercicio</span><span>Series</span><span>Reps</span><span>Peso por serie ({unit})</span><span>Descanso</span><span>Acciones</span>
+                  <div className="gym-exercise-head mt-4 hidden grid-cols-[minmax(170px,1fr)_92px_minmax(360px,1.8fr)_72px_108px] gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-black uppercase tracking-wide text-blue-100 min-[900px]:grid">
+                    <span>Ejercicio</span><span>Series</span><span>Reps y peso por serie ({unit})</span><span>Descanso</span><span>Acciones</span>
                   </div>
 
                   <div className="gym-exercise-list mt-3 grid gap-2">
                     {exercises.map((exercise, index) => (
-                      <article className="gym-exercise-row grid items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 min-[900px]:grid-cols-[minmax(170px,1fr)_92px_54px_minmax(280px,1.5fr)_72px_108px]" key={exercise.id}>
+                      <article className="gym-exercise-row grid items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 min-[900px]:grid-cols-[minmax(170px,1fr)_92px_minmax(360px,1.8fr)_72px_108px]" key={exercise.id}>
                         <div className="gym-exercise-name grid grid-cols-[30px_minmax(0,1fr)] items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-green-500 text-sm font-black text-white">{index + 1}</span><input className="h-9 rounded-lg border border-slate-200 px-2 text-sm font-semibold text-slate-900" value={exercise.name} onChange={(event) => updateExercise(exercise.id, { name: event.target.value })} /></div>
                         <div className="series-ctrl"><button type="button" onClick={() => changeSets(exercise.id, -1)}>-</button><strong>{exercise.sets}</strong><button type="button" onClick={() => changeSets(exercise.id, 1)}>+</button></div>
-                        <input className="compact-input reps-input h-9 rounded-lg border border-slate-200 px-2 text-center text-sm text-slate-800" value={exercise.reps} onChange={(event) => updateExercise(exercise.id, { reps: event.target.value })} />
-                        <div className="weight-chips" data-unit={unit}>{exercise.weights.map((weight, setIndex) => <label key={`${exercise.id}-${setIndex}`}>S{setIndex + 1}<input inputMode="decimal" type="number" value={weight} onChange={(event) => updateWeight(exercise.id, setIndex, event.target.value)} /></label>)}</div>
+                        <div className="weight-chips" data-unit={unit}>{exercise.weights.map((weight, setIndex) => <label key={`${exercise.id}-${setIndex}`}><span>S{setIndex + 1}</span><input aria-label={`Repeticiones serie ${setIndex + 1}`} className="set-reps-input" inputMode="numeric" placeholder="rep" type="text" value={exercise.repsBySet?.[setIndex] ?? exercise.reps} onChange={(event) => updateSetReps(exercise.id, setIndex, event.target.value)} /><input aria-label={`Peso serie ${setIndex + 1}`} className="set-weight-input" inputMode="decimal" placeholder={unit} type="number" value={weight} onChange={(event) => updateWeight(exercise.id, setIndex, event.target.value)} /></label>)}</div>
                         <input className="compact-input rest-input h-9 rounded-lg border border-slate-200 px-2 text-center text-sm text-slate-800" value={secondsToMMSS(exercise.rest)} onChange={(event) => updateExercise(exercise.id, { rest: mmssToSeconds(event.target.value) })} />
                         <div className="gym-row-actions">
                           <button type="button" title="Guardar ejercicio" onClick={() => saveExercise(exercise.id)}><Icon name="save" /></button>
@@ -1294,7 +1339,7 @@ export default function GymModule() {
                               {detailSession.exercises.map((exercise, index) => {
                                 const maxWeight = Math.max(...exercise.weights.map((weight) => Number(weight) || 0));
                                 return (
-                                  <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 xl:grid-cols-[34px_minmax(170px,1fr)_92px_90px_minmax(280px,1.4fr)_88px]" key={`${detailSession.id}-${exercise.id}`}>
+                                  <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 xl:grid-cols-[34px_minmax(170px,1fr)_92px_minmax(360px,1.6fr)_88px]" key={`${detailSession.id}-${exercise.id}`}>
                                     <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500 text-sm font-black text-white">{index + 1}</span>
                                     {isInlineEditing ? (
                                       <input className="h-9 rounded-lg border border-slate-200 px-2 text-sm font-black text-slate-900" value={exercise.name} onChange={(event) => updateInlineExercise(exercise.id, { name: event.target.value })} />
@@ -1312,24 +1357,19 @@ export default function GymModule() {
                                         <p className="text-sm font-black text-slate-900">{exercise.sets}</p>
                                       )}
                                     </div>
-                                    <label>
-                                      <p className="mb-1 text-[10px] font-black uppercase text-slate-400">Reps</p>
-                                      {isInlineEditing ? (
-                                        <input className="h-9 w-full rounded-lg border border-slate-200 px-2 text-center text-sm font-black text-slate-900" value={exercise.reps} onChange={(event) => updateInlineExercise(exercise.id, { reps: event.target.value })} />
-                                      ) : (
-                                        <p className="text-sm font-black text-slate-900">{exercise.reps}</p>
-                                      )}
-                                    </label>
                                     <div>
-                                      <p className="mb-1 text-[10px] font-black uppercase text-slate-400">Peso por serie</p>
+                                      <p className="mb-1 text-[10px] font-black uppercase text-slate-400">Reps y peso por serie</p>
                                       <div className="weight-chips" data-unit={unit}>
                                         {exercise.weights.map((weight, setIndex) => (
                                           <label key={`${exercise.id}-${setIndex}`}>
-                                            S{setIndex + 1}
+                                            <span>S{setIndex + 1}</span>
                                             {isInlineEditing ? (
-                                              <input inputMode="decimal" type="number" value={weight} onChange={(event) => updateInlineWeight(exercise.id, setIndex, event.target.value)} />
+                                              <>
+                                                <input aria-label={`Repeticiones serie ${setIndex + 1}`} className="set-reps-input" inputMode="numeric" placeholder="rep" type="text" value={exercise.repsBySet?.[setIndex] ?? exercise.reps} onChange={(event) => updateInlineSetReps(exercise.id, setIndex, event.target.value)} />
+                                                <input aria-label={`Peso serie ${setIndex + 1}`} className="set-weight-input" inputMode="decimal" placeholder={unit} type="number" value={weight} onChange={(event) => updateInlineWeight(exercise.id, setIndex, event.target.value)} />
+                                              </>
                                             ) : (
-                                              <span className="px-1 font-black text-slate-900">{weight || "--"}</span>
+                                              <span className="px-1 font-black text-slate-900">{exercise.repsBySet?.[setIndex] ?? exercise.reps} x {weight || "--"}</span>
                                             )}
                                           </label>
                                         ))}

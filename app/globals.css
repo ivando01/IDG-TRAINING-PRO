@@ -1607,7 +1607,7 @@ svg {
 .gym-exercise-head,
 .gym-exercise-row {
   display: grid;
-  grid-template-columns: minmax(168px, 1.15fr) 92px 54px minmax(286px, 1.75fr) 72px 126px;
+  grid-template-columns: minmax(168px, 1.15fr) 92px minmax(360px, 1.8fr) 72px 126px;
   gap: 8px;
   align-items: center;
 }
@@ -1709,10 +1709,10 @@ svg {
 .weight-chips label {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   border: 1px solid #dbe4f0;
   border-radius: 999px;
-  padding: 3px 5px;
+  padding: 4px 6px;
   background: white;
   color: #64748b;
   font-size: 0.68rem;
@@ -1732,13 +1732,27 @@ svg {
 }
 
 .weight-chips input {
-  width: 48px;
+  width: 64px;
   min-height: 28px;
   border: 0;
-  padding: 0 4px;
+  padding: 0 3px;
   background: transparent;
-  font-size: 16px;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
   color: #0f172a;
+  text-align: center;
+}
+
+.weight-chips .set-reps-input {
+  width: 42px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.68);
+  color: #334155;
+}
+
+.weight-chips .set-weight-input {
+  width: 68px;
 }
 
 .gym-row-actions {
