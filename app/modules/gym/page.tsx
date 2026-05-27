@@ -211,6 +211,20 @@ function normalizeExerciseDraft(exercise: Partial<ExerciseDraft>, index = 0): Ex
   };
 }
 
+function repsForLoad(value: string | undefined) {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return 0;
+  if (/\d+\s*s/.test(text)) return 1;
+  const range = text.match(/(\d+(?:[.,]\d+)?)\s*-\s*(\d+(?:[.,]\d+)?)/);
+  if (range) {
+    const first = Number(range[1].replace(",", "."));
+    const second = Number(range[2].replace(",", "."));
+    return Number.isFinite(first) && Number.isFinite(second) ? (first + second) / 2 : 0;
+  }
+  const parsed = Number(text.replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function normalizeSession(session: GymSession): GymSession {
   const routineKey = String(session.routine || "4") as RoutineKey;
   const validRoutine = routines[routineKey] ? routineKey : "custom";
@@ -420,7 +434,8 @@ export default function GymModule() {
   const selectedTemplate = templates.find((template) => template.id === selectedTemplateId);
   const routineName = selectedTemplate?.name || (routine === "custom" && customRoutineName ? customRoutineName : routines[routine].name);
   const latest = history.find((session) => selectedTemplate ? session.routineName === selectedTemplate.name : session.routine === routine);
-  const exerciseVolume = (exercise: ExerciseDraft) => exercise.weights.reduce((sum, weight) => sum + (Number(weight) || 0), 0);
+  const loadUnit = `${unit}·rep`;
+  const exerciseVolume = (exercise: ExerciseDraft) => exercise.weights.reduce((sum, weight, index) => sum + ((Number(weight) || 0) * repsForLoad(exercise.repsBySet?.[index] ?? exercise.reps)), 0);
   const sessionVolume = (session: Pick<GymSession, "exercises">) => session.exercises.reduce((sum, exercise) => sum + exerciseVolume(exercise), 0);
   const completedSetsFor = (session: Pick<GymSession, "exercises">) => session.exercises.reduce((sum, exercise) => sum + exercise.weights.filter((weight) => Number(weight) > 0).length, 0);
   const exerciseSnapshot = (session: Pick<GymSession, "exercises">) =>
@@ -434,7 +449,7 @@ export default function GymModule() {
         reps: exercise.repsBySet?.length ? exercise.repsBySet.join("/") : exercise.reps,
         maxWeight: loadedWeights.length ? Math.max(...loadedWeights) : 0,
         minWeight: loadedWeights.length ? Math.min(...loadedWeights) : 0,
-        totalLoad: weights.reduce((sum, weight) => sum + weight, 0),
+        totalLoad: exerciseVolume(exercise),
         restSec: exercise.rest,
         note: exercise.note || "",
       };
@@ -667,7 +682,7 @@ export default function GymModule() {
           `- Alerta: Intensidad ${session.intensity}/10 y ${painText}.${missingText}`,
           `- Proxima: ${changeText} ${session.intensity >= 8 ? "Mantén o sube solo el ejercicio más estable; no subas todo el día." : "Sube 1 serie o 5-10 lb solo en el ejercicio mejor tolerado."}`,
         ].join("\n")
-      : `${session.routineName}: sin pesos registrados. La carga se calcula como la suma del peso diligenciado en cada serie.`;
+      : `${session.routineName}: sin pesos registrados. La carga se calcula como peso x repeticiones en cada serie.`;
   };
 
   const usableIntelligence = (value: string) => {
@@ -1148,7 +1163,7 @@ export default function GymModule() {
                   </div>
                   <div className="rounded-lg bg-white px-3 py-2">
                     <p className="text-[10px] font-black uppercase text-slate-400">Carga</p>
-                    <p className="mt-1 text-lg font-black text-slate-900">{stats.volume.toFixed(0)} {unit}</p>
+                    <p className="mt-1 text-lg font-black text-slate-900">{stats.volume.toFixed(0)} {loadUnit}</p>
                   </div>
                   <div className="rounded-lg bg-white px-3 py-2">
                     <p className="text-[10px] font-black uppercase text-slate-400">Intensidad</p>
@@ -1243,7 +1258,7 @@ export default function GymModule() {
                           <strong className="block text-base font-black text-slate-900">{session.routineName}</strong>
                           <span className="mt-1 block text-sm font-semibold text-slate-500">{session.exercises.length} ejercicios - {setCount} series</span>
                         </div>
-                        <div><strong className="block text-base font-black text-slate-900">{volume.toFixed(0)} {unit}</strong><span className="text-xs font-semibold text-slate-500">Carga</span></div>
+                        <div><strong className="block text-base font-black text-slate-900">{volume.toFixed(0)} {loadUnit}</strong><span className="text-xs font-semibold text-slate-500">Carga</span></div>
                         <div><strong className="block text-base font-black text-slate-900">{session.intensity * 10}%</strong><span className="text-xs font-semibold text-slate-500">Intensidad</span></div>
                         <div><strong className="block text-base font-black text-slate-900">{minutesToHHMM(session.duration)}</strong><span className="text-xs font-semibold text-slate-500">Duracion</span></div>
                         <div>
@@ -1282,7 +1297,7 @@ export default function GymModule() {
                           <div className="mt-4 grid gap-3 md:grid-cols-4">
                             <div className="rounded-lg bg-slate-50 p-3">
                               <p className="text-[10px] font-black uppercase text-slate-400">Carga</p>
-                              <p className="mt-1 text-lg font-black text-slate-900">{detailVolume.toFixed(0)} {unit}</p>
+                              <p className="mt-1 text-lg font-black text-slate-900">{detailVolume.toFixed(0)} {loadUnit}</p>
                             </div>
                             <label className="rounded-lg bg-slate-50 p-3">
                               <p className="text-[10px] font-black uppercase text-slate-400">Duracion</p>

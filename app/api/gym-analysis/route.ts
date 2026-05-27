@@ -19,7 +19,7 @@ ${JSON.stringify(history || []).slice(0, 2500)}
 Reglas:
 - Maximo 120 palabras.
 - Usa solo datos presentes. No inventes objetivos, pesos ni molestias.
-- La carga es la suma del peso registrado por serie; unidad: ${unit || "lbs"}.
+- La carga externa es tonelaje: peso x repeticiones por cada serie; unidad: ${unit || "lbs"}.
 - Si existe previousSameRoutine, compara carga, intensidad, dolor y ejercicios que subieron o bajaron.
 - Si no hay historial comparable, dilo en una frase y analiza coherencia interna.
 - Menciona 1 punto fuerte, 1 alerta concreta y 1 ajuste para la proxima sesion.

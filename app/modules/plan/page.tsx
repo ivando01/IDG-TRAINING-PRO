@@ -3,6 +3,7 @@
 import { AppIcon, AppIconName } from "@/components/Brand";
 import TopNav from "@/components/TopNav";
 import { canSyncCloud, getCloudCollection, loadCloudBackedCollection, saveCloudBackedCollection } from "@/lib/cloud-sync";
+import { cardioTrimpFromZones } from "@/lib/training-load";
 import { useEffect, useMemo, useState } from "react";
 
 type SessionType = "gym" | "running" | "cycling" | "mobility" | "rest";
@@ -149,6 +150,25 @@ function minutesFromActivity(activity: Record<string, unknown>) {
   return Math.round(num((activity.metrics as Record<string, unknown> | undefined)?.durationSec) / 60);
 }
 
+function cardioLoad(activity: Record<string, unknown>, fallbackIntensity = 140) {
+  const metrics = (activity.metrics || {}) as Record<string, unknown>;
+  const trimp = cardioTrimpFromZones(activity.zoneTotals);
+  if (trimp) return Math.round(trimp);
+  return Math.round((num(metrics.durationSec) / 60) * ((num(metrics.avgHr) || fallbackIntensity) / fallbackIntensity));
+}
+
+function zoneFactor(targetZone: string) {
+  const match = String(targetZone || "").match(/z\s*(\d)/i);
+  return match ? Number(match[1]) || 1 : 1;
+}
+
+function plannedLoadForSession(session: PlannedSession) {
+  if (session.type === "rest") return 0;
+  if (session.type === "mobility") return session.duration * 1;
+  if (session.type === "gym") return session.duration * 7;
+  return session.duration * zoneFactor(session.targetZone || session.objective);
+}
+
 function activityDate(item: Record<string, unknown>) {
   return String(item.date || item.startTime || item.start_date || item.startDate || item.activity_date || "").slice(0, 10);
 }
@@ -170,7 +190,7 @@ function getRealSessions(): RealSession[] {
     type: "gym" as const,
     title: String(item.routineName || "Gym"),
     duration: num(item.duration),
-    load: Math.round(num(item.duration) * (num(item.intensity) || 6) / 10),
+    load: Math.round(num(item.duration) * (num(item.intensity) || 6)),
   }));
 
   const runSessions = running.map((item) => {
@@ -181,7 +201,7 @@ function getRealSessions(): RealSession[] {
       type: "running" as const,
       title: String(item.name || "Running"),
       duration: minutesFromActivity(item),
-      load: Math.round((num(metrics.durationSec) / 60) * ((num(metrics.avgHr) || 130) / 150)),
+      load: cardioLoad(item, 150),
     };
   });
 
@@ -193,7 +213,7 @@ function getRealSessions(): RealSession[] {
       type: "cycling" as const,
       title: String(item.name || "Ciclismo"),
       duration: minutesFromActivity(item),
-      load: Math.round(num(metrics.tss) || (num(metrics.durationSec) / 60) * ((num(metrics.avgHr) || 125) / 145)),
+      load: Math.round(cardioTrimpFromZones(item.zoneTotals) || num(metrics.tss) || cardioLoad(item, 145)),
     };
   });
 
@@ -326,7 +346,7 @@ export default function PlanModule() {
       .map((planned) => planned.id),
   );
 
-  const plannedLoad = weekPlan.reduce((sum, item) => sum + (item.duration * (item.type === "gym" ? 0.7 : item.type === "cycling" ? 0.9 : item.type === "running" ? 0.85 : 0.25)), 0);
+  const plannedLoad = weekPlan.reduce((sum, item) => sum + plannedLoadForSession(item), 0);
   const realLoad = weekReal.reduce((sum, item) => sum + item.load, 0);
   const plannedMinutes = weekPlan.reduce((sum, item) => sum + item.duration, 0);
   const completedCount = weekPlan.filter((item) => completedIds.has(item.id) || item.status === "completed").length;

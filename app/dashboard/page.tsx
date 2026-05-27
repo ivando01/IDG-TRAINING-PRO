@@ -5,6 +5,7 @@ import KPICard from "@/components/KPICard";
 import SessionCard from "@/components/SessionCard";
 import TopNav from "@/components/TopNav";
 import { getCloudCollection, getCloudProfile, getSyncStatus, retryPendingSyncs } from "@/lib/cloud-sync";
+import { cardioTrimpFromZones } from "@/lib/training-load";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -82,6 +83,13 @@ function minutesFromActivity(activity: Record<string, unknown>) {
   return Math.round(num((activity.metrics as Record<string, unknown> | undefined)?.durationSec) / 60);
 }
 
+function cardioLoad(activity: Record<string, unknown>, fallbackIntensity = 140) {
+  const metrics = (activity.metrics || {}) as Record<string, unknown>;
+  const trimp = cardioTrimpFromZones(activity.zoneTotals);
+  if (trimp) return Math.round(trimp);
+  return Math.round((num(metrics.durationSec) / 60) * ((num(metrics.avgHr) || fallbackIntensity) / fallbackIntensity));
+}
+
 function loadDashboardData(): DashboardData {
   const profile = readJSON("idg_profile_json", readJSON("iv_profile", {})) as Record<string, unknown>;
   const gym = readJSON("idg_gym_sessions_json", []) as Array<Record<string, unknown>>;
@@ -98,7 +106,7 @@ function loadDashboardData(): DashboardData {
     duration: num(item.duration),
     calories: num(item.calories) || undefined,
     status: "completed",
-    load: Math.round(num(item.duration) * (num(item.intensity) || 6) / 10),
+    load: Math.round(num(item.duration) * (num(item.intensity) || 6)),
   }));
 
   const runSessions: DashboardSession[] = running.map((item) => {
@@ -113,7 +121,7 @@ function loadDashboardData(): DashboardData {
       calories: num(metrics.calories) || undefined,
       averageHR: num(metrics.avgHr) || undefined,
       status: "completed",
-      load: Math.round((num(metrics.durationSec) / 60) * ((num(metrics.avgHr) || 130) / 150)),
+      load: cardioLoad(item, 150),
       zoneTotals: item.zoneTotals as DashboardSession["zoneTotals"],
     };
   });
@@ -130,7 +138,7 @@ function loadDashboardData(): DashboardData {
       calories: num(metrics.calories) || undefined,
       averageHR: num(metrics.avgHr) || undefined,
       status: "completed",
-      load: Math.round(num(metrics.tss) || (num(metrics.durationSec) / 60) * ((num(metrics.avgHr) || 125) / 145)),
+      load: Math.round(cardioTrimpFromZones(item.zoneTotals) || num(metrics.tss) || cardioLoad(item, 145)),
       zoneTotals: item.zoneTotals as DashboardSession["zoneTotals"],
     };
   });
@@ -218,7 +226,7 @@ function WeeklyChart({ sessions }: { sessions: DashboardSession[] }) {
       </div>
 
       <p className="mt-3 text-xs font-semibold leading-5 text-slate-500">
-        La carga combina duracion e intensidad estimada: gym usa intensidad de sesion, running usa FC promedio y ciclismo prioriza TSS cuando existe.
+        La carga combina sRPE en gym y TRIMP por zonas en cardio; ciclismo prioriza TSS cuando existe.
       </p>
     </div>
   );
