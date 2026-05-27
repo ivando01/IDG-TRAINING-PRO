@@ -3,6 +3,7 @@
 import { AppIcon } from "@/components/Brand";
 import TopNav from "@/components/TopNav";
 import { getCloudCollection, saveCloudCollection } from "@/lib/cloud-sync";
+import { calculateNutritionSuggestion } from "@/lib/performance-insights";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 
 type WeightRecord = {
@@ -183,6 +184,7 @@ export default function WeightModule() {
   const firstKg = numberValue(records.at(-1)?.kg);
   const weightDelta = currentKg && firstKg ? Number((currentKg - firstKg).toFixed(1)) : null;
   const goalProgress = currentKg && firstKg && firstKg !== goalKg ? Math.max(0, Math.min(100, ((firstKg - currentKg) / (firstKg - goalKg)) * 100)) : 0;
+  const nutrition = useMemo(() => calculateNutritionSuggestion(profile, currentKg), [profile, currentKg]);
 
   const composition = useMemo(() => {
     if (!latest || !currentKg) return [];
@@ -447,6 +449,48 @@ export default function WeightModule() {
               )}
             </div>
           </div>
+        </section>
+
+        <section className="mb-5 rounded-lg border border-emerald-100 bg-white p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-wide text-emerald-700">Objetivo nutricional</p>
+              <h2 className="mt-1 text-lg font-black text-slate-900">Ingesta diaria sugerida</h2>
+              <p className="mt-1 text-sm font-semibold text-slate-500">
+                Calculada con peso actual, peso objetivo, objetivo deportivo y carga reciente. Ajusta con criterio profesional si hay indicacion medica.
+              </p>
+            </div>
+            {nutrition ? (
+              <span className="w-fit rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase text-emerald-700">{nutrition.loadLabel}</span>
+            ) : null}
+          </div>
+
+          {nutrition ? (
+            <>
+              <div className="mt-5 grid gap-3 md:grid-cols-5">
+                {[
+                  ["Calorias", `${nutrition.calories} kcal`, `peso x ${nutrition.multiplier}`],
+                  ["Proteina", `${nutrition.proteinG} g`, "peso objetivo x 1.8"],
+                  ["Grasas", `${nutrition.fatG} g`, "peso actual x 0.8"],
+                  ["Carbohidratos", `${nutrition.carbsG} g`, "calorias restantes / 4"],
+                  ["Fibra", `${nutrition.fiberMinG}-${nutrition.fiberMaxG} g`, "rango diario"],
+                ].map(([label, value, hint]) => (
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-4" key={label}>
+                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">{label}</p>
+                    <p className="mt-2 text-xl font-black text-slate-900">{value}</p>
+                    <p className="mt-1 text-xs font-bold text-slate-400">{hint}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 rounded-lg bg-emerald-50 p-4 text-sm font-semibold leading-6 text-emerald-800">
+                {nutrition.goalNote} Los carbohidratos se calculan despues de reservar calorias para proteina y grasa.
+              </div>
+            </>
+          ) : (
+            <div className="mt-5 rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm font-bold text-slate-400">
+              Registra tu peso actual para calcular calorias y macronutrientes sugeridos.
+            </div>
+          )}
         </section>
 
         <section className="mb-5 rounded-lg border border-blue-100 bg-white p-5">

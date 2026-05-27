@@ -2,6 +2,7 @@
 
 import TopNav from "@/components/TopNav";
 import { getCloudProfile, saveCloudProfile } from "@/lib/cloud-sync";
+import { estimatePerformance } from "@/lib/performance-insights";
 import { useEffect, useMemo, useState } from "react";
 
 type Zone = { name: string; min: number; max: number; color: string };
@@ -30,6 +31,11 @@ type AthleteProfile = {
   bikeDaysPerWeek: string;
   restDaysPerWeek: string;
   zones: Zone[];
+  estimatedFtp?: number | null;
+  estimatedFtpMethod?: string;
+  estimatedVo2Max?: number | null;
+  estimatedVo2Method?: string;
+  performanceUpdatedAt?: string;
 };
 
 const PROFILE_KEY = "idg_profile_json";
@@ -191,6 +197,8 @@ export default function ProfilePage() {
     return "";
   }, [profile.fcmax, profile.zones]);
 
+  const performance = useMemo(() => estimatePerformance(profile as unknown as Record<string, unknown>), [profile]);
+
   const setField = (key: keyof AthleteProfile, value: string) => {
     setProfile((current) => ({ ...current, [key]: value }));
   };
@@ -210,7 +218,16 @@ export default function ProfilePage() {
   };
 
   const saveProfile = async () => {
-    const payload = { ...profile, zones: normalizeZones(profile.zones, profile.fcmax), updatedAt: new Date().toISOString() };
+    const payload = {
+      ...profile,
+      zones: normalizeZones(profile.zones, profile.fcmax),
+      estimatedFtp: performance.ftp,
+      estimatedFtpMethod: performance.ftpMethod,
+      estimatedVo2Max: performance.vo2,
+      estimatedVo2Method: performance.vo2Method,
+      performanceUpdatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
     setProfile(payload);
     localStorage.setItem(PROFILE_KEY, JSON.stringify(payload));
     localStorage.setItem(LEGACY_PROFILE_KEY, JSON.stringify(payload));
@@ -406,6 +423,43 @@ export default function ProfilePage() {
               </div>
               {zoneError ? <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-600">{zoneError}</p> : null}
               <p className="mt-3 text-xs font-semibold text-slate-500">Las zonas alimentan Running, Ciclismo, recuperacion e IDG Intelligence. Si haces prueba de campo o laboratorio, edita los rangos manualmente.</p>
+            </div>
+
+            <div className="rounded-lg border border-blue-100 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-blue-600">Rendimiento estimado</p>
+                  <h2 className="mt-1 text-lg font-black text-slate-900">FTP y VO2 Max</h2>
+                  <p className="mt-1 text-sm font-semibold text-slate-500">Calculado desde actividades, potencia estimada y parametros fisiologicos. No se edita manualmente.</p>
+                </div>
+                <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Auto</span>
+              </div>
+
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-wide text-slate-500">FTP estimado</p>
+                      <p className="mt-2 text-3xl font-black text-slate-900">{performance.ftp ? `${performance.ftp} W` : "--"}</p>
+                    </div>
+                    <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-black uppercase text-blue-700">{performance.ftpConfidence}</span>
+                  </div>
+                  <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">{performance.ftpMethod}</p>
+                  <p className="mt-2 text-xs font-bold text-slate-400">Se recalcula con cada importacion de ciclismo.</p>
+                </div>
+
+                <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-wide text-slate-500">VO2 Max estimado</p>
+                      <p className="mt-2 text-3xl font-black text-slate-900">{performance.vo2 ? `${performance.vo2}` : "--"}</p>
+                    </div>
+                    <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase text-emerald-700">{performance.vo2Confidence}</span>
+                  </div>
+                  <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">{performance.vo2Method}</p>
+                  <p className="mt-2 text-xs font-bold text-slate-400">Se usa para lectura de running, ciclismo y Coach.</p>
+                </div>
+              </div>
             </div>
           </section>
 

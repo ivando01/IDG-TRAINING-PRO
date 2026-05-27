@@ -1323,6 +1323,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
                   ["Cadencia", selected.metrics.avgCadence, "rpm"],
                   ["Calorias", selected.metrics.calories, "kcal"],
                   ["Potencia NP", selected.metrics.normalizedPower, "W"],
+                  ["FTP est.", selected.metrics.estimatedFtp, "W"],
                   ["TSS", selected.metrics.tss, ""],
                   ["IF", selected.metrics.intensityFactor, ""],
                 ] : [

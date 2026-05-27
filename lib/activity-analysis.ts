@@ -53,6 +53,7 @@ export type ActivityMetrics = {
   vo2Estimate: number | null;
   calories: number | null;
   normalizedPower: number | null;
+  estimatedFtp: number | null;
   powerSource: "real" | "estimated" | "none";
   tss: number | null;
   intensityFactor: number | null;
@@ -348,6 +349,47 @@ function normalizedPower(points: ActivityPoint[]) {
   return Math.round(fourth ** 0.25);
 }
 
+function getStoredEstimatedFtp() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY) || localStorage.getItem(LEGACY_PROFILE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    const ftp = Number(parsed?.estimatedFtp || parsed?.ftpEstimate);
+    return Number.isFinite(ftp) && ftp >= 80 && ftp <= 450 ? Math.round(ftp) : null;
+  } catch {
+    return null;
+  }
+}
+
+function estimateCyclingFtpForActivity(points: ActivityPoint[], np: number | null, avgPower: number | null, durationSec: number) {
+  const stored = getStoredEstimatedFtp();
+  const power = points
+    .map((point) => ({ power: typeof point.power === "number" && Number.isFinite(point.power) ? point.power : null, time: point.time }))
+    .filter((point): point is { power: number; time: number | undefined } => point.power !== null && point.power > 20);
+  let best20 = 0;
+  if (power.length >= 30) {
+    for (let start = 0; start < power.length; start += 1) {
+      const startTime = power[start].time;
+      let sum = 0;
+      let count = 0;
+      for (let end = start; end < power.length; end += 1) {
+        if (startTime && power[end].time && power[end].time! - startTime > 20 * 60 * 1000) break;
+        sum += power[end].power;
+        count += 1;
+      }
+      if (count >= 20) best20 = Math.max(best20, sum / count);
+    }
+  }
+  const candidates = [
+    best20 ? best20 * 0.95 : null,
+    durationSec >= 2400 && durationSec <= 5400 && avgPower ? avgPower * 0.95 : null,
+    np ? np * 0.9 : null,
+    stored,
+  ].filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0);
+  if (!candidates.length) return null;
+  return Math.round(Math.max(80, Math.min(450, Math.max(...candidates))));
+}
+
 function estimateRunningVo2(avgSpeedKmh: number | null, avgHr: number | null, maxHr: number | null) {
   if (!avgSpeedKmh || avgSpeedKmh <= 0) return null;
   const metersPerMinute = (avgSpeedKmh * 1000) / 60;
@@ -370,7 +412,7 @@ function buildMetrics(points: ActivityPoint[], sport: SportType): ActivityMetric
   const powerPoints = sport === "cycling" ? points.filter((point) => point.power && point.power > 20) : [];
   const realPowerPoints = powerPoints.filter((point) => !point.powerEstimated);
   const powerSource = sport !== "cycling" || !powerPoints.length ? "none" : realPowerPoints.length >= powerPoints.length * 0.4 ? "real" : "estimated";
-  const ftp = sport === "cycling" ? 250 : null;
+  const ftp = sport === "cycling" ? estimateCyclingFtpForActivity(points, np, powerAvg, durationSec) : null;
   const intensityFactor = np && ftp ? Number((np / ftp).toFixed(2)) : null;
   const tss = intensityFactor && durationSec ? Math.round((durationSec * np! * intensityFactor) / (ftp! * 3600) * 100) : null;
   const avgCadence = avg(points.map((point) => point.cad));
@@ -398,6 +440,7 @@ function buildMetrics(points: ActivityPoint[], sport: SportType): ActivityMetric
     vo2Estimate,
     calories: estimateCalories(avgHr, durationSec, sport, distanceKm),
     normalizedPower: sport === "cycling" ? np : null,
+    estimatedFtp: sport === "cycling" ? ftp : null,
     powerSource,
     tss: sport === "cycling" ? tss : null,
     intensityFactor: sport === "cycling" ? intensityFactor : null,
