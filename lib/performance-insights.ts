@@ -7,6 +7,9 @@ export type NutritionSuggestion = {
   carbsG: number;
   fiberMinG: number;
   fiberMaxG: number;
+  fluidsMinL: number;
+  fluidsMaxL: number;
+  electrolyteNote: string;
   multiplier: number;
   loadLabel: string;
   goalNote: string;
@@ -105,6 +108,11 @@ export function calculateNutritionSuggestion(profile: AnyRecord, latestWeightKg?
   const proteinG = Math.round(currentKg * 1.8);
   const fatG = Math.round(currentKg * 0.8);
   const carbsG = Math.max(0, Math.round((calories - (proteinG * 4 + fatG * 9)) / 4));
+  const fluidsMinL = Number((currentKg * 0.035).toFixed(1));
+  const fluidsMaxL = Number((currentKg * (weeklyLoad >= 360 ? 0.05 : 0.045)).toFixed(1));
+  const electrolyteNote = weeklyLoad >= 360
+    ? "Incluye sodio/electrolitos si sudas mucho o entrenas mas de 60 min."
+    : "Agua repartida durante el dia; electrolitos solo si hay calor o sudoracion alta.";
 
   return {
     calories,
@@ -113,6 +121,9 @@ export function calculateNutritionSuggestion(profile: AnyRecord, latestWeightKg?
     carbsG,
     fiberMinG: 25,
     fiberMaxG: 35,
+    fluidsMinL,
+    fluidsMaxL,
+    electrolyteNote,
     multiplier,
     loadLabel,
     goalNote,
