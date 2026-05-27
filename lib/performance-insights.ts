@@ -77,18 +77,18 @@ export function calculateNutritionSuggestion(profile: AnyRecord, latestWeightKg?
   const goalKg = numberValue(profile.weightGoal) || currentKg;
   const goal = String(profile.goal || "").toLowerCase();
   const weeklyLoad = currentWeekLoad();
-  let multiplier = 27;
+  let multiplier = 33;
   let loadLabel = "dia base";
 
   if (weeklyLoad >= 650) {
-    multiplier = 32;
+    multiplier = 40;
     loadLabel = "carga alta";
   } else if (weeklyLoad >= 360) {
-    multiplier = 30;
+    multiplier = 36;
     loadLabel = "carga moderada";
   } else if (weeklyLoad <= 120) {
-    multiplier = 25;
-    loadLabel = "descanso o carga baja";
+    multiplier = 33;
+    loadLabel = "descanso o gym suave";
   }
 
   let calories = Math.round(currentKg * multiplier);
@@ -102,7 +102,7 @@ export function calculateNutritionSuggestion(profile: AnyRecord, latestWeightKg?
   }
 
   calories = Math.max(1200, Math.round(calories));
-  const proteinG = Math.round(goalKg * 1.8);
+  const proteinG = Math.round(currentKg * 1.8);
   const fatG = Math.round(currentKg * 0.8);
   const carbsG = Math.max(0, Math.round((calories - (proteinG * 4 + fatG * 9)) / 4));
 
@@ -189,6 +189,15 @@ function estimateFtp(cycling: AnyRecord[]) {
 }
 
 function estimateVo2(running: AnyRecord[], cycling: AnyRecord[], profile: AnyRecord) {
+  const profileVo2 = numberValue(profile.vo2Max || profile.vo2max || profile.knownVo2Max);
+  if (profileVo2 && profileVo2 >= 20 && profileVo2 <= 90) {
+    return {
+      vo2: Math.round(profileVo2),
+      vo2Method: "valor actual registrado en perfil",
+      vo2Confidence: "alta" as const,
+    };
+  }
+
   const direct = [...running, ...cycling]
     .map((activity) => metric(activity, "vo2Estimate"))
     .filter((value): value is number => Boolean(value && value >= 15 && value <= 90));

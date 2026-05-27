@@ -19,6 +19,7 @@ type AthleteProfile = {
   weightGoalDate: string;
   fcmax: string;
   fcrest: string;
+  vo2Max: string;
   diseases: string;
   meds: string;
   injuries: string;
@@ -61,6 +62,7 @@ const seedProfile: AthleteProfile = {
   weightGoalDate: "2026-06-01",
   fcmax: "190",
   fcrest: "54",
+  vo2Max: "53",
   diseases: "HTA",
   meds: "NEBIVOLOL",
   injuries: "RUPTURA FIBRAS HOMBRO DERECHO",
@@ -402,6 +404,7 @@ export default function ProfilePage() {
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <label className={labelClass}>FC maxima bpm<input className={inputClass} type="number" value={profile.fcmax} onChange={(event) => setField("fcmax", event.target.value)} /></label>
                 <label className={labelClass}>FC reposo<input className={inputClass} type="number" value={profile.fcrest} onChange={(event) => setField("fcrest", event.target.value)} /></label>
+                <label className={labelClass}>VO2 Max actual<input className={inputClass} type="number" value={profile.vo2Max} onChange={(event) => setField("vo2Max", event.target.value)} /></label>
               </div>
 
               <div className="mt-5 grid gap-3">

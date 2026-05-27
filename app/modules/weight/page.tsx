@@ -470,7 +470,7 @@ export default function WeightModule() {
               <div className="mt-5 grid gap-3 md:grid-cols-5">
                 {[
                   ["Calorias", `${nutrition.calories} kcal`, `peso x ${nutrition.multiplier}`],
-                  ["Proteina", `${nutrition.proteinG} g`, "peso objetivo x 1.8"],
+                  ["Proteina", `${nutrition.proteinG} g`, "peso actual x 1.8"],
                   ["Grasas", `${nutrition.fatG} g`, "peso actual x 0.8"],
                   ["Carbohidratos", `${nutrition.carbsG} g`, "calorias restantes / 4"],
                   ["Fibra", `${nutrition.fiberMinG}-${nutrition.fiberMaxG} g`, "rango diario"],
@@ -483,7 +483,7 @@ export default function WeightModule() {
                 ))}
               </div>
               <div className="mt-4 rounded-lg bg-emerald-50 p-4 text-sm font-semibold leading-6 text-emerald-800">
-                {nutrition.goalNote} Los carbohidratos se calculan despues de reservar calorias para proteina y grasa.
+                {nutrition.goalNote} Base deportista: peso x 33 en descanso/gym suave, x36 con carga moderada y x40 en carga alta. Los carbohidratos se calculan despues de reservar calorias para proteina y grasa.
               </div>
             </>
           ) : (
