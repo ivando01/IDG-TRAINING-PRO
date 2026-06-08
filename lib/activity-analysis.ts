@@ -296,49 +296,11 @@ function estimateCalories(avgHr: number | null, durationSec: number, sport: Spor
   return Math.round(distanceKm * (sport === "running" ? 70 : 35));
 }
 
-function getAthleteWeightKg() {
-  if (typeof window === "undefined") return 68;
-  try {
-    const raw = localStorage.getItem(PROFILE_KEY) || localStorage.getItem(LEGACY_PROFILE_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    const value = Number(parsed?.weightKg || parsed?.weight || parsed?.peso || parsed?.currentWeight);
-    return Number.isFinite(value) && value > 35 ? value : 68;
-  } catch {
-    return 68;
-  }
-}
-
-function estimateVirtualCyclingPower(points: ActivityPoint[]) {
-  const athleteKg = getAthleteWeightKg();
-  const systemMassKg = athleteKg + 10;
-  const crr = 0.005;
-  const airDensity = 1.12;
-  const cda = 0.36;
-  const drivetrain = 0.96;
-  const result = points.map((point) => ({ ...point }));
-  for (let i = 1; i < result.length; i += 1) {
-    const prev = result[i - 1];
-    const point = result[i];
-    if (point.power && point.power > 20) continue;
-    const dt = point.time && prev.time ? Math.max(1, (point.time - prev.time) / 1000) : 1;
-    const distanceM = Math.max(1, haversineKm(prev, point) * 1000);
-    const vMs = point.speedKmh && point.speedKmh > 1 ? point.speedKmh / 3.6 : distanceM / dt;
-    if (!Number.isFinite(vMs) || vMs < 1.5 || vMs > 25) continue;
-    const elevationDelta = Number.isFinite(point.ele) && Number.isFinite(prev.ele) ? Number(point.ele) - Number(prev.ele) : 0;
-    const grade = Math.max(-0.18, Math.min(0.18, elevationDelta / distanceM));
-    const gravity = systemMassKg * 9.81 * grade * vMs;
-    const rolling = systemMassKg * 9.81 * crr * vMs;
-    const aero = 0.5 * airDensity * cda * vMs ** 3;
-    const acceleration = i > 1 && result[i - 2].speedKmh ? systemMassKg * ((vMs - result[i - 2].speedKmh! / 3.6) / dt) * vMs : 0;
-    const watts = Math.round(Math.max(0, (gravity + rolling + aero + acceleration) / drivetrain));
-    point.power = Math.min(650, watts);
-    point.powerEstimated = true;
-  }
-  return result;
-}
-
 function normalizedPower(points: ActivityPoint[]) {
-  const power = points.map((point) => point.power).filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 20);
+  const power = points
+    .filter((point) => !point.powerEstimated)
+    .map((point) => point.power)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 20);
   if (power.length < 30) return null;
   const rolling: number[] = [];
   for (let i = 0; i < power.length; i += 1) {
@@ -364,6 +326,7 @@ function getStoredEstimatedFtp() {
 function estimateCyclingFtpForActivity(points: ActivityPoint[], np: number | null, avgPower: number | null, durationSec: number) {
   const stored = getStoredEstimatedFtp();
   const power = points
+    .filter((point) => !point.powerEstimated)
     .map((point) => ({ power: typeof point.power === "number" && Number.isFinite(point.power) ? point.power : null, time: point.time }))
     .filter((point): point is { power: number; time: number | undefined } => point.power !== null && point.power > 20);
   let best20 = 0;
@@ -390,6 +353,43 @@ function estimateCyclingFtpForActivity(points: ActivityPoint[], np: number | nul
   return Math.round(Math.max(80, Math.min(450, Math.max(...candidates))));
 }
 
+function elapsedDurationSec(points: ActivityPoint[]) {
+  if (points.length < 2 || !points[0].time || !points.at(-1)?.time) return 0;
+  return Math.max(0, Math.round((points.at(-1)!.time! - points[0].time!) / 1000));
+}
+
+function activeDurationSec(points: ActivityPoint[]) {
+  if (points.length < 2) return 0;
+  let active = 0;
+  let elapsed = 0;
+
+  for (let i = 1; i < points.length; i += 1) {
+    const prev = points[i - 1];
+    const point = points[i];
+    if (!prev.time || !point.time) continue;
+    const deltaSec = Math.max(0, Math.round((point.time - prev.time) / 1000));
+    if (!deltaSec) continue;
+    elapsed += deltaSec;
+    const distanceDeltaKm = Math.max(0, (point.distanceKm || 0) - (prev.distanceKm || 0));
+    const derivedSpeedKmh = deltaSec ? distanceDeltaKm / (deltaSec / 3600) : 0;
+    const speedKmh = point.speedKmh || derivedSpeedKmh;
+    const isMoving = distanceDeltaKm > 0.002 || speedKmh > 1;
+    if (isMoving) active += deltaSec;
+  }
+
+  return active || elapsed;
+}
+
+function activeIntervalSec(prev: ActivityPoint, point: ActivityPoint) {
+  if (!prev.time || !point.time) return 1;
+  const deltaSec = Math.max(0, Math.round((point.time - prev.time) / 1000));
+  if (!deltaSec) return 0;
+  const distanceDeltaKm = Math.max(0, (point.distanceKm || 0) - (prev.distanceKm || 0));
+  const derivedSpeedKmh = deltaSec ? distanceDeltaKm / (deltaSec / 3600) : 0;
+  const speedKmh = point.speedKmh || derivedSpeedKmh;
+  return distanceDeltaKm > 0.002 || speedKmh > 1 ? deltaSec : 0;
+}
+
 function estimateRunningVo2(avgSpeedKmh: number | null, avgHr: number | null, maxHr: number | null) {
   if (!avgSpeedKmh || avgSpeedKmh <= 0) return null;
   const metersPerMinute = (avgSpeedKmh * 1000) / 60;
@@ -402,16 +402,15 @@ function estimateRunningVo2(avgSpeedKmh: number | null, avgHr: number | null, ma
 }
 
 function buildMetrics(points: ActivityPoint[], sport: SportType): ActivityMetrics {
-  const durationSec = points.length > 1 && points[0].time && points.at(-1)?.time ? Math.round((points.at(-1)!.time! - points[0].time!) / 1000) : 0;
+  const durationSec = activeDurationSec(points) || elapsedDurationSec(points);
   const distanceKm = points.at(-1)?.distanceKm || 0;
   const elevation = elevationStats(points);
   const avgHr = avg(points.map((point) => point.hr));
   const speeds = points.map((point) => point.speedKmh).filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0.5);
-  const powerAvg = sport === "cycling" ? avg(points.map((point) => point.power)) : null;
+  const importedPowerPoints = sport === "cycling" ? points.filter((point) => !point.powerEstimated && point.power && point.power > 20) : [];
+  const powerAvg = sport === "cycling" ? avg(importedPowerPoints.map((point) => point.power)) : null;
   const np = sport === "cycling" ? normalizedPower(points) : null;
-  const powerPoints = sport === "cycling" ? points.filter((point) => point.power && point.power > 20) : [];
-  const realPowerPoints = powerPoints.filter((point) => !point.powerEstimated);
-  const powerSource = sport !== "cycling" || !powerPoints.length ? "none" : realPowerPoints.length >= powerPoints.length * 0.4 ? "real" : "estimated";
+  const powerSource = sport !== "cycling" || !importedPowerPoints.length ? "none" : "real";
   const ftp = sport === "cycling" ? estimateCyclingFtpForActivity(points, np, powerAvg, durationSec) : null;
   const intensityFactor = np && ftp ? Number((np / ftp).toFixed(2)) : null;
   const tss = intensityFactor && durationSec ? Math.round((durationSec * np! * intensityFactor) / (ftp! * 3600) * 100) : null;
@@ -473,7 +472,8 @@ function buildZoneAnalytics(points: ActivityPoint[], zones: HRZone[]) {
     const prev = points[i - 1];
     const point = points[i];
     const zone = zoneForHr(point.hr, zones);
-    const seconds = point.time && prev.time ? Math.max(1, Math.round((point.time - prev.time) / 1000)) : 1;
+    const seconds = activeIntervalSec(prev, point);
+    if (!seconds) continue;
     const key = zone?.key || "NA";
     const label = zone ? `${zone.key} ${zone.name}` : "Sin FC";
     const color = zone?.color || "#CBD5E1";
@@ -518,7 +518,9 @@ function buildSegments(points: ActivityPoint[], sport: SportType) {
 }
 
 function finalizeActivity(activity: Omit<ActivityAnalysis, "metrics" | "zoneTotals" | "zoneTimeline" | "segments">): ActivityAnalysis {
-  const preparedPoints = activity.sport === "cycling" ? estimateVirtualCyclingPower(activity.points) : activity.points;
+  const preparedPoints = activity.sport === "cycling"
+    ? activity.points.map((point) => (point.powerEstimated ? { ...point, power: null, powerEstimated: false } : point))
+    : activity.points;
   const analysisPoints = preparedPoints;
   const points = downsample(preparedPoints);
   const metrics = buildMetrics(analysisPoints, activity.sport);
@@ -657,14 +659,6 @@ export async function parseFITFile(file: File, sport: SportType, zones = getStor
           const delta = haversineKm(prev, next);
           if (delta < 0.5) distanceKm += delta;
           next.distanceKm = distanceKm;
-          if (sport === "cycling" && !next.power && next.speedKmh && prev.ele !== null && next.ele !== null && prev.ele !== undefined && next.ele !== undefined) {
-            const dt = next.time && prev.time ? Math.max(1, (next.time - prev.time) / 1000) : 1;
-            const grade = ((next.ele - prev.ele) / Math.max(1, (next.speedKmh / 3.6) * dt)) * 100;
-            const vMs = next.speedKmh / 3.6;
-            const massKg = 80;
-            const force = massKg * 9.81 * Math.sin(Math.atan(grade / 100)) + massKg * 9.81 * 0.004 + 0.5 * 1.15 * 0.35 * vMs * vMs;
-            next.power = Math.max(0, Math.round(force * vMs));
-          }
         }
         if (Number.isFinite(next.lat) || next.hr || next.speedKmh) points.push(next);
       }

@@ -154,9 +154,8 @@ function hasReliableHeartRate(activity: ActivityAnalysis) {
 
 function powerLabel(activity: ActivityAnalysis) {
   if (activity.sport !== "cycling") return "";
-  if (activity.metrics.powerSource === "estimated") return "Potencia estimada por velocidad, pendiente y peso";
-  if (activity.metrics.powerSource === "real") return "Potencia registrada por sensor";
-  return "Sin datos de potencia";
+  if (activity.metrics.powerSource === "real") return activity.source === "FIT" ? "Potencia virtual importada del dispositivo" : "Potencia importada de Strava o dispositivo";
+  return "Sin datos de potencia importada";
 }
 
 function smoothChartValues(values: Array<number | null | undefined>, radius = 4) {
@@ -269,7 +268,7 @@ function stravaToActivity(item: StravaSyncedActivity, sport: SportType) {
         : null,
       cad: normalizeCadenceValue(cad, sport, summary.name),
       speedKmh: Number.isFinite(velocity[index]) ? Number((Number(velocity[index]) * 3.6).toFixed(1)) : null,
-      power: sport === "cycling" && Number.isFinite(watts[index]) ? Number(watts[index]) : null,
+      power: sport === "cycling" && Number.isFinite(watts[index]) && Number(watts[index]) > 0 ? Number(watts[index]) : null,
       temp: Number.isFinite(temp[index]) ? Number(temp[index]) : null,
     });
   }
@@ -303,8 +302,8 @@ function stravaToActivity(item: StravaSyncedActivity, sport: SportType) {
     metrics: {
       ...parsed.metrics,
       calories: summary.calories ? Math.round(summary.calories) : parsed.metrics.calories,
-      avgPower: sport === "cycling" && summary.average_watts ? Math.round(summary.average_watts) : parsed.metrics.avgPower,
-      normalizedPower: sport === "cycling" && summary.weighted_average_watts ? Math.round(summary.weighted_average_watts) : parsed.metrics.normalizedPower,
+      avgPower: sport === "cycling" && Number(summary.average_watts) > 0 ? Math.round(Number(summary.average_watts)) : parsed.metrics.avgPower,
+      normalizedPower: sport === "cycling" && Number(summary.weighted_average_watts) > 0 ? Math.round(Number(summary.weighted_average_watts)) : parsed.metrics.normalizedPower,
     },
   };
 }
