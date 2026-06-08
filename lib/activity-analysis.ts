@@ -296,9 +296,52 @@ function estimateCalories(avgHr: number | null, durationSec: number, sport: Spor
   return Math.round(distanceKm * (sport === "running" ? 70 : 35));
 }
 
+function getAthleteWeightKg() {
+  if (typeof window === "undefined") return 68;
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY) || localStorage.getItem(LEGACY_PROFILE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    const value = Number(parsed?.weightKg || parsed?.weight || parsed?.peso || parsed?.currentWeight);
+    return Number.isFinite(value) && value > 35 ? value : 68;
+  } catch {
+    return 68;
+  }
+}
+
+function estimateVirtualCyclingPower(points: ActivityPoint[]) {
+  const athleteKg = getAthleteWeightKg();
+  const systemMassKg = athleteKg + 10;
+  const crr = 0.005;
+  const airDensity = 1.12;
+  const cda = 0.36;
+  const drivetrain = 0.96;
+  const result = points.map((point) => ({ ...point }));
+
+  for (let i = 1; i < result.length; i += 1) {
+    const prev = result[i - 1];
+    const point = result[i];
+    if (point.power && point.power > 20 && !point.powerEstimated) continue;
+    const dt = point.time && prev.time ? Math.max(1, (point.time - prev.time) / 1000) : 1;
+    const distanceM = Math.max(1, haversineKm(prev, point) * 1000);
+    const vMs = point.speedKmh && point.speedKmh > 1 ? point.speedKmh / 3.6 : distanceM / dt;
+    if (!Number.isFinite(vMs) || vMs < 1.5 || vMs > 25) continue;
+    const elevationDelta = Number.isFinite(point.ele) && Number.isFinite(prev.ele) ? Number(point.ele) - Number(prev.ele) : 0;
+    const grade = Math.max(-0.18, Math.min(0.18, elevationDelta / distanceM));
+    const gravity = systemMassKg * 9.81 * grade * vMs;
+    const rolling = systemMassKg * 9.81 * crr * vMs;
+    const aero = 0.5 * airDensity * cda * vMs ** 3;
+    const prevSpeedMs = i > 1 && result[i - 2].speedKmh ? result[i - 2].speedKmh! / 3.6 : vMs;
+    const acceleration = systemMassKg * ((vMs - prevSpeedMs) / dt) * vMs;
+    const watts = Math.round(Math.max(0, (gravity + rolling + aero + acceleration) / drivetrain));
+    point.power = Math.min(650, watts);
+    point.powerEstimated = true;
+  }
+
+  return result;
+}
+
 function normalizedPower(points: ActivityPoint[]) {
   const power = points
-    .filter((point) => !point.powerEstimated)
     .map((point) => point.power)
     .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 20);
   if (power.length < 30) return null;
@@ -326,7 +369,6 @@ function getStoredEstimatedFtp() {
 function estimateCyclingFtpForActivity(points: ActivityPoint[], np: number | null, avgPower: number | null, durationSec: number) {
   const stored = getStoredEstimatedFtp();
   const power = points
-    .filter((point) => !point.powerEstimated)
     .map((point) => ({ power: typeof point.power === "number" && Number.isFinite(point.power) ? point.power : null, time: point.time }))
     .filter((point): point is { power: number; time: number | undefined } => point.power !== null && point.power > 20);
   let best20 = 0;
@@ -407,10 +449,16 @@ function buildMetrics(points: ActivityPoint[], sport: SportType): ActivityMetric
   const elevation = elevationStats(points);
   const avgHr = avg(points.map((point) => point.hr));
   const speeds = points.map((point) => point.speedKmh).filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0.5);
-  const importedPowerPoints = sport === "cycling" ? points.filter((point) => !point.powerEstimated && point.power && point.power > 20) : [];
-  const powerAvg = sport === "cycling" ? avg(importedPowerPoints.map((point) => point.power)) : null;
+  const powerPoints = sport === "cycling" ? points.filter((point) => point.power && point.power > 20) : [];
+  const importedPowerPoints = powerPoints.filter((point) => !point.powerEstimated);
+  const estimatedPowerPoints = powerPoints.filter((point) => point.powerEstimated);
+  const powerAvg = sport === "cycling" ? avg(powerPoints.map((point) => point.power)) : null;
   const np = sport === "cycling" ? normalizedPower(points) : null;
-  const powerSource = sport !== "cycling" || !importedPowerPoints.length ? "none" : "real";
+  const powerSource = sport !== "cycling" || !powerPoints.length
+    ? "none"
+    : importedPowerPoints.length >= estimatedPowerPoints.length
+      ? "real"
+      : "estimated";
   const ftp = sport === "cycling" ? estimateCyclingFtpForActivity(points, np, powerAvg, durationSec) : null;
   const intensityFactor = np && ftp ? Number((np / ftp).toFixed(2)) : null;
   const tss = intensityFactor && durationSec ? Math.round((durationSec * np! * intensityFactor) / (ftp! * 3600) * 100) : null;
@@ -519,7 +567,7 @@ function buildSegments(points: ActivityPoint[], sport: SportType) {
 
 function finalizeActivity(activity: Omit<ActivityAnalysis, "metrics" | "zoneTotals" | "zoneTimeline" | "segments">): ActivityAnalysis {
   const preparedPoints = activity.sport === "cycling"
-    ? activity.points.map((point) => (point.powerEstimated ? { ...point, power: null, powerEstimated: false } : point))
+    ? estimateVirtualCyclingPower(activity.points)
     : activity.points;
   const analysisPoints = preparedPoints;
   const points = downsample(preparedPoints);

@@ -154,8 +154,9 @@ function hasReliableHeartRate(activity: ActivityAnalysis) {
 
 function powerLabel(activity: ActivityAnalysis) {
   if (activity.sport !== "cycling") return "";
+  if (activity.metrics.powerSource === "estimated") return "Potencia virtual estimada por IDG";
   if (activity.metrics.powerSource === "real") return activity.source === "FIT" ? "Potencia virtual importada del dispositivo" : "Potencia importada de Strava o dispositivo";
-  return "Sin datos de potencia importada";
+  return "Sin datos suficientes para potencia";
 }
 
 function smoothChartValues(values: Array<number | null | undefined>, radius = 4) {
