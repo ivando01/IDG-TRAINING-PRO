@@ -332,6 +332,7 @@ export default function GymModule() {
   const [showAI, setShowAI] = useState(true);
   const [aiLoadingId, setAiLoadingId] = useState("");
   const [weeklyTarget, setWeeklyTarget] = useState(4);
+  const [savedExerciseIds, setSavedExerciseIds] = useState<string[]>([]);
 
   const buildExercises = (nextRoutine: RoutineKey, savedHistory: GymSession[]) => {
     const previous = savedHistory.find((session) => session.routine === nextRoutine);
@@ -590,10 +591,12 @@ export default function GymModule() {
   };
 
   const updateExercise = (id: string, patch: Partial<ExerciseDraft>) => {
+    setSavedExerciseIds((current) => current.filter((item) => item !== id));
     setExercises((current) => current.map((exercise) => (exercise.id === id ? { ...exercise, ...patch } : exercise)));
   };
 
   const changeSets = (id: string, delta: number) => {
+    setSavedExerciseIds((current) => current.filter((item) => item !== id));
     setExercises((current) =>
       current.map((exercise) => {
         if (exercise.id !== id) return exercise;
@@ -609,6 +612,7 @@ export default function GymModule() {
   };
 
   const updateSetReps = (id: string, index: number, value: string) => {
+    setSavedExerciseIds((current) => current.filter((item) => item !== id));
     setExercises((current) =>
       current.map((exercise) => {
         if (exercise.id !== id) return exercise;
@@ -620,6 +624,7 @@ export default function GymModule() {
   };
 
   const updateWeight = (id: string, index: number, value: string) => {
+    setSavedExerciseIds((current) => current.filter((item) => item !== id));
     setExercises((current) =>
       current.map((exercise) => {
         if (exercise.id !== id) return exercise;
@@ -638,6 +643,7 @@ export default function GymModule() {
   };
 
   const deleteExercise = (id: string) => {
+    setSavedExerciseIds((current) => current.filter((item) => item !== id));
     setExercises((current) => (current.length > 1 ? current.filter((exercise) => exercise.id !== id) : current));
   };
 
@@ -845,6 +851,7 @@ export default function GymModule() {
     session.intelligence = usableIntelligence(intelligence) || buildIntelligence(session);
     setEditingId(session.id);
     localStorage.setItem(DRAFT_KEY, JSON.stringify(session));
+    setSavedExerciseIds((current) => Array.from(new Set([...current, exerciseId])));
     setIntelligence(`${exercise.name} guardado en la rutina actual. La sesion completa se guarda solo con "Guardar sesion".`);
   };
 
@@ -1113,19 +1120,22 @@ export default function GymModule() {
                   </div>
 
                   <div className="gym-exercise-list mt-3 grid gap-2">
-                    {exercises.map((exercise, index) => (
-                      <article className="gym-exercise-row grid items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 min-[900px]:grid-cols-[minmax(170px,1fr)_92px_minmax(360px,1.8fr)_72px_108px]" key={exercise.id}>
-                        <div className="gym-exercise-name grid grid-cols-[30px_minmax(0,1fr)] items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-green-500 text-sm font-black text-white">{index + 1}</span><input className="h-9 rounded-lg border border-slate-200 px-2 text-sm font-semibold text-slate-900" value={exercise.name} onChange={(event) => updateExercise(exercise.id, { name: event.target.value })} /></div>
+                    {exercises.map((exercise, index) => {
+                      const exerciseSaved = savedExerciseIds.includes(exercise.id);
+                      return (
+                      <article className={`gym-exercise-row grid items-center gap-2 rounded-lg border p-3 min-[900px]:grid-cols-[minmax(170px,1fr)_92px_minmax(360px,1.8fr)_72px_108px] ${exerciseSaved ? "gym-exercise-row-saved border-emerald-200 bg-emerald-50/80" : "border-slate-200 bg-slate-50"}`} key={exercise.id}>
+                        <div className="gym-exercise-name grid grid-cols-[30px_minmax(0,1fr)] items-center gap-2"><span className={`grid h-7 w-7 place-items-center rounded-lg text-sm font-black text-white ${exerciseSaved ? "bg-emerald-600" : "bg-green-500"}`}>{exerciseSaved ? "OK" : index + 1}</span><input className="h-9 rounded-lg border border-slate-200 px-2 text-sm font-semibold text-slate-900" value={exercise.name} onChange={(event) => updateExercise(exercise.id, { name: event.target.value })} /></div>
                         <div className="series-ctrl"><button type="button" onClick={() => changeSets(exercise.id, -1)}>-</button><strong>{exercise.sets}</strong><button type="button" onClick={() => changeSets(exercise.id, 1)}>+</button></div>
                         <div className="weight-chips" data-unit={unit}>{exercise.weights.map((weight, setIndex) => <label key={`${exercise.id}-${setIndex}`}><span>S{setIndex + 1}</span><input aria-label={`Repeticiones serie ${setIndex + 1}`} className="set-reps-input" inputMode="numeric" placeholder="rep" type="text" value={exercise.repsBySet?.[setIndex] ?? exercise.reps} onChange={(event) => updateSetReps(exercise.id, setIndex, event.target.value)} /><input aria-label={`Peso serie ${setIndex + 1}`} className="set-weight-input" inputMode="decimal" placeholder={unit} type="number" value={weight} onChange={(event) => updateWeight(exercise.id, setIndex, event.target.value)} /></label>)}</div>
                         <input className="compact-input rest-input h-9 rounded-lg border border-slate-200 px-2 text-center text-sm text-slate-800" value={secondsToMMSS(exercise.rest)} onChange={(event) => updateExercise(exercise.id, { rest: mmssToSeconds(event.target.value) })} />
                         <div className="gym-row-actions">
-                          <button type="button" title="Guardar ejercicio" onClick={() => saveExercise(exercise.id)}><Icon name="save" /></button>
+                          <button className={exerciseSaved ? "gym-exercise-saved-btn" : ""} type="button" title={exerciseSaved ? "Ejercicio guardado" : "Guardar ejercicio"} onClick={() => saveExercise(exercise.id)}>{exerciseSaved ? <span className="text-[10px] font-black">OK</span> : <Icon name="save" />}</button>
                           <button type="button" title="Editar"><Icon name="edit" /></button>
                           <button type="button" title="Eliminar" onClick={() => deleteExercise(exercise.id)}><Icon name="trash" /></button>
                         </div>
                       </article>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <button className="add-exercise-btn mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-200 bg-blue-50 p-3 font-black text-blue-600" type="button" onClick={addExercise}><Icon name="plus" /> Agregar ejercicio</button>
