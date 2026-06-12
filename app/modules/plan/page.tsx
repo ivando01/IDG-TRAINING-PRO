@@ -264,6 +264,8 @@ export default function PlanModule() {
   const [proposedPlan, setProposedPlan] = useState<PlannedSession[] | null>(null);
   const [mounted, setMounted] = useState(false);
   const [status, setStatus] = useState("");
+  const [reschedulingId, setReschedulingId] = useState("");
+  const [rescheduleDate, setRescheduleDate] = useState("");
   const [draft, setDraft] = useState({
     type: "gym" as SessionType,
     gymRoutine: gymRoutines[0],
@@ -390,6 +392,31 @@ export default function PlanModule() {
 
   const updateSessionStatus = (id: string, nextStatus: PlanStatus) => {
     saveSessions(sessions.map((session) => session.id === id ? { ...session, status: nextStatus } : session));
+  };
+
+  const openReschedule = (session: PlannedSession) => {
+    const currentIndex = weekDays.findIndex((day) => isoDate(day) === session.date);
+    const nextDay = weekDays.find((day, index) => index > currentIndex && isoDate(day) !== session.date)
+      || weekDays.find((day) => isoDate(day) !== session.date)
+      || parseLocalDate(session.date);
+    setReschedulingId(session.id);
+    setRescheduleDate(isoDate(nextDay));
+  };
+
+  const rescheduleSession = (id: string) => {
+    if (!rescheduleDate) {
+      setStatus("Selecciona una fecha para reprogramar.");
+      return;
+    }
+    saveSessions(
+      sessions
+        .map((session) => session.id === id ? { ...session, date: rescheduleDate, status: "moved" as PlanStatus } : session)
+        .sort((a, b) => `${a.date}-${a.type}`.localeCompare(`${b.date}-${b.type}`)),
+    );
+    setSelectedDate(rescheduleDate);
+    setReschedulingId("");
+    setRescheduleDate("");
+    setStatus("Sesion reprogramada y sincronizada.");
   };
 
   const deleteSession = (id: string) => {
@@ -621,14 +648,30 @@ export default function PlanModule() {
                               <p className="font-black text-slate-900">{session.type === "gym" ? session.gymRoutine : session.title}</p>
                               <p className="text-sm font-semibold text-slate-500">{typeMeta[session.type].label} - {session.objective} - {formatDuration(session.duration)} - {session.targetZone}</p>
                               {session.notes ? <p className="mt-1 text-xs font-bold text-slate-400">{session.notes}</p> : null}
+                              {session.status === "moved" ? <span className="mt-2 inline-flex w-fit rounded-full bg-blue-50 px-2 py-1 text-[10px] font-black uppercase text-blue-700">Reprogramada</span> : null}
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             <button className={`rounded-lg px-3 py-2 text-xs font-black ${done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`} type="button" onClick={() => updateSessionStatus(session.id, done ? "planned" : "completed")}>{done ? "Completada" : "Marcar hecho"}</button>
-                            <button className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-black text-slate-600" type="button" onClick={() => updateSessionStatus(session.id, "moved")}>Reprogramar</button>
+                            <button className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-black text-slate-600" type="button" onClick={() => openReschedule(session)}>Reprogramar</button>
                             <button className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-600" type="button" onClick={() => deleteSession(session.id)}>Eliminar</button>
                           </div>
                         </div>
+                        {reschedulingId === session.id ? (
+                          <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50/70 p-3">
+                            <p className="text-xs font-black uppercase tracking-wide text-blue-700">Mover sesion a</p>
+                            <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+                              <select className="h-10 rounded-lg border border-blue-100 bg-white px-3 text-sm font-black text-slate-800" value={rescheduleDate} onChange={(event) => setRescheduleDate(event.target.value)}>
+                                {weekDays.map((day) => {
+                                  const value = isoDate(day);
+                                  return <option key={value} value={value}>{day.toLocaleDateString("es-CO", { weekday: "short", day: "2-digit", month: "short" })}</option>;
+                                })}
+                              </select>
+                              <button className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-black text-white" type="button" onClick={() => rescheduleSession(session.id)}>Guardar</button>
+                              <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600" type="button" onClick={() => { setReschedulingId(""); setRescheduleDate(""); }}>Cancelar</button>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     );
                   })}

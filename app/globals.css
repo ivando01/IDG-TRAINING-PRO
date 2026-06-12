@@ -1607,7 +1607,7 @@ svg {
 .gym-exercise-head,
 .gym-exercise-row {
   display: grid;
-  grid-template-columns: minmax(168px, 1.15fr) 92px minmax(360px, 1.8fr) 72px 126px;
+  grid-template-columns: minmax(168px, 1.15fr) 92px minmax(360px, 1.8fr) 72px 174px;
   gap: 8px;
   align-items: center;
 }
@@ -1789,9 +1789,26 @@ svg {
 }
 
 .gym-row-actions button:nth-child(3) {
+  border-color: rgba(37, 99, 235, 0.3);
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.gym-row-actions button:nth-child(4) {
+  border-color: rgba(100, 116, 139, 0.3);
+  background: #f8fafc;
+  color: #475569;
+}
+
+.gym-row-actions button:nth-child(5) {
   border-color: rgba(239, 68, 68, 0.24);
   background: #fff1f2;
   color: #dc2626;
+}
+
+.gym-row-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
 }
 
 .add-exercise-btn {

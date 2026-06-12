@@ -286,7 +286,7 @@ function scaleColor(value: number) {
   return "#ef4444";
 }
 
-function Icon({ name }: { name: "save" | "edit" | "trash" | "chart" | "spark" | "plus" | "chev" | "eye" }) {
+function Icon({ name }: { name: "save" | "edit" | "trash" | "chart" | "spark" | "plus" | "chev" | "eye" | "up" | "down" }) {
   const common = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, strokeWidth: 1.8 };
 
   if (name === "spark") {
@@ -302,6 +302,8 @@ function Icon({ name }: { name: "save" | "edit" | "trash" | "chart" | "spark" | 
       {name === "eye" ? <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" {...common} /> : null}
       {name === "plus" ? <path d="M12 5v14M5 12h14" {...common} /> : null}
       {name === "chev" ? <path d="m6 9 6 6 6-6" {...common} /> : null}
+      {name === "up" ? <path d="m6 15 6-6 6 6" {...common} /> : null}
+      {name === "down" ? <path d="m6 9 6 6 6-6" {...common} /> : null}
     </svg>
   );
 }
@@ -645,6 +647,19 @@ export default function GymModule() {
   const deleteExercise = (id: string) => {
     setSavedExerciseIds((current) => current.filter((item) => item !== id));
     setExercises((current) => (current.length > 1 ? current.filter((exercise) => exercise.id !== id) : current));
+  };
+
+  const moveExercise = (id: string, direction: -1 | 1) => {
+    setExercises((current) => {
+      const index = current.findIndex((exercise) => exercise.id === id);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+      const next = [...current];
+      const [item] = next.splice(index, 1);
+      next.splice(nextIndex, 0, item);
+      return next;
+    });
+    setIntelligence("Orden de ejercicios actualizado en la rutina actual.");
   };
 
   const buildIntelligence = (session: GymSession) => {
@@ -1115,7 +1130,7 @@ export default function GymModule() {
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Notas<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" value={notes} placeholder="Sensaciones o ajustes" onChange={(event) => setNotes(event.target.value)} /></label>
                   </div>
 
-                  <div className="gym-exercise-head mt-4 hidden grid-cols-[minmax(170px,1fr)_92px_minmax(360px,1.8fr)_72px_108px] gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-black uppercase tracking-wide text-blue-100 min-[900px]:grid">
+                  <div className="gym-exercise-head mt-4 hidden grid-cols-[minmax(170px,1fr)_92px_minmax(360px,1.8fr)_72px_174px] gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-black uppercase tracking-wide text-blue-100 min-[900px]:grid">
                     <span>Ejercicio</span><span>Series</span><span>Reps y peso por serie ({unit})</span><span>Descanso</span><span>Acciones</span>
                   </div>
 
@@ -1123,13 +1138,15 @@ export default function GymModule() {
                     {exercises.map((exercise, index) => {
                       const exerciseSaved = savedExerciseIds.includes(exercise.id);
                       return (
-                      <article className={`gym-exercise-row grid items-center gap-2 rounded-lg border p-3 min-[900px]:grid-cols-[minmax(170px,1fr)_92px_minmax(360px,1.8fr)_72px_108px] ${exerciseSaved ? "gym-exercise-row-saved border-emerald-200 bg-emerald-50/80" : "border-slate-200 bg-slate-50"}`} key={exercise.id}>
+                      <article className={`gym-exercise-row grid items-center gap-2 rounded-lg border p-3 min-[900px]:grid-cols-[minmax(170px,1fr)_92px_minmax(360px,1.8fr)_72px_174px] ${exerciseSaved ? "gym-exercise-row-saved border-emerald-200 bg-emerald-50/80" : "border-slate-200 bg-slate-50"}`} key={exercise.id}>
                         <div className="gym-exercise-name grid grid-cols-[30px_minmax(0,1fr)] items-center gap-2"><span className={`grid h-7 w-7 place-items-center rounded-lg text-sm font-black text-white ${exerciseSaved ? "bg-emerald-600" : "bg-green-500"}`}>{exerciseSaved ? "OK" : index + 1}</span><input className="h-9 rounded-lg border border-slate-200 px-2 text-sm font-semibold text-slate-900" value={exercise.name} onChange={(event) => updateExercise(exercise.id, { name: event.target.value })} /></div>
                         <div className="series-ctrl"><button type="button" onClick={() => changeSets(exercise.id, -1)}>-</button><strong>{exercise.sets}</strong><button type="button" onClick={() => changeSets(exercise.id, 1)}>+</button></div>
                         <div className="weight-chips" data-unit={unit}>{exercise.weights.map((weight, setIndex) => <label key={`${exercise.id}-${setIndex}`}><span>S{setIndex + 1}</span><input aria-label={`Repeticiones serie ${setIndex + 1}`} className="set-reps-input" inputMode="numeric" placeholder="rep" type="text" value={exercise.repsBySet?.[setIndex] ?? exercise.reps} onChange={(event) => updateSetReps(exercise.id, setIndex, event.target.value)} /><input aria-label={`Peso serie ${setIndex + 1}`} className="set-weight-input" inputMode="decimal" placeholder={unit} type="number" value={weight} onChange={(event) => updateWeight(exercise.id, setIndex, event.target.value)} /></label>)}</div>
                         <input className="compact-input rest-input h-9 rounded-lg border border-slate-200 px-2 text-center text-sm text-slate-800" value={secondsToMMSS(exercise.rest)} onChange={(event) => updateExercise(exercise.id, { rest: mmssToSeconds(event.target.value) })} />
                         <div className="gym-row-actions">
                           <button className={exerciseSaved ? "gym-exercise-saved-btn" : ""} type="button" title={exerciseSaved ? "Ejercicio guardado" : "Guardar ejercicio"} onClick={() => saveExercise(exercise.id)}>{exerciseSaved ? <span className="text-[10px] font-black">OK</span> : <Icon name="save" />}</button>
+                          <button type="button" title="Subir ejercicio" disabled={index === 0} onClick={() => moveExercise(exercise.id, -1)}><Icon name="up" /></button>
+                          <button type="button" title="Bajar ejercicio" disabled={index === exercises.length - 1} onClick={() => moveExercise(exercise.id, 1)}><Icon name="down" /></button>
                           <button type="button" title="Editar"><Icon name="edit" /></button>
                           <button type="button" title="Eliminar" onClick={() => deleteExercise(exercise.id)}><Icon name="trash" /></button>
                         </div>
