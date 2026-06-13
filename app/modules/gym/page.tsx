@@ -1,7 +1,7 @@
 "use client";
 
 import TopNav from "@/components/TopNav";
-import { deleteCloudItem, getCloudCollection, saveCloudCollection } from "@/lib/cloud-sync";
+import { deleteCloudItem, getCloudCollection, saveCloudBackedCollection, saveCloudCollection } from "@/lib/cloud-sync";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 type RoutineKey = "1" | "2" | "3" | "4" | "5" | "wod" | "custom";
@@ -47,14 +47,50 @@ type GymTemplate = {
 };
 
 const STORAGE_KEY = "idg_gym_sessions_json";
+const RECENT_BACKUP_KEY = "idg_gym_recent_sessions_backup_json";
 const DRAFT_KEY = "idg_gym_current_session_json";
 const TEMPLATES_KEY = "idg_gym_templates_json";
 const PROFILE_KEY = "idg_profile_json";
+const RECENT_BACKUP_DAYS = 14;
+
+function readJSON<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) as T : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function recentGymSessions(sessions: GymSession[]) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - RECENT_BACKUP_DAYS);
+  cutoff.setHours(0, 0, 0, 0);
+  return sessions.filter((session) => parseLocalDate(session.date).getTime() >= cutoff.getTime()).slice(0, 40);
+}
+
+function mergeGymSessions(...groups: GymSession[][]) {
+  const byId = new Map<string, GymSession>();
+  groups.flat().forEach((session) => {
+    const normalized = normalizeSession(session);
+    const current = byId.get(normalized.id);
+    if (!current || normalized.updatedAt >= current.updatedAt) byId.set(normalized.id, normalized);
+  });
+  return sortSessions(Array.from(byId.values()));
+}
+
+function readLocalGymSessions() {
+  return mergeGymSessions(
+    readJSON<GymSession[]>(STORAGE_KEY, []),
+    readJSON<GymSession[]>(RECENT_BACKUP_KEY, []),
+  );
+}
 
 function safeSaveGymLocal(sessions: GymSession[]) {
   const compact = sessions.slice(0, 160);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(compact));
+    localStorage.setItem(RECENT_BACKUP_KEY, JSON.stringify(recentGymSessions(compact)));
     return true;
   } catch {
     // Keep Strava caches intact; fall back to a smaller gym snapshot only.
@@ -62,6 +98,7 @@ function safeSaveGymLocal(sessions: GymSession[]) {
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(compact.slice(0, 100)));
+    localStorage.setItem(RECENT_BACKUP_KEY, JSON.stringify(recentGymSessions(compact)));
     return true;
   } catch {
     return false;
@@ -366,11 +403,11 @@ export default function GymModule() {
 
   useEffect(() => {
     let alive = true;
+    let localSessions: GymSession[] = [];
     setDate(localISODate());
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const saved: GymSession[] = raw ? JSON.parse(raw) : [];
-      const sorted = sortSessions(saved);
+      const sorted = readLocalGymSessions();
+      localSessions = sorted;
       setHistory(sorted);
       const savedTemplates = sortTemplates(JSON.parse(localStorage.getItem(TEMPLATES_KEY) || "[]"));
       setTemplates(savedTemplates);
@@ -404,11 +441,16 @@ export default function GymModule() {
     }
     getCloudCollection<GymSession>("/gym/sessions", "sessions")
       .then((cloudSessions) => {
-        if (!alive || !cloudSessions.length) return;
-        const sorted = sortSessions(cloudSessions);
-        setHistory(sorted);
-        if (!localStorage.getItem(DRAFT_KEY)) setExercises(buildExercises("4", sorted));
-        safeSaveGymLocal(sorted);
+        if (!alive) return;
+        const latestLocal = readLocalGymSessions();
+        const merged = mergeGymSessions(cloudSessions, latestLocal.length ? latestLocal : localSessions);
+        if (!merged.length) return;
+        setHistory(merged);
+        if (!localStorage.getItem(DRAFT_KEY)) setExercises(buildExercises("4", merged));
+        safeSaveGymLocal(merged);
+        if (latestLocal.length && merged.length >= cloudSessions.length) {
+          saveCloudBackedCollection({ path: "/gym/sessions", key: "sessions", cacheKey: STORAGE_KEY, items: merged }).catch(() => undefined);
+        }
       })
       .catch(() => undefined);
     getCloudCollection<GymTemplate>("/gym/templates", "templates")
@@ -739,7 +781,7 @@ export default function GymModule() {
     const nextHistory = sortSessions(sessions);
     setHistory(nextHistory);
     safeSaveGymLocal(nextHistory);
-    saveCloudCollection("/gym/sessions", "sessions", nextHistory).catch(() => undefined);
+    saveCloudBackedCollection({ path: "/gym/sessions", key: "sessions", cacheKey: STORAGE_KEY, items: nextHistory }).catch(() => undefined);
     return nextHistory;
   };
 
