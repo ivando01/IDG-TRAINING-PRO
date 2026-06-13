@@ -198,6 +198,7 @@ function stravaPointsFromStreams(summary, streams, sport) {
   const cadence = streamData(streams, "cadence");
   const watts = streamData(streams, "watts");
   const velocity = streamData(streams, "velocity_smooth");
+  const grade = streamData(streams, "grade_smooth");
   const temp = streamData(streams, "temp");
   const length = Math.max(latlng.length, time.length, distance.length, altitude.length, heartrate.length, velocity.length);
   const start = summary?.start_date ? new Date(summary.start_date).getTime() : Date.now();
@@ -218,6 +219,7 @@ function stravaPointsFromStreams(summary, streams, sport) {
       speedKmh: Number.isFinite(Number(velocity[streamIndex])) ? numericOrNull(Number(velocity[streamIndex]) * 3.6, 1) : null,
       power: sport === "cycling" ? numericOrNull(watts[streamIndex], 0) : null,
       temp: numericOrNull(temp[streamIndex], 0),
+      gradePct: grade[streamIndex] === undefined || grade[streamIndex] === null ? null : numericOrNull(grade[streamIndex], 1),
     };
   });
 }
