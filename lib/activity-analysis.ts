@@ -39,6 +39,28 @@ export type CadenceTerrainSummary = {
   avgGradePct: number | null;
 };
 
+type StoredCadenceTerrainProfile = {
+  key?: CadenceTerrainKey;
+  label?: string;
+  gradeMin?: number;
+  gradeMax?: number | null;
+  optimalMin?: number;
+  optimalMax?: number;
+  lowLimit?: number;
+};
+
+type CadenceTerrainRule = {
+  key: CadenceTerrainKey;
+  label: string;
+  range: string;
+  gradeMin: number;
+  gradeMax: number | null;
+  optimalMin: number;
+  optimalMax: number;
+  lowLimit: number;
+  optimal: string;
+};
+
 export type CadenceEfficiencyAnalysis = {
   activePedalingSec: number;
   efficientSec: number;
@@ -136,6 +158,12 @@ export const DEFAULT_ZONES: HRZone[] = [
   { key: "Z5", name: "Extremo", min: 171, max: 190, color: ZONE_COLORS.Z5 },
 ];
 
+const DEFAULT_CADENCE_TERRAIN_RULES: CadenceTerrainRule[] = [
+  { key: "flat", label: "Plano / falso llano", range: "0-3%", gradeMin: 0, gradeMax: 3, optimalMin: 85, optimalMax: 95, lowLimit: 75, optimal: "85-95 rpm" },
+  { key: "rolling", label: "Terreno ondulado", range: "3-6%", gradeMin: 3.01, gradeMax: 6, optimalMin: 75, optimalMax: 85, lowLimit: 65, optimal: "75-85 rpm" },
+  { key: "climb", label: "Subida sostenida", range: ">6%", gradeMin: 6.01, gradeMax: null, optimalMin: 65, optimalMax: 75, lowLimit: 60, optimal: "65-75 rpm" },
+];
+
 function calculatedZonesFromProfile(profile: Record<string, unknown> | null | undefined): HRZone[] {
   const fcmax = Number(profile?.fcmax) || 190;
   const fcrest = Number(profile?.fcrest) || 0;
@@ -205,6 +233,46 @@ export function getStoredZones(): HRZone[] {
     return calculated;
   } catch {
     return DEFAULT_ZONES;
+  }
+}
+
+function normalizeCadenceTerrainRules(value: unknown): CadenceTerrainRule[] {
+  if (!Array.isArray(value) || value.length < 3) return DEFAULT_CADENCE_TERRAIN_RULES;
+  const items = value as StoredCadenceTerrainProfile[];
+  const normalized = DEFAULT_CADENCE_TERRAIN_RULES.map((fallback) => {
+    const stored = items.find((item) => item?.key === fallback.key);
+    const gradeMin = Number(stored?.gradeMin);
+    const rawGradeMax = stored?.gradeMax === null ? null : Number(stored?.gradeMax);
+    const optimalMin = Number(stored?.optimalMin);
+    const optimalMax = Number(stored?.optimalMax);
+    const lowLimit = Number(stored?.lowLimit);
+    const next = {
+      ...fallback,
+      label: stored?.label || fallback.label,
+      gradeMin: Number.isFinite(gradeMin) ? gradeMin : fallback.gradeMin,
+      gradeMax: rawGradeMax === null || Number.isFinite(rawGradeMax) ? rawGradeMax : fallback.gradeMax,
+      optimalMin: Number.isFinite(optimalMin) ? optimalMin : fallback.optimalMin,
+      optimalMax: Number.isFinite(optimalMax) ? optimalMax : fallback.optimalMax,
+      lowLimit: Number.isFinite(lowLimit) ? lowLimit : fallback.lowLimit,
+    };
+    return {
+      ...next,
+      range: next.gradeMax === null ? `>${Math.round(next.gradeMin)}%` : `${next.gradeMin}-${next.gradeMax}%`,
+      optimal: `${next.optimalMin}-${next.optimalMax} rpm`,
+    };
+  });
+  const coherent = normalized.every((rule) => rule.optimalMin > 0 && rule.optimalMin < rule.optimalMax && rule.lowLimit < rule.optimalMin);
+  return coherent ? normalized : DEFAULT_CADENCE_TERRAIN_RULES;
+}
+
+function getStoredCadenceTerrainRules(): CadenceTerrainRule[] {
+  if (typeof window === "undefined") return DEFAULT_CADENCE_TERRAIN_RULES;
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY) || localStorage.getItem(LEGACY_PROFILE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return normalizeCadenceTerrainRules(parsed?.cadenceTerrains);
+  } catch {
+    return DEFAULT_CADENCE_TERRAIN_RULES;
   }
 }
 
@@ -481,21 +549,14 @@ function zoneRank(zone: HRZone | null) {
   return zone ? Number(zone.key.replace("Z", "")) || 0 : 0;
 }
 
-function cadenceTerrainForGrade(gradePct: number): CadenceTerrainKey | null {
+function cadenceTerrainForGrade(gradePct: number, rules: CadenceTerrainRule[]): CadenceTerrainRule | null {
   if (!Number.isFinite(gradePct) || gradePct < 0) return null;
-  if (gradePct <= 3) return "flat";
-  if (gradePct > 6) return "climb";
-  return "rolling";
-}
-
-function cadenceTerrainMeta(key: CadenceTerrainKey) {
-  if (key === "flat") return { label: "Plano / falso llano", range: "0-3%", optimalMin: 85, optimalMax: 95, lowLimit: 75, optimal: "85-95 rpm" };
-  if (key === "climb") return { label: "Subida sostenida", range: ">6%", optimalMin: 65, optimalMax: 75, lowLimit: 60, optimal: "65-75 rpm" };
-  return { label: "Terreno ondulado", range: "3-6%", optimalMin: 75, optimalMax: 85, lowLimit: 65, optimal: "75-85 rpm" };
+  return rules.find((rule) => gradePct >= rule.gradeMin && (rule.gradeMax === null || gradePct <= rule.gradeMax)) || null;
 }
 
 function buildCadenceEfficiency(points: ActivityPoint[], zones: HRZone[]): CadenceEfficiencyAnalysis | null {
   if (points.length < 2) return null;
+  const terrainRules = getStoredCadenceTerrainRules();
   const buckets = new Map<CadenceTerrainKey, {
     seconds: number;
     efficientSeconds: number;
@@ -504,8 +565,8 @@ function buildCadenceEfficiency(points: ActivityPoint[], zones: HRZone[]): Caden
     cadence: number[];
     grade: number[];
   }>();
-  (["flat", "rolling", "climb"] as CadenceTerrainKey[]).forEach((key) => {
-    buckets.set(key, { seconds: 0, efficientSeconds: 0, overgearedSeconds: 0, companionSeconds: 0, cadence: [], grade: [] });
+  terrainRules.forEach((rule) => {
+    buckets.set(rule.key, { seconds: 0, efficientSeconds: 0, overgearedSeconds: 0, companionSeconds: 0, cadence: [], grade: [] });
   });
 
   for (let i = 1; i < points.length; i += 1) {
@@ -516,14 +577,13 @@ function buildCadenceEfficiency(points: ActivityPoint[], zones: HRZone[]): Caden
     if (!seconds || !Number.isFinite(cadence) || cadence <= 0) continue;
     const gradePct = Number.isFinite(point.gradePct) ? Number(point.gradePct) : gradeBetween(prev, point);
     if (!Number.isFinite(gradePct) || Number(gradePct) < 0) continue;
-    const terrainKey = cadenceTerrainForGrade(Number(gradePct));
-    if (!terrainKey) continue;
-    const meta = cadenceTerrainMeta(terrainKey);
-    const bucket = buckets.get(terrainKey)!;
+    const meta = cadenceTerrainForGrade(Number(gradePct), terrainRules);
+    if (!meta) continue;
+    const bucket = buckets.get(meta.key)!;
     const hrRank = zoneRank(zoneForHr(point.hr, zones));
     const isEfficient = cadence >= meta.optimalMin && cadence <= meta.optimalMax;
     const isLow = cadence < meta.lowLimit;
-    const isCompanion = terrainKey === "climb" && isLow && hrRank > 0 && hrRank <= 2;
+    const isCompanion = meta.key === "climb" && isLow && hrRank > 0 && hrRank <= 2;
     const isOvergeared = isLow && hrRank >= 3;
 
     bucket.seconds += seconds;
@@ -534,12 +594,11 @@ function buildCadenceEfficiency(points: ActivityPoint[], zones: HRZone[]): Caden
     bucket.grade.push(Number(gradePct));
   }
 
-  const terrain = (["flat", "rolling", "climb"] as CadenceTerrainKey[]).map((key) => {
-    const bucket = buckets.get(key)!;
-    const meta = cadenceTerrainMeta(key);
+  const terrain = terrainRules.map((meta) => {
+    const bucket = buckets.get(meta.key)!;
     const efficientBase = bucket.efficientSeconds + bucket.companionSeconds;
     return {
-      key,
+      key: meta.key,
       label: meta.label,
       range: meta.range,
       optimal: meta.optimal,

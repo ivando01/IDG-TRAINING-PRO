@@ -6,6 +6,18 @@ import { estimatePerformance } from "@/lib/performance-insights";
 import { useEffect, useMemo, useState } from "react";
 
 type Zone = { name: string; min: number; max: number; color: string };
+type BikeType = "road" | "mtb";
+type CyclistCadenceLevel = "beginner" | "enthusiast" | "advanced";
+type DrivetrainType = "unknown" | "standard" | "compact" | "single";
+type CadenceTerrainProfile = {
+  key: "flat" | "rolling" | "climb";
+  label: string;
+  gradeMin: number;
+  gradeMax: number | null;
+  optimalMin: number;
+  optimalMax: number;
+  lowLimit: number;
+};
 
 type AthleteProfile = {
   name: string;
@@ -32,6 +44,12 @@ type AthleteProfile = {
   bikeDaysPerWeek: string;
   restDaysPerWeek: string;
   zones: Zone[];
+  bikeType: BikeType;
+  cyclistCadenceLevel: CyclistCadenceLevel;
+  drivetrainType: DrivetrainType;
+  largestCog: string;
+  cadenceTerrains: CadenceTerrainProfile[];
+  cadenceProfileUpdatedAt?: string;
   estimatedFtp?: number | null;
   estimatedFtpMethod?: string;
   estimatedVo2Max?: number | null;
@@ -75,7 +93,76 @@ const seedProfile: AthleteProfile = {
   bikeDaysPerWeek: "2",
   restDaysPerWeek: "1",
   zones: [],
+  bikeType: "road",
+  cyclistCadenceLevel: "enthusiast",
+  drivetrainType: "compact",
+  largestCog: "32",
+  cadenceTerrains: [],
 };
+
+function buildCadenceTerrainProfile(
+  cyclistLevel: CyclistCadenceLevel,
+  bikeType: BikeType,
+  drivetrainType: DrivetrainType,
+  largestCogText: string,
+): CadenceTerrainProfile[] {
+  const isBeginner = cyclistLevel === "beginner";
+  const isMtb = bikeType === "mtb";
+  const largestCog = Number(largestCogText) || 32;
+  const hasClimbingGear = drivetrainType === "single" || largestCog >= 34;
+  const mtbOffset = isMtb ? -3 : 0;
+  const climbOffset = hasClimbingGear ? 0 : -2;
+  const flatMin = (isBeginner ? 80 : 85) + mtbOffset;
+  const flatMax = (isBeginner ? 90 : 95) + mtbOffset;
+  const rollingMin = (isBeginner ? 70 : 75) + mtbOffset;
+  const rollingMax = (isBeginner ? 82 : 85) + mtbOffset;
+  const climbMin = (isBeginner ? 60 : 65) + mtbOffset + climbOffset;
+  const climbMax = (isBeginner ? 70 : 75) + mtbOffset + climbOffset;
+  const lowLimitBase = isBeginner ? 55 : 60;
+
+  return [
+    {
+      key: "flat",
+      label: "Plano / falso llano",
+      gradeMin: 0,
+      gradeMax: 3,
+      optimalMin: flatMin,
+      optimalMax: flatMax,
+      lowLimit: Math.max(50, flatMin - 10),
+    },
+    {
+      key: "rolling",
+      label: "Terreno ondulado",
+      gradeMin: 3.01,
+      gradeMax: 6,
+      optimalMin: rollingMin,
+      optimalMax: rollingMax,
+      lowLimit: Math.max(50, rollingMin - 10),
+    },
+    {
+      key: "climb",
+      label: "Subida sostenida",
+      gradeMin: 6.01,
+      gradeMax: null,
+      optimalMin: Math.max(55, climbMin),
+      optimalMax: Math.max(62, climbMax),
+      lowLimit: Math.max(50, lowLimitBase + mtbOffset + climbOffset),
+    },
+  ];
+}
+
+function normalizeCadenceProfile(profile: Partial<AthleteProfile>) {
+  const bikeType: BikeType = profile.bikeType === "mtb" ? "mtb" : "road";
+  const cyclistCadenceLevel: CyclistCadenceLevel =
+    profile.cyclistCadenceLevel === "beginner" || profile.cyclistCadenceLevel === "advanced"
+      ? profile.cyclistCadenceLevel
+      : "enthusiast";
+  const drivetrainType: DrivetrainType =
+    profile.drivetrainType === "standard" || profile.drivetrainType === "single" || profile.drivetrainType === "unknown"
+      ? profile.drivetrainType
+      : "compact";
+  return buildCadenceTerrainProfile(cyclistCadenceLevel, bikeType, drivetrainType, profile.largestCog || "32");
+}
 
 function calculateZones(fcmaxText: string) {
   const fcmax = Number(fcmaxText) || 190;
@@ -132,6 +219,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<AthleteProfile>(() => ({
     ...seedProfile,
     zones: calculateZones(seedProfile.fcmax),
+    cadenceTerrains: normalizeCadenceProfile(seedProfile),
   }));
   const [status, setStatus] = useState("");
   const [analysisLoading, setAnalysisLoading] = useState(false);
@@ -153,6 +241,9 @@ export default function ProfilePage() {
     const nextProfile = {
       ...merged,
       zones: normalizeZones(parsed.zones, merged.fcmax),
+      cadenceTerrains: Array.isArray(parsed.cadenceTerrains) && parsed.cadenceTerrains.length
+        ? parsed.cadenceTerrains
+        : normalizeCadenceProfile(merged),
     };
     setProfile(nextProfile);
     getCloudProfile<AthleteProfile>()
@@ -162,7 +253,14 @@ export default function ProfilePage() {
           saveCloudProfile(parsed as AthleteProfile).catch(() => undefined);
           return;
         }
-        const synced = { ...seedProfile, ...cloudProfile, zones: normalizeZones(cloudProfile.zones, cloudProfile.fcmax || seedProfile.fcmax) };
+        const synced = {
+          ...seedProfile,
+          ...cloudProfile,
+          zones: normalizeZones(cloudProfile.zones, cloudProfile.fcmax || seedProfile.fcmax),
+          cadenceTerrains: Array.isArray(cloudProfile.cadenceTerrains) && cloudProfile.cadenceTerrains.length
+            ? cloudProfile.cadenceTerrains
+            : normalizeCadenceProfile(cloudProfile),
+        };
         setProfile(synced);
         localStorage.setItem(PROFILE_KEY, JSON.stringify(synced));
         localStorage.setItem(LEGACY_PROFILE_KEY, JSON.stringify(synced));
@@ -182,7 +280,7 @@ export default function ProfilePage() {
   }, [profile.height, profile.weight]);
 
   const completion = useMemo(() => {
-    const keys: (keyof AthleteProfile)[] = ["name", "gender", "dob", "weight", "height", "fcmax", "fcrest", "lvlRun", "lvlBike", "lvlGym", "goal", "gymDaysPerWeek"];
+    const keys: (keyof AthleteProfile)[] = ["name", "gender", "dob", "weight", "height", "fcmax", "fcrest", "lvlRun", "lvlBike", "lvlGym", "goal", "gymDaysPerWeek", "bikeType", "cyclistCadenceLevel"];
     const done = keys.filter((key) => String(profile[key] || "").trim()).length;
     const zonesOk = profile.zones.every((zone, index) => zone.min < zone.max && (index === 0 || zone.min >= profile.zones[index - 1].max));
     return Math.round(((done + (zonesOk ? 1 : 0)) / (keys.length + 1)) * 100);
@@ -202,7 +300,17 @@ export default function ProfilePage() {
   const performance = useMemo(() => estimatePerformance(profile as unknown as Record<string, unknown>), [profile]);
 
   const setField = (key: keyof AthleteProfile, value: string) => {
-    setProfile((current) => ({ ...current, [key]: value }));
+    setProfile((current) => {
+      const next = { ...current, [key]: value };
+      if (key === "bikeType" || key === "cyclistCadenceLevel" || key === "drivetrainType" || key === "largestCog") {
+        return {
+          ...next,
+          cadenceTerrains: normalizeCadenceProfile(next),
+          cadenceProfileUpdatedAt: new Date().toISOString(),
+        };
+      }
+      return next;
+    });
   };
 
   const updateZone = (index: number, key: "min" | "max", value: string) => {
@@ -219,10 +327,21 @@ export default function ProfilePage() {
     setStatus("Zonas recalculadas desde FC maxima.");
   };
 
+  const recalculateCadenceProfile = () => {
+    setProfile((current) => ({
+      ...current,
+      cadenceTerrains: normalizeCadenceProfile(current),
+      cadenceProfileUpdatedAt: new Date().toISOString(),
+    }));
+    setStatus("Perfil biomecanico de cadencia actualizado desde tus respuestas.");
+  };
+
   const saveProfile = async () => {
     const payload = {
       ...profile,
       zones: normalizeZones(profile.zones, profile.fcmax),
+      cadenceTerrains: normalizeCadenceProfile(profile),
+      cadenceProfileUpdatedAt: profile.cadenceProfileUpdatedAt || new Date().toISOString(),
       estimatedFtp: performance.ftp,
       estimatedFtpMethod: performance.ftpMethod,
       estimatedVo2Max: performance.vo2,
@@ -426,6 +545,74 @@ export default function ProfilePage() {
               </div>
               {zoneError ? <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-600">{zoneError}</p> : null}
               <p className="mt-3 text-xs font-semibold text-slate-500">Las zonas alimentan Running, Ciclismo, recuperacion e IDG Intelligence. Si haces prueba de campo o laboratorio, edita los rangos manualmente.</p>
+            </div>
+
+            <div className="rounded-lg border border-emerald-100 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-emerald-700">Biomecanica de ciclismo</p>
+                  <h2 className="mt-1 text-lg font-black text-slate-900">Perfil de cadencia por terreno</h2>
+                  <p className="mt-1 text-sm font-semibold text-slate-500">La app calcula tu cadencia optima segun bici, nivel y desarrollo. Luego el analisis compara cada tramo contra el terreno real.</p>
+                </div>
+                <button className="rounded-lg bg-slate-900 px-4 py-3 text-sm font-black text-white" type="button" onClick={recalculateCadenceProfile}>Calcular perfil</button>
+              </div>
+
+              <div className="mt-5 grid gap-4 lg:grid-cols-4">
+                <label className={labelClass}>
+                  Bicicleta principal
+                  <select className={inputClass} value={profile.bikeType} onChange={(event) => setField("bikeType", event.target.value)}>
+                    <option value="road">Ruta</option>
+                    <option value="mtb">Montana MTB</option>
+                  </select>
+                </label>
+                <label className={labelClass}>
+                  Tipo de ciclista
+                  <select className={inputClass} value={profile.cyclistCadenceLevel} onChange={(event) => setField("cyclistCadenceLevel", event.target.value)}>
+                    <option value="beginner">Principiante / recreativo</option>
+                    <option value="enthusiast">Entusiasta / amateur</option>
+                    <option value="advanced">Avanzado / competitivo</option>
+                  </select>
+                </label>
+                <label className={labelClass}>
+                  Transmision
+                  <select className={inputClass} value={profile.drivetrainType} onChange={(event) => setField("drivetrainType", event.target.value)}>
+                    <option value="compact">Biplato compact 50/34</option>
+                    <option value="standard">Biplato estandar</option>
+                    <option value="single">Monoplato</option>
+                    <option value="unknown">No estoy seguro</option>
+                  </select>
+                </label>
+                <label className={labelClass}>Pinon mas grande<input className={inputClass} type="number" min="24" max="52" value={profile.largestCog} onChange={(event) => setField("largestCog", event.target.value)} /></label>
+              </div>
+
+              <div className="mt-5 grid gap-3 lg:grid-cols-3">
+                {profile.cadenceTerrains.map((terrain) => (
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-4" key={terrain.key}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wide text-slate-500">{terrain.label}</p>
+                        <p className="mt-2 text-2xl font-black text-slate-900">{terrain.optimalMin}-{terrain.optimalMax} rpm</p>
+                      </div>
+                      <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-black uppercase text-emerald-700">
+                        {terrain.gradeMax === null ? `>${Math.round(terrain.gradeMin)}%` : `${terrain.gradeMin}-${terrain.gradeMax}%`}
+                      </span>
+                    </div>
+                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(100, Math.max(12, ((terrain.optimalMax - terrain.lowLimit) / 45) * 100))}%` }} />
+                    </div>
+                    <p className="mt-3 text-xs font-semibold leading-5 text-slate-500">
+                      Atranque critico bajo {terrain.lowLimit} rpm si coincide con FC en Z3 o superior.
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 rounded-lg border border-blue-100 bg-blue-50/70 p-4">
+                <p className="text-sm font-black text-slate-900">Tu Perfil Biomecanico de Cadencia esta listo</p>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+                  En plano se prioriza eficiencia aerobica; en subida se protege la articulacion y se evita exigir 90 rpm cuando la pendiente obliga a una relacion mas pesada. Con historial suficiente, IDG Coach podra proponer una autocalibracion basada en tus rutas reales.
+                </p>
+              </div>
             </div>
 
             <div className="rounded-lg border border-blue-100 bg-white p-5 shadow-sm">
