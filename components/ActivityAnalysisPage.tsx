@@ -249,6 +249,7 @@ function stravaToActivity(item: StravaSyncedActivity, sport: SportType) {
   const cadence = readStream<number>(streams, "cadence");
   const watts = readStream<number>(streams, "watts");
   const velocity = readStream<number>(streams, "velocity_smooth");
+  const grade = readStream<number>(streams, "grade_smooth");
   const temp = readStream<number>(streams, "temp");
   const length = Math.max(latlng.length, time.length, distance.length, altitude.length, heartrate.length, velocity.length);
   const activityDate = summary.start_date_local || summary.start_date || null;
@@ -271,6 +272,7 @@ function stravaToActivity(item: StravaSyncedActivity, sport: SportType) {
       speedKmh: Number.isFinite(velocity[index]) ? Number((Number(velocity[index]) * 3.6).toFixed(1)) : null,
       power: sport === "cycling" && Number.isFinite(watts[index]) && Number(watts[index]) > 0 ? Number(watts[index]) : null,
       temp: Number.isFinite(temp[index]) ? Number(temp[index]) : null,
+      gradePct: Number.isFinite(grade[index]) ? Number(Number(grade[index]).toFixed(1)) : null,
     });
   }
 
@@ -1019,6 +1021,79 @@ function ZoneTimeline({
   );
 }
 
+function CadenceTerrainAnalysis({ activity }: { activity: ActivityAnalysis }) {
+  const cadence = activity.metrics.cadenceEfficiency;
+  if (activity.sport !== "cycling" || !cadence || cadence.activePedalingSec < 60) return null;
+  const terrain = cadence.terrain.filter((item) => item.seconds > 0);
+  const overMinutes = Math.round(cadence.overgearedSec / 60);
+
+  return (
+    <section className="rounded-lg border border-[#D9EAFE] bg-white p-5">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-wide text-blue-600">Cadencia por terreno</p>
+          <h2 className="mt-1 text-lg font-black text-slate-900">Eficiencia biomecanica</h2>
+          <p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-slate-500">
+            Compara tu cadencia contra el rango esperado segun inclinacion real, excluyendo bajadas y tramos sin pedaleo.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:min-w-[280px]">
+          <div className="rounded-lg bg-blue-50 p-3">
+            <p className="text-[10px] font-black uppercase tracking-wide text-blue-600">Score</p>
+            <p className="mt-1 text-2xl font-black text-slate-900">{cadence.efficiencyPct}%</p>
+          </div>
+          <div className="rounded-lg bg-orange-50 p-3">
+            <p className="text-[10px] font-black uppercase tracking-wide text-orange-600">Atrancado</p>
+            <p className="mt-1 text-2xl font-black text-slate-900">{overMinutes} min</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 xl:grid-cols-3">
+        {terrain.map((item) => (
+          <div className="rounded-lg border border-slate-100 bg-slate-50/70 p-4" key={item.key}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-slate-900">{item.label}</p>
+                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-slate-400">
+                  {item.range} - optimo {item.optimal}
+                </p>
+              </div>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-100">
+                {item.efficiencyPct}%
+              </span>
+            </div>
+            <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-200">
+              <div className="h-full rounded-full bg-blue-600" style={{ width: `${Math.min(100, item.efficiencyPct)}%` }} />
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] font-bold text-slate-500">
+              <div>
+                <p className="font-black uppercase text-slate-400">Tiempo</p>
+                <p className="mt-1 text-slate-900">{formatDuration(item.seconds)}</p>
+              </div>
+              <div>
+                <p className="font-black uppercase text-slate-400">Cad.</p>
+                <p className="mt-1 text-slate-900">{item.avgCadence ? `${item.avgCadence} rpm` : "--"}</p>
+              </div>
+              <div>
+                <p className="font-black uppercase text-slate-400">Atr.</p>
+                <p className="mt-1 text-slate-900">{formatDuration(item.overgearedSeconds)}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className={`mt-4 rounded-lg border p-4 ${cadence.overgearedSec >= 12 * 60 ? "border-orange-100 bg-orange-50" : "border-emerald-100 bg-emerald-50"}`}>
+        <p className={`text-xs font-black uppercase tracking-wide ${cadence.overgearedSec >= 12 * 60 ? "text-orange-700" : "text-emerald-700"}`}>
+          Insight tecnico
+        </p>
+        <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{cadence.insight}</p>
+      </div>
+    </section>
+  );
+}
+
 export default function ActivityAnalysisPage({ sport }: Props) {
   const copy = sportCopy(sport);
   const analysisTopRef = useRef<HTMLDivElement | null>(null);
@@ -1398,6 +1473,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
             </div>
 
             <ZoneTimeline activity={selected} />
+            <CadenceTerrainAnalysis activity={selected} />
 
             <section className="rounded-lg border border-[#E2E8F0] bg-white p-5">
               <h2 className="text-lg font-black text-slate-900">Notas de la actividad</h2>

@@ -20,6 +20,33 @@ export type ActivityPoint = {
   power?: number | null;
   powerEstimated?: boolean;
   temp?: number | null;
+  gradePct?: number | null;
+};
+
+export type CadenceTerrainKey = "flat" | "rolling" | "climb";
+
+export type CadenceTerrainSummary = {
+  key: CadenceTerrainKey;
+  label: string;
+  range: string;
+  optimal: string;
+  seconds: number;
+  efficientSeconds: number;
+  overgearedSeconds: number;
+  companionSeconds: number;
+  efficiencyPct: number;
+  avgCadence: number | null;
+  avgGradePct: number | null;
+};
+
+export type CadenceEfficiencyAnalysis = {
+  activePedalingSec: number;
+  efficientSec: number;
+  overgearedSec: number;
+  companionSec: number;
+  efficiencyPct: number;
+  terrain: CadenceTerrainSummary[];
+  insight: string;
 };
 
 export type ZoneTimelineSegment = {
@@ -58,6 +85,7 @@ export type ActivityMetrics = {
   tss: number | null;
   intensityFactor: number | null;
   variabilityIndex: number | null;
+  cadenceEfficiency: CadenceEfficiencyAnalysis | null;
 };
 
 export type ActivityAnalysis = {
@@ -326,7 +354,7 @@ function estimateVirtualCyclingPower(points: ActivityPoint[]) {
     const vMs = point.speedKmh && point.speedKmh > 1 ? point.speedKmh / 3.6 : distanceM / dt;
     if (!Number.isFinite(vMs) || vMs < 1.5 || vMs > 25) continue;
     const elevationDelta = Number.isFinite(point.ele) && Number.isFinite(prev.ele) ? Number(point.ele) - Number(prev.ele) : 0;
-    const grade = Math.max(-0.18, Math.min(0.18, elevationDelta / distanceM));
+    const grade = Math.max(-0.18, Math.min(0.18, Number.isFinite(point.gradePct) ? Number(point.gradePct) / 100 : elevationDelta / distanceM));
     const gravity = systemMassKg * 9.81 * grade * vMs;
     const rolling = systemMassKg * 9.81 * crr * vMs;
     const aero = 0.5 * airDensity * cda * vMs ** 3;
@@ -432,6 +460,117 @@ function activeIntervalSec(prev: ActivityPoint, point: ActivityPoint) {
   return distanceDeltaKm > 0.002 || speedKmh > 1 ? deltaSec : 0;
 }
 
+function gradeBetween(prev: ActivityPoint, point: ActivityPoint) {
+  if (Number.isFinite(point.gradePct)) return Math.max(-25, Math.min(25, Number(point.gradePct)));
+  const distanceM = Math.max(1, ((point.distanceKm || 0) - (prev.distanceKm || 0)) * 1000 || haversineKm(prev, point) * 1000);
+  if (!Number.isFinite(prev.ele) || !Number.isFinite(point.ele) || distanceM <= 0) return null;
+  return Math.max(-25, Math.min(25, ((Number(point.ele) - Number(prev.ele)) / distanceM) * 100));
+}
+
+function annotateGrade(points: ActivityPoint[]) {
+  if (points.length < 2) return points;
+  const rawGrades = points.map((point, index) => (index === 0 ? null : gradeBetween(points[index - 1], point)));
+  const smoothed = smoothNumericValues(rawGrades, 4);
+  return points.map((point, index) => ({
+    ...point,
+    gradePct: Number.isFinite(point.gradePct) ? Number(point.gradePct) : smoothed[index],
+  }));
+}
+
+function zoneRank(zone: HRZone | null) {
+  return zone ? Number(zone.key.replace("Z", "")) || 0 : 0;
+}
+
+function cadenceTerrainForGrade(gradePct: number): CadenceTerrainKey | null {
+  if (!Number.isFinite(gradePct) || gradePct < 0) return null;
+  if (gradePct <= 3) return "flat";
+  if (gradePct > 6) return "climb";
+  return "rolling";
+}
+
+function cadenceTerrainMeta(key: CadenceTerrainKey) {
+  if (key === "flat") return { label: "Plano / falso llano", range: "0-3%", optimalMin: 85, optimalMax: 95, lowLimit: 75, optimal: "85-95 rpm" };
+  if (key === "climb") return { label: "Subida sostenida", range: ">6%", optimalMin: 65, optimalMax: 75, lowLimit: 60, optimal: "65-75 rpm" };
+  return { label: "Terreno ondulado", range: "3-6%", optimalMin: 75, optimalMax: 85, lowLimit: 65, optimal: "75-85 rpm" };
+}
+
+function buildCadenceEfficiency(points: ActivityPoint[], zones: HRZone[]): CadenceEfficiencyAnalysis | null {
+  if (points.length < 2) return null;
+  const buckets = new Map<CadenceTerrainKey, {
+    seconds: number;
+    efficientSeconds: number;
+    overgearedSeconds: number;
+    companionSeconds: number;
+    cadence: number[];
+    grade: number[];
+  }>();
+  (["flat", "rolling", "climb"] as CadenceTerrainKey[]).forEach((key) => {
+    buckets.set(key, { seconds: 0, efficientSeconds: 0, overgearedSeconds: 0, companionSeconds: 0, cadence: [], grade: [] });
+  });
+
+  for (let i = 1; i < points.length; i += 1) {
+    const prev = points[i - 1];
+    const point = points[i];
+    const seconds = activeIntervalSec(prev, point);
+    const cadence = Number(point.cad);
+    if (!seconds || !Number.isFinite(cadence) || cadence <= 0) continue;
+    const gradePct = Number.isFinite(point.gradePct) ? Number(point.gradePct) : gradeBetween(prev, point);
+    if (!Number.isFinite(gradePct) || Number(gradePct) < 0) continue;
+    const terrainKey = cadenceTerrainForGrade(Number(gradePct));
+    if (!terrainKey) continue;
+    const meta = cadenceTerrainMeta(terrainKey);
+    const bucket = buckets.get(terrainKey)!;
+    const hrRank = zoneRank(zoneForHr(point.hr, zones));
+    const isEfficient = cadence >= meta.optimalMin && cadence <= meta.optimalMax;
+    const isLow = cadence < meta.lowLimit;
+    const isCompanion = terrainKey === "climb" && isLow && hrRank > 0 && hrRank <= 2;
+    const isOvergeared = isLow && hrRank >= 3;
+
+    bucket.seconds += seconds;
+    if (isEfficient) bucket.efficientSeconds += seconds;
+    if (isCompanion) bucket.companionSeconds += seconds;
+    if (isOvergeared) bucket.overgearedSeconds += seconds;
+    bucket.cadence.push(cadence);
+    bucket.grade.push(Number(gradePct));
+  }
+
+  const terrain = (["flat", "rolling", "climb"] as CadenceTerrainKey[]).map((key) => {
+    const bucket = buckets.get(key)!;
+    const meta = cadenceTerrainMeta(key);
+    const efficientBase = bucket.efficientSeconds + bucket.companionSeconds;
+    return {
+      key,
+      label: meta.label,
+      range: meta.range,
+      optimal: meta.optimal,
+      seconds: bucket.seconds,
+      efficientSeconds: bucket.efficientSeconds,
+      overgearedSeconds: bucket.overgearedSeconds,
+      companionSeconds: bucket.companionSeconds,
+      efficiencyPct: bucket.seconds ? Math.round((efficientBase / bucket.seconds) * 100) : 0,
+      avgCadence: avg(bucket.cadence),
+      avgGradePct: bucket.grade.length ? Number((bucket.grade.reduce((sum, value) => sum + value, 0) / bucket.grade.length).toFixed(1)) : null,
+    };
+  });
+  const activePedalingSec = terrain.reduce((sum, item) => sum + item.seconds, 0);
+  if (activePedalingSec < 60) return null;
+  const efficientSec = terrain.reduce((sum, item) => sum + item.efficientSeconds, 0);
+  const companionSec = terrain.reduce((sum, item) => sum + item.companionSeconds, 0);
+  const overgearedSec = terrain.reduce((sum, item) => sum + item.overgearedSeconds, 0);
+  const efficiencyPct = Math.round(((efficientSec + companionSec) / activePedalingSec) * 100);
+  const climb = terrain.find((item) => item.key === "climb");
+  const overMinutes = Math.round(overgearedSec / 60);
+  const insight = overgearedSec >= 12 * 60
+    ? "Nota biomecanica: detectamos tendencia a rodar atrancado con frecuencia cardiaca alta. Esto incrementa fatiga muscular y tension en espalda baja/rodillas; anticipa el cambio de desarrollo y usa una relacion mas suave antes de la pendiente."
+    : climb && climb.seconds >= 5 * 60 && climb.efficiencyPct < 55
+      ? "En subida tu cadencia aun puede ser mas economica. Busca sostener una relacion suave sin perseguir 90 rpm: el objetivo es mantener control cardiaco y tecnica estable."
+      : efficiencyPct >= 75
+        ? "Cadencia bien adaptada al terreno. La relacion entre pedaleo, inclinacion y frecuencia cardiaca fue eficiente para sostener carga sin abusar de fuerza."
+        : "Hay margen para ajustar cambios antes de cada cambio de pendiente y evitar alternar cadencias muy bajas con picos cardiacos.";
+
+  return { activePedalingSec, efficientSec, overgearedSec, companionSec, efficiencyPct, terrain, insight };
+}
+
 function estimateRunningVo2(avgSpeedKmh: number | null, avgHr: number | null, maxHr: number | null) {
   if (!avgSpeedKmh || avgSpeedKmh <= 0) return null;
   const metersPerMinute = (avgSpeedKmh * 1000) / 60;
@@ -443,7 +582,7 @@ function estimateRunningVo2(avgSpeedKmh: number | null, avgHr: number | null, ma
   return Math.round(Math.max(20, Math.min(80, estimate)));
 }
 
-function buildMetrics(points: ActivityPoint[], sport: SportType): ActivityMetrics {
+function buildMetrics(points: ActivityPoint[], sport: SportType, zones = DEFAULT_ZONES): ActivityMetrics {
   const durationSec = activeDurationSec(points) || elapsedDurationSec(points);
   const distanceKm = points.at(-1)?.distanceKm || 0;
   const elevation = elevationStats(points);
@@ -463,6 +602,7 @@ function buildMetrics(points: ActivityPoint[], sport: SportType): ActivityMetric
   const intensityFactor = np && ftp ? Number((np / ftp).toFixed(2)) : null;
   const tss = intensityFactor && durationSec ? Math.round((durationSec * np! * intensityFactor) / (ftp! * 3600) * 100) : null;
   const avgCadence = avg(points.map((point) => point.cad));
+  const cadenceEfficiency = sport === "cycling" ? buildCadenceEfficiency(points, zones) : null;
   const avgSpeedKmh = speeds.length ? Number((speeds.reduce((sum, value) => sum + value, 0) / speeds.length).toFixed(1)) : durationSec ? Number((distanceKm / (durationSec / 3600)).toFixed(1)) : null;
   const strideMeters = sport === "running" && avgCadence && distanceKm && durationSec ? Number(((distanceKm * 1000) / ((avgCadence * durationSec) / 60)).toFixed(2)) : null;
   const maxHrValue = max(points.map((point) => point.hr));
@@ -492,6 +632,7 @@ function buildMetrics(points: ActivityPoint[], sport: SportType): ActivityMetric
     tss: sport === "cycling" ? tss : null,
     intensityFactor: sport === "cycling" ? intensityFactor : null,
     variabilityIndex: sport === "cycling" && np && powerAvg ? Number((np / powerAvg).toFixed(2)) : null,
+    cadenceEfficiency,
   };
 }
 
@@ -566,12 +707,13 @@ function buildSegments(points: ActivityPoint[], sport: SportType) {
 }
 
 function finalizeActivity(activity: Omit<ActivityAnalysis, "metrics" | "zoneTotals" | "zoneTimeline" | "segments">): ActivityAnalysis {
+  const gradedPoints = activity.sport === "cycling" ? annotateGrade(activity.points) : activity.points;
   const preparedPoints = activity.sport === "cycling"
-    ? estimateVirtualCyclingPower(activity.points)
+    ? estimateVirtualCyclingPower(gradedPoints)
     : activity.points;
   const analysisPoints = preparedPoints;
   const points = downsample(preparedPoints);
-  const metrics = buildMetrics(analysisPoints, activity.sport);
+  const metrics = buildMetrics(analysisPoints, activity.sport, activity.zones);
   const zoneAnalytics = buildZoneAnalytics(analysisPoints, activity.zones);
   return {
     ...activity,
