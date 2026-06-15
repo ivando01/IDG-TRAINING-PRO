@@ -127,20 +127,6 @@ export default function TopNav({ title }: { title: string }) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <div
-          className={`hidden rounded-lg border px-3 py-2 text-[11px] font-black sm:block ${
-            syncStatus.lastError
-              ? "border-red-100 bg-red-50 text-red-600"
-              : syncStatus.pendingCount
-                ? "border-amber-100 bg-amber-50 text-amber-700"
-                : syncStatus.cloud
-                ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-                : "border-slate-200 bg-slate-50 text-slate-500"
-          }`}
-          title={syncStatus.lastError || (syncStatus.lastSyncAt ? `Ultima sincronizacion: ${new Date(syncStatus.lastSyncAt).toLocaleString("es-CO")}` : "Sin sincronizacion reciente")}
-        >
-          {syncStatus.lastError ? "Nube con alerta" : syncStatus.pendingCount ? `${syncStatus.pendingCount} pendientes` : syncStatus.cloud ? "Nube activa" : "Solo local"}
-        </div>
         <button className="relative rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900" aria-label="Notificaciones">
           <AppIcon name="bell" className="h-5 w-5" />
         </button>

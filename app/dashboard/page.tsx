@@ -287,8 +287,8 @@ function DashboardSyncCenter({ status, onRetry }: { status: DashboardSyncStatus;
   const dotClass = isCloudReady ? "bg-emerald-500" : status.cloud ? "bg-amber-500" : "bg-slate-400";
 
   return (
-    <section className="mb-6 rounded-lg border border-blue-100 bg-white p-4 shadow-sm">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <section className="rounded-lg border border-white/15 bg-white/10 p-4 text-white shadow-sm backdrop-blur">
+      <div className="flex flex-col gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-extrabold ${stateClass}`}>
@@ -305,19 +305,19 @@ function DashboardSyncCenter({ status, onRetry }: { status: DashboardSyncStatus;
               </span>
             )}
           </div>
-          <h2 className="mt-3 text-xl font-extrabold text-slate-900">Centro de sincronizacion</h2>
-          <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
-            Estado de nube, cache local y sincronizacion entre tus dispositivos.
+          <h2 className="mt-3 text-xl font-extrabold text-white">Centro de sincronizacion</h2>
+          <p className="mt-1 text-sm font-semibold leading-6 text-blue-100">
+            Tu estado de nube y cache local en una sola lectura.
           </p>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px] lg:min-w-[390px]">
-          <div className="rounded-lg bg-slate-50 px-3 py-2">
-            <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">Ultima sync</p>
-            <p className="mt-1 text-sm font-extrabold text-slate-900">{formatSyncTime(status.lastSyncAt)}</p>
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px]">
+          <div className="rounded-lg border border-white/10 bg-white/10 px-3 py-2">
+            <p className="text-[10px] font-extrabold uppercase tracking-wide text-blue-100">Ultima sync</p>
+            <p className="mt-1 text-sm font-extrabold text-white">{formatSyncTime(status.lastSyncAt)}</p>
           </div>
           <button
-            className="rounded-lg bg-slate-900 px-4 py-3 text-sm font-extrabold text-white disabled:bg-slate-300"
+            className="rounded-lg bg-white px-4 py-3 text-sm font-extrabold text-slate-950 disabled:bg-white/30 disabled:text-white/60"
             disabled={!status.cloud && !status.pendingCount}
             type="button"
             onClick={onRetry}
@@ -332,6 +332,84 @@ function DashboardSyncCenter({ status, onRetry }: { status: DashboardSyncStatus;
           <strong className="font-extrabold">Ultima alerta:</strong> {status.lastError}
         </div>
       ) : null}
+    </section>
+  );
+}
+
+function DashboardExecutiveHero({
+  readiness,
+  consistency,
+  totalMinutes,
+  hardSessions,
+  weekSessions,
+  syncStatus,
+  onRetrySync,
+}: {
+  readiness: number;
+  consistency: number;
+  totalMinutes: number;
+  hardSessions: number;
+  weekSessions: DashboardSession[];
+  syncStatus: DashboardSyncStatus;
+  onRetrySync: () => void;
+}) {
+  const nextRecommendation =
+    hardSessions > 2
+      ? "Recuperacion activa + movilidad"
+      : consistency < 50
+        ? "Retomar consistencia con sesion corta"
+        : "Base aerobica + fuerza controlada";
+  const nextDetail =
+    hardSessions > 2
+      ? "Hay carga alta acumulada; baja intensidad y protege articulaciones."
+      : consistency < 50
+        ? "Una sesion de 30-45 min mantiene el habito sin sobrecargar la semana."
+        : "Mantente en zonas eficientes y evita picos innecesarios.";
+
+  return (
+    <section className="mb-6 overflow-hidden rounded-lg border border-slate-200 bg-[#06152f] text-white shadow-[0_22px_70px_rgba(15,23,42,0.18)]">
+      <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] lg:p-6">
+        <div className="relative overflow-hidden rounded-lg border border-white/10 bg-white/5 p-5">
+          <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl" />
+          <div className="relative">
+            <p className="text-xs font-black uppercase tracking-wide text-emerald-300">IDG Coach · lectura de hoy</p>
+            <h2 className="mt-3 max-w-3xl text-3xl font-black leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+              Entrena con una decision clara, no con ruido.
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm font-semibold leading-6 text-blue-100 sm:text-base">
+              {nextRecommendation}. {nextDetail}
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link className="rounded-lg bg-emerald-400 px-4 py-3 text-sm font-black text-slate-950" href="/modules/plan">
+                Ver plan de hoy
+              </Link>
+              <Link className="rounded-lg border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-white" href="/modules/analytics">
+                Preguntar al coach
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-white/10 bg-white/10 p-4">
+              <p className="text-[10px] font-black uppercase tracking-wide text-blue-100">Readiness</p>
+              <p className="mt-2 text-3xl font-black">{readiness}</p>
+              <p className="mt-1 text-xs font-bold text-emerald-200">{readiness >= 75 ? "Bueno" : "Controlado"}</p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/10 p-4">
+              <p className="text-[10px] font-black uppercase tracking-wide text-blue-100">Consistencia</p>
+              <p className="mt-2 text-3xl font-black">{consistency}%</p>
+              <p className="mt-1 text-xs font-bold text-blue-100">{weekSessions.length} sesiones esta semana</p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/10 p-4">
+              <p className="text-[10px] font-black uppercase tracking-wide text-blue-100">Tiempo</p>
+              <p className="mt-2 text-3xl font-black">{Math.round(totalMinutes / 60)}h</p>
+              <p className="mt-1 text-xs font-bold text-blue-100">{totalMinutes % 60} min acumulados</p>
+            </div>
+          </div>
+        </div>
+
+        <DashboardSyncCenter status={syncStatus} onRetry={onRetrySync} />
+      </div>
     </section>
   );
 }
@@ -406,7 +484,15 @@ export default function Dashboard() {
     <>
       <TopNav title="Dashboard" />
       <main className="min-h-0 flex-1 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-6">
-        <DashboardSyncCenter status={syncStatus} onRetry={handleRetrySync} />
+        <DashboardExecutiveHero
+          consistency={consistency}
+          hardSessions={hardSessions}
+          onRetrySync={handleRetrySync}
+          readiness={readiness}
+          syncStatus={syncStatus}
+          totalMinutes={totalMinutes}
+          weekSessions={weekSessions}
+        />
 
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <KPICard label="Carga Semanal" value={totalLoad || "--"} icon={<AppIcon name="analytics" className="h-5 w-5" />} trend={{ value: Math.max(0, consistency), direction: "up" }} color="blue" />
