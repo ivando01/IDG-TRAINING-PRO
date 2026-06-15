@@ -9,6 +9,17 @@ type Zone = { name: string; min: number; max: number; color: string };
 type BikeType = "road" | "mtb";
 type CyclistCadenceLevel = "beginner" | "enthusiast" | "advanced";
 type DrivetrainType = "unknown" | "standard" | "compact" | "single";
+type BikeSetup = {
+  id: string;
+  name: string;
+  brand: string;
+  model: string;
+  type: BikeType;
+  chainringCount: string;
+  smallestCog: string;
+  largestCog: string;
+  isPrimary?: boolean;
+};
 type CadenceTerrainProfile = {
   key: "flat" | "rolling" | "climb";
   label: string;
@@ -48,6 +59,8 @@ type AthleteProfile = {
   cyclistCadenceLevel: CyclistCadenceLevel;
   drivetrainType: DrivetrainType;
   largestCog: string;
+  bikes: BikeSetup[];
+  selectedBikeId: string;
   cadenceTerrains: CadenceTerrainProfile[];
   cadenceProfileUpdatedAt?: string;
   estimatedFtp?: number | null;
@@ -97,21 +110,61 @@ const seedProfile: AthleteProfile = {
   cyclistCadenceLevel: "enthusiast",
   drivetrainType: "compact",
   largestCog: "32",
+  bikes: [],
+  selectedBikeId: "bike-1",
   cadenceTerrains: [],
 };
 
+function defaultBikeFromProfile(profile: Partial<AthleteProfile>): BikeSetup {
+  const type: BikeType = profile.bikeType === "mtb" ? "mtb" : "road";
+  const drivetrain = profile.drivetrainType || "compact";
+  return {
+    id: "bike-1",
+    name: type === "mtb" ? "MTB principal" : "Ruta principal",
+    brand: "",
+    model: "",
+    type,
+    chainringCount: drivetrain === "single" ? "1" : "2",
+    smallestCog: "11",
+    largestCog: profile.largestCog || "32",
+    isPrimary: true,
+  };
+}
+
+function normalizeBikes(profile: Partial<AthleteProfile>): BikeSetup[] {
+  const source: Partial<BikeSetup>[] = Array.isArray(profile.bikes) && profile.bikes.length ? profile.bikes : [defaultBikeFromProfile(profile)];
+  const normalized: BikeSetup[] = source.map((bike, index) => ({
+    id: bike.id || `bike-${index + 1}`,
+    name: bike.name || `Bici ${index + 1}`,
+    brand: bike.brand || "",
+    model: bike.model || "",
+    type: bike.type === "mtb" ? "mtb" : "road",
+    chainringCount: bike.chainringCount || "2",
+    smallestCog: bike.smallestCog || "11",
+    largestCog: bike.largestCog || profile.largestCog || "32",
+    isPrimary: index === 0 ? true : Boolean(bike.isPrimary),
+  }));
+  return normalized.map((bike, index, bikes) => ({ ...bike, isPrimary: bikes.some((item) => item.isPrimary) ? bike.isPrimary : index === 0 }));
+}
+
+function getSelectedBike(profile: Partial<AthleteProfile>) {
+  const bikes = normalizeBikes(profile);
+  return bikes.find((bike) => bike.id === profile.selectedBikeId) || bikes.find((bike) => bike.isPrimary) || bikes[0];
+}
+
 function buildCadenceTerrainProfile(
   cyclistLevel: CyclistCadenceLevel,
-  bikeType: BikeType,
-  drivetrainType: DrivetrainType,
-  largestCogText: string,
+  bike: BikeSetup,
 ): CadenceTerrainProfile[] {
   const isBeginner = cyclistLevel === "beginner";
-  const isMtb = bikeType === "mtb";
-  const largestCog = Number(largestCogText) || 32;
-  const hasClimbingGear = drivetrainType === "single" || largestCog >= 34;
+  const isMtb = bike.type === "mtb";
+  const chainrings = Number(bike.chainringCount) || 2;
+  const largestCog = Number(bike.largestCog) || 32;
+  const smallestCog = Number(bike.smallestCog) || 11;
+  const hasClimbingGear = chainrings === 1 || largestCog >= 34;
+  const narrowCassette = smallestCog >= 12 && largestCog <= 28;
   const mtbOffset = isMtb ? -3 : 0;
-  const climbOffset = hasClimbingGear ? 0 : -2;
+  const climbOffset = hasClimbingGear ? 0 : narrowCassette ? -4 : -2;
   const flatMin = (isBeginner ? 80 : 85) + mtbOffset;
   const flatMax = (isBeginner ? 90 : 95) + mtbOffset;
   const rollingMin = (isBeginner ? 70 : 75) + mtbOffset;
@@ -152,16 +205,11 @@ function buildCadenceTerrainProfile(
 }
 
 function normalizeCadenceProfile(profile: Partial<AthleteProfile>) {
-  const bikeType: BikeType = profile.bikeType === "mtb" ? "mtb" : "road";
   const cyclistCadenceLevel: CyclistCadenceLevel =
     profile.cyclistCadenceLevel === "beginner" || profile.cyclistCadenceLevel === "advanced"
       ? profile.cyclistCadenceLevel
       : "enthusiast";
-  const drivetrainType: DrivetrainType =
-    profile.drivetrainType === "standard" || profile.drivetrainType === "single" || profile.drivetrainType === "unknown"
-      ? profile.drivetrainType
-      : "compact";
-  return buildCadenceTerrainProfile(cyclistCadenceLevel, bikeType, drivetrainType, profile.largestCog || "32");
+  return buildCadenceTerrainProfile(cyclistCadenceLevel, getSelectedBike(profile));
 }
 
 function calculateZones(fcmaxText: string) {
@@ -240,6 +288,8 @@ export default function ProfilePage() {
     };
     const nextProfile = {
       ...merged,
+      bikes: normalizeBikes(merged),
+      selectedBikeId: merged.selectedBikeId || normalizeBikes(merged)[0]?.id || "bike-1",
       zones: normalizeZones(parsed.zones, merged.fcmax),
       cadenceTerrains: Array.isArray(parsed.cadenceTerrains) && parsed.cadenceTerrains.length
         ? parsed.cadenceTerrains
@@ -256,6 +306,8 @@ export default function ProfilePage() {
         const synced = {
           ...seedProfile,
           ...cloudProfile,
+          bikes: normalizeBikes(cloudProfile),
+          selectedBikeId: cloudProfile.selectedBikeId || normalizeBikes(cloudProfile)[0]?.id || "bike-1",
           zones: normalizeZones(cloudProfile.zones, cloudProfile.fcmax || seedProfile.fcmax),
           cadenceTerrains: Array.isArray(cloudProfile.cadenceTerrains) && cloudProfile.cadenceTerrains.length
             ? cloudProfile.cadenceTerrains
@@ -280,7 +332,7 @@ export default function ProfilePage() {
   }, [profile.height, profile.weight]);
 
   const completion = useMemo(() => {
-    const keys: (keyof AthleteProfile)[] = ["name", "gender", "dob", "weight", "height", "fcmax", "fcrest", "lvlRun", "lvlBike", "lvlGym", "goal", "gymDaysPerWeek", "bikeType", "cyclistCadenceLevel"];
+    const keys: (keyof AthleteProfile)[] = ["name", "gender", "dob", "weight", "height", "fcmax", "fcrest", "lvlRun", "lvlBike", "lvlGym", "goal", "gymDaysPerWeek", "cyclistCadenceLevel", "selectedBikeId"];
     const done = keys.filter((key) => String(profile[key] || "").trim()).length;
     const zonesOk = profile.zones.every((zone, index) => zone.min < zone.max && (index === 0 || zone.min >= profile.zones[index - 1].max));
     return Math.round(((done + (zonesOk ? 1 : 0)) / (keys.length + 1)) * 100);
@@ -302,9 +354,10 @@ export default function ProfilePage() {
   const setField = (key: keyof AthleteProfile, value: string) => {
     setProfile((current) => {
       const next = { ...current, [key]: value };
-      if (key === "bikeType" || key === "cyclistCadenceLevel" || key === "drivetrainType" || key === "largestCog") {
+      if (key === "bikeType" || key === "cyclistCadenceLevel" || key === "drivetrainType" || key === "largestCog" || key === "selectedBikeId") {
         return {
           ...next,
+          bikeType: getSelectedBike(next).type,
           cadenceTerrains: normalizeCadenceProfile(next),
           cadenceProfileUpdatedAt: new Date().toISOString(),
         };
@@ -322,6 +375,52 @@ export default function ProfilePage() {
     }));
   };
 
+  const updateBike = (id: string, key: keyof BikeSetup, value: string | boolean) => {
+    setProfile((current) => {
+      const bikes = normalizeBikes(current).map((bike) => {
+        if (bike.id !== id) return key === "isPrimary" && value === true ? { ...bike, isPrimary: false } : bike;
+        return { ...bike, [key]: value, isPrimary: key === "isPrimary" ? Boolean(value) : bike.isPrimary };
+      });
+      const selectedBikeId = current.selectedBikeId && bikes.some((bike) => bike.id === current.selectedBikeId)
+        ? current.selectedBikeId
+        : bikes.find((bike) => bike.isPrimary)?.id || bikes[0]?.id || "bike-1";
+      const next = { ...current, bikes, selectedBikeId };
+      return {
+        ...next,
+        bikeType: getSelectedBike(next).type,
+        cadenceTerrains: normalizeCadenceProfile(next),
+        cadenceProfileUpdatedAt: new Date().toISOString(),
+      };
+    });
+  };
+
+  const addBike = () => {
+    setProfile((current) => {
+      const bikes = normalizeBikes(current);
+      const nextBike: BikeSetup = {
+        id: `bike-${Date.now()}`,
+        name: `Bici ${bikes.length + 1}`,
+        brand: "",
+        model: "",
+        type: "road",
+        chainringCount: "2",
+        smallestCog: "11",
+        largestCog: "32",
+      };
+      return { ...current, bikes: [...bikes, nextBike] };
+    });
+  };
+
+  const removeBike = (id: string) => {
+    setProfile((current) => {
+      const bikes = normalizeBikes(current).filter((bike) => bike.id !== id);
+      const normalized = bikes.length ? bikes : [defaultBikeFromProfile(current)];
+      const selectedBikeId = normalized[0].id;
+      const next = { ...current, bikes: normalized.map((bike, index) => ({ ...bike, isPrimary: index === 0 })), selectedBikeId };
+      return { ...next, bikeType: getSelectedBike(next).type, cadenceTerrains: normalizeCadenceProfile(next) };
+    });
+  };
+
   const recalculateZones = () => {
     setProfile((current) => ({ ...current, zones: calculateZones(current.fcmax) }));
     setStatus("Zonas recalculadas desde FC maxima.");
@@ -330,6 +429,8 @@ export default function ProfilePage() {
   const recalculateCadenceProfile = () => {
     setProfile((current) => ({
       ...current,
+      bikes: normalizeBikes(current),
+      bikeType: getSelectedBike(current).type,
       cadenceTerrains: normalizeCadenceProfile(current),
       cadenceProfileUpdatedAt: new Date().toISOString(),
     }));
@@ -339,6 +440,8 @@ export default function ProfilePage() {
   const saveProfile = async () => {
     const payload = {
       ...profile,
+      bikes: normalizeBikes(profile),
+      bikeType: getSelectedBike(profile).type,
       zones: normalizeZones(profile.zones, profile.fcmax),
       cadenceTerrains: normalizeCadenceProfile(profile),
       cadenceProfileUpdatedAt: profile.cadenceProfileUpdatedAt || new Date().toISOString(),
@@ -557,14 +660,7 @@ export default function ProfilePage() {
                 <button className="rounded-lg bg-slate-900 px-4 py-3 text-sm font-black text-white" type="button" onClick={recalculateCadenceProfile}>Calcular perfil</button>
               </div>
 
-              <div className="mt-5 grid gap-4 lg:grid-cols-4">
-                <label className={labelClass}>
-                  Bicicleta principal
-                  <select className={inputClass} value={profile.bikeType} onChange={(event) => setField("bikeType", event.target.value)}>
-                    <option value="road">Ruta</option>
-                    <option value="mtb">Montana MTB</option>
-                  </select>
-                </label>
+              <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_160px]">
                 <label className={labelClass}>
                   Tipo de ciclista
                   <select className={inputClass} value={profile.cyclistCadenceLevel} onChange={(event) => setField("cyclistCadenceLevel", event.target.value)}>
@@ -574,15 +670,40 @@ export default function ProfilePage() {
                   </select>
                 </label>
                 <label className={labelClass}>
-                  Transmision
-                  <select className={inputClass} value={profile.drivetrainType} onChange={(event) => setField("drivetrainType", event.target.value)}>
-                    <option value="compact">Biplato compact 50/34</option>
-                    <option value="standard">Biplato estandar</option>
-                    <option value="single">Monoplato</option>
-                    <option value="unknown">No estoy seguro</option>
+                  Bici activa para calcular
+                  <select className={inputClass} value={profile.selectedBikeId} onChange={(event) => setField("selectedBikeId", event.target.value)}>
+                    {normalizeBikes(profile).map((bike) => (
+                      <option key={bike.id} value={bike.id}>{bike.name || `${bike.brand} ${bike.model}` || "Bici"}</option>
+                    ))}
                   </select>
                 </label>
-                <label className={labelClass}>Pinon mas grande<input className={inputClass} type="number" min="24" max="52" value={profile.largestCog} onChange={(event) => setField("largestCog", event.target.value)} /></label>
+                <button className="h-10 self-end rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-700" type="button" onClick={addBike}>Agregar bici</button>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                {normalizeBikes(profile).map((bike) => (
+                  <div className={`rounded-lg border p-4 ${bike.id === profile.selectedBikeId ? "border-blue-200 bg-blue-50/50" : "border-slate-200 bg-slate-50"}`} key={bike.id}>
+                    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <label className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-600">
+                        <input checked={profile.selectedBikeId === bike.id} name="selected-bike" onChange={() => setField("selectedBikeId", bike.id)} type="radio" />
+                        Bici para analisis
+                      </label>
+                      <div className="flex gap-2">
+                        <button className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700" type="button" onClick={() => updateBike(bike.id, "isPrimary", true)}>Principal</button>
+                        <button className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-600" type="button" onClick={() => removeBike(bike.id)}>Eliminar</button>
+                      </div>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      <label className={labelClass}>Nombre<input className={inputClass} value={bike.name} onChange={(event) => updateBike(bike.id, "name", event.target.value)} /></label>
+                      <label className={labelClass}>Marca<input className={inputClass} value={bike.brand} onChange={(event) => updateBike(bike.id, "brand", event.target.value)} placeholder="Specialized, Trek..." /></label>
+                      <label className={labelClass}>Modelo<input className={inputClass} value={bike.model} onChange={(event) => updateBike(bike.id, "model", event.target.value)} placeholder="Emonda, Epic..." /></label>
+                      <label className={labelClass}>Tipo<select className={inputClass} value={bike.type} onChange={(event) => updateBike(bike.id, "type", event.target.value)}><option value="road">Ruta</option><option value="mtb">Montana MTB</option></select></label>
+                      <label className={labelClass}>Cantidad de platos<input className={inputClass} type="number" min="1" max="3" value={bike.chainringCount} onChange={(event) => updateBike(bike.id, "chainringCount", event.target.value)} /></label>
+                      <label className={labelClass}>Pinon pequeno<input className={inputClass} type="number" min="9" max="16" value={bike.smallestCog} onChange={(event) => updateBike(bike.id, "smallestCog", event.target.value)} /></label>
+                      <label className={labelClass}>Pinon grande<input className={inputClass} type="number" min="24" max="52" value={bike.largestCog} onChange={(event) => updateBike(bike.id, "largestCog", event.target.value)} /></label>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <div className="mt-5 grid gap-3 lg:grid-cols-3">

@@ -1,9 +1,10 @@
 "use client";
 
 import { AppIcon } from "@/components/Brand";
+import { navItems } from "@/components/Sidebar";
 import { clearStoredAccess } from "@/lib/access";
 import { getSyncStatus, retryPendingSyncs } from "@/lib/cloud-sync";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface User {
@@ -14,8 +15,10 @@ interface User {
 
 export default function TopNav({ title }: { title: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [showModuleMenu, setShowModuleMenu] = useState(false);
   const [syncStatus, setSyncStatus] = useState({
     cloud: false,
     lastSyncAt: null as string | null,
@@ -65,8 +68,63 @@ export default function TopNav({ title }: { title: string }) {
       .toUpperCase();
 
   return (
-    <div className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
-      <h1 className="text-xl font-black text-slate-900">{title}</h1>
+    <div className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2.5 lg:px-6 lg:py-4">
+      <div className="relative flex min-w-0 items-center gap-2">
+        <button
+          aria-label="Abrir menu de modulos"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-900 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 lg:hidden"
+          onClick={() => setShowModuleMenu((value) => !value)}
+          type="button"
+        >
+          <AppIcon name="menu" className="h-5 w-5" />
+        </button>
+        <h1 className="min-w-0 truncate text-lg font-black text-slate-900 lg:text-xl">{title}</h1>
+
+        {showModuleMenu ? (
+          <div className="absolute left-0 top-[calc(100%+10px)] z-50 w-[calc(100vw-1.5rem)] max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-2xl backdrop-blur lg:hidden">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wide text-blue-600">Navegacion</p>
+                <p className="text-sm font-black text-slate-900">Cambiar modulo</p>
+              </div>
+              <button
+                aria-label="Cerrar menu de modulos"
+                className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-sm font-black text-slate-700"
+                onClick={() => setShowModuleMenu(false)}
+                type="button"
+              >
+                x
+              </button>
+            </div>
+            <nav className="grid max-h-[58vh] grid-cols-2 gap-2 overflow-y-auto pb-1">
+              {navItems.map((item) => {
+                const active = pathname === item.href || pathname.startsWith(item.href);
+                return (
+                  <button
+                    className={`flex min-w-0 items-center gap-3 rounded-xl border px-3 py-3 text-left text-sm font-black transition ${
+                      active ? "border-blue-200 bg-blue-50 text-blue-700" : "border-slate-100 bg-white text-slate-600"
+                    }`}
+                    key={item.href}
+                    onClick={() => {
+                      setShowModuleMenu(false);
+                      router.push(item.href);
+                    }}
+                    type="button"
+                  >
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${active ? "bg-white" : "bg-slate-50"}`}>
+                      <AppIcon name={item.icon} className="h-7 w-7" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate">{item.label.replace("Dashboard", "Inicio").replace("IDG Coach", "Coach").replace("Peso & Cuerpo", "Peso")}</span>
+                      <span className="block truncate text-[10px] font-black uppercase tracking-wide text-slate-400">{item.section}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        ) : null}
+      </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
         <div

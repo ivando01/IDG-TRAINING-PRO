@@ -120,6 +120,8 @@ export type ActivityAnalysis = {
   name: string;
   date: string;
   startTime?: string;
+  bikeId?: string;
+  bikeLabel?: string;
   points: ActivityPoint[];
   metrics: ActivityMetrics;
   zones: HRZone[];

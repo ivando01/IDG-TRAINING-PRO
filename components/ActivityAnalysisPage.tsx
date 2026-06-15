@@ -58,6 +58,15 @@ type StravaSyncedActivity = {
   streams?: Record<string, StravaStream> | null;
 };
 
+type BikeProfile = {
+  id: string;
+  name?: string;
+  brand?: string;
+  model?: string;
+  type?: "road" | "mtb";
+  isPrimary?: boolean;
+};
+
 type ChartOption = {
   key: string;
   label: string;
@@ -159,6 +168,38 @@ function powerLabel(activity: ActivityAnalysis) {
   return "Sin datos suficientes para potencia";
 }
 
+function bikeLabel(bike: BikeProfile) {
+  const brandModel = `${bike.brand || ""} ${bike.model || ""}`.trim();
+  return bike.name || brandModel || (bike.type === "mtb" ? "MTB" : "Bici de ruta");
+}
+
+function profileBikesFromStorage(profile?: Record<string, unknown> | null): BikeProfile[] {
+  const source = profile || (() => {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY) || localStorage.getItem(LEGACY_PROFILE_KEY);
+      return raw ? JSON.parse(raw) as Record<string, unknown> : null;
+    } catch {
+      return null;
+    }
+  })();
+  const bikes = Array.isArray(source?.bikes) ? source.bikes as BikeProfile[] : [];
+  if (bikes.length) {
+    return bikes.map((bike, index) => ({
+      ...bike,
+      id: bike.id || `bike-${index + 1}`,
+      name: bike.name || `Bici ${index + 1}`,
+      isPrimary: index === 0 ? true : Boolean(bike.isPrimary),
+    }));
+  }
+  const fallbackType = source?.bikeType === "mtb" ? "mtb" : "road";
+  return [{
+    id: "bike-1",
+    name: fallbackType === "mtb" ? "MTB principal" : "Ruta principal",
+    type: fallbackType,
+    isPrimary: true,
+  }];
+}
+
 function smoothChartValues(values: Array<number | null | undefined>, radius = 4) {
   return values.map((value, index) => {
     if (!Number.isFinite(value)) return null;
@@ -240,6 +281,12 @@ async function readJsonResponse(response: Response) {
 function stravaToActivity(item: StravaSyncedActivity, sport: SportType) {
   const summary = item.summary;
   const support = sport === "running" && isSupportActivityText(stravaActivityText(summary));
+  const activeBike = sport === "cycling"
+    ? (() => {
+      const bikes = profileBikesFromStorage();
+      return bikes.find((bike) => bike.isPrimary) || bikes[0];
+    })()
+    : undefined;
   const streams = item.streams || {};
   const latlng = readStream<[number, number]>(streams, "latlng");
   const time = readStream<number>(streams, "time");
@@ -295,6 +342,8 @@ function stravaToActivity(item: StravaSyncedActivity, sport: SportType) {
     name: summary.name || (sport === "cycling" ? "Actividad de ciclismo" : support ? "Caminata de soporte" : "Actividad de running"),
     date: activityDate ? activityDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
     startTime: activityDate || undefined,
+    bikeId: activeBike?.id,
+    bikeLabel: activeBike ? bikeLabel(activeBike) : undefined,
     points,
     zones: getStoredZones(),
     notes: "",
@@ -1109,6 +1158,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
   const [chartPointIndex, setChartPointIndex] = useState(0);
   const [mapPointIndex, setMapPointIndex] = useState(0);
   const [expandedViewer, setExpandedViewer] = useState<"" | "chart" | "map">("");
+  const [bikeProfiles, setBikeProfiles] = useState<BikeProfile[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -1136,8 +1186,9 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       setActivities([]);
     }
     syncCloudProfileToLocal()
-      .then(() => {
+      .then((profile) => {
         if (!alive) return;
+        setBikeProfiles(profileBikesFromStorage(profile || undefined));
         setActivities((currentActivities) => {
           const recalculated = sortActivitiesBySessionDate(currentActivities.map(hydrateCloudActivity).filter((activity) => keepActivityForSport(activity, sport)));
           safeSetActivities(storageKeyForSport(sport), recalculated);
@@ -1146,6 +1197,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       })
       .catch(() => undefined);
     loadCloudActivities();
+    setBikeProfiles(profileBikesFromStorage());
     const refreshOnFocus = () => loadCloudActivities();
     window.addEventListener("focus", refreshOnFocus);
     document.addEventListener("visibilitychange", refreshOnFocus);
@@ -1186,6 +1238,18 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     if (stored.length !== ordered.length) {
       setStatus("Se guardaron las actividades compactadas para no superar el limite local del navegador.");
     }
+  };
+
+  const assignBikeToSelectedActivity = (bikeId: string) => {
+    if (!selected) return;
+    const bike = bikeProfiles.find((item) => item.id === bikeId);
+    const next = activities.map((activity) =>
+      activity.id === selected.id
+        ? { ...activity, bikeId, bikeLabel: bike ? bikeLabel(bike) : undefined }
+        : activity,
+    );
+    saveActivities(next);
+    setStatus(bike ? `${selected.name}: bici asignada ${bikeLabel(bike)}.` : `${selected.name}: bici actualizada.`);
   };
 
   const onFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -1358,6 +1422,20 @@ export default function ActivityAnalysisPage({ sport }: Props) {
                 {activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.date} - {isSupportActivity(activity) ? "Soporte - " : ""}{activity.name}</option>)}
               </select>
             ) : null}
+            {sport === "cycling" && selected && bikeProfiles.length ? (
+              <select
+                aria-label="Bici usada en la ruta"
+                className="h-11 rounded-lg border border-[#E2E8F0] bg-white px-3 text-sm font-bold text-slate-700"
+                value={selected.bikeId || bikeProfiles.find((bike) => bike.isPrimary)?.id || bikeProfiles[0]?.id || ""}
+                onChange={(event) => assignBikeToSelectedActivity(event.target.value)}
+              >
+                {bikeProfiles.map((bike) => (
+                  <option key={bike.id} value={bike.id}>
+                    {bikeLabel(bike)}
+                  </option>
+                ))}
+              </select>
+            ) : null}
             <label className="grid h-11 cursor-pointer place-items-center rounded-lg bg-[#1D4ED8] px-4 text-sm font-black text-white">
               Importar GPX/FIT
               <input className="hidden" type="file" accept=".gpx,.fit" onChange={onFile} />
@@ -1420,7 +1498,12 @@ export default function ActivityAnalysisPage({ sport }: Props) {
                   </div>
                 ))}
               </div>
-              {sport === "cycling" ? <p className="mt-2 text-[11px] font-bold text-slate-400">{powerLabel(selected)}</p> : null}
+              {sport === "cycling" ? (
+                <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-bold text-slate-400">
+                  <span>{powerLabel(selected)}</span>
+                  {selected.bikeLabel ? <span className="text-slate-500">Bici: {selected.bikeLabel}</span> : null}
+                </div>
+              ) : null}
               {isSupportActivity(selected) ? (
                 <p className="mt-2 w-fit rounded-full bg-amber-50 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-700">
                   Actividad de soporte: visible para analisis, excluida del acumulado de running

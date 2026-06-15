@@ -5,14 +5,14 @@ import { clearStoredAccess } from "@/lib/access";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-interface NavItem {
+export interface NavItem {
   icon: AppIconName;
   label: string;
   href: string;
   section: string;
 }
 
-const navItems: NavItem[] = [
+export const navItems: NavItem[] = [
   { icon: "dashboard", label: "Dashboard", href: "/dashboard", section: "PRINCIPAL" },
   { icon: "profile", label: "Perfil", href: "/profile", section: "PRINCIPAL" },
   { icon: "gym", label: "Gym", href: "/modules/gym", section: "DEPORTES" },
@@ -114,7 +114,6 @@ export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const [score, setScore] = useState<ScoreState>({ score: 82, ...scoreLabel(82) });
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const initialScore = window.setTimeout(() => setScore(calculateScore()), 0);
@@ -136,9 +135,7 @@ export default function Sidebar() {
   };
 
   const sections = ["PRINCIPAL", "DEPORTES", "CONTROL", "HERRAMIENTAS"];
-  const activeItem = navItems.find((item) => pathname === item.href || pathname.startsWith(item.href)) || navItems[0];
-
-  const navButton = (item: NavItem, mobile = false) => {
+  const navButton = (item: NavItem) => {
     const active = pathname === item.href || pathname.startsWith(item.href);
     return (
       <button
@@ -149,12 +146,11 @@ export default function Sidebar() {
         }`}
         key={item.href}
         onClick={() => {
-          setMobileMenuOpen(false);
           router.push(item.href);
         }}
       >
-        <span className={`grid shrink-0 place-items-center rounded-lg ${mobile ? "h-9 w-9" : "h-12 w-12"} ${active ? "bg-white" : "bg-slate-50"}`}>
-          <AppIcon name={item.icon} className={mobile ? "h-7 w-7" : "h-10 w-10"} />
+        <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-lg ${active ? "bg-white" : "bg-slate-50"}`}>
+          <AppIcon name={item.icon} className="h-10 w-10" />
         </span>
         {item.label}
       </button>
@@ -162,8 +158,7 @@ export default function Sidebar() {
   };
 
   return (
-    <>
-      <div className="hidden h-screen w-64 flex-col border-r border-slate-200 bg-white lg:flex">
+    <div className="hidden h-screen w-64 flex-col border-r border-slate-200 bg-white lg:flex">
         <div className="border-b border-slate-200 p-4">
           <IDGLogo />
         </div>
@@ -207,65 +202,6 @@ export default function Sidebar() {
             Cerrar sesion
           </button>
         </div>
-      </div>
-
-      {mobileMenuOpen ? (
-        <div className="fixed inset-x-3 bottom-3 z-50 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-2xl backdrop-blur lg:hidden">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wide text-blue-600">Navegacion</p>
-              <p className="text-sm font-black text-slate-900">Cambiar modulo</p>
-            </div>
-            <button
-              aria-label="Cerrar menu de modulos"
-              className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-xl font-black text-slate-700"
-              onClick={() => setMobileMenuOpen(false)}
-              type="button"
-            >
-              x
-            </button>
-          </div>
-          <nav className="grid max-h-[52vh] grid-cols-2 gap-2 overflow-y-auto pb-1">
-            {navItems.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(item.href);
-              return (
-                <button
-                  className={`flex min-w-0 items-center gap-3 rounded-xl border px-3 py-3 text-left text-sm font-black transition ${
-                    active ? "border-blue-200 bg-blue-50 text-blue-700" : "border-slate-100 bg-white text-slate-600"
-                  }`}
-                  key={item.href}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    router.push(item.href);
-                  }}
-                  type="button"
-                >
-                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${active ? "bg-white" : "bg-slate-50"}`}>
-                    <AppIcon name={item.icon} className="h-7 w-7" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate">{item.label.replace("Dashboard", "Inicio").replace("IDG Coach", "Coach").replace("Peso & Cuerpo", "Peso")}</span>
-                    <span className="block truncate text-[10px] font-black uppercase tracking-wide text-slate-400">{item.section}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      ) : (
-        <button
-          aria-label="Abrir menu de modulos"
-          className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full border border-slate-200 bg-[#0F172A] px-3 py-2 text-sm font-black text-white shadow-2xl lg:hidden"
-          onClick={() => setMobileMenuOpen(true)}
-          type="button"
-        >
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-white">
-            <AppIcon name={activeItem.icon} className="h-6 w-6" />
-          </span>
-          <span>Modulos</span>
-          <span aria-hidden="true" className="text-lg leading-none">=</span>
-        </button>
-      )}
-    </>
+    </div>
   );
 }
