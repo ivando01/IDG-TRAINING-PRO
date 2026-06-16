@@ -1345,18 +1345,13 @@ export default function GymModule() {
                 <button className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-black text-white" type="button">Ver todas</button>
               </div>
               <div className="bg-white p-3">
-                <div className="hidden grid-cols-[76px_minmax(210px,1fr)_110px_95px_95px_110px_166px] gap-3 border-b border-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-slate-400 min-[1100px]:grid">
+                <div className="hidden grid-cols-[94px_minmax(220px,1fr)_166px] gap-3 border-b border-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-slate-400 min-[900px]:grid">
                   <span>Fecha</span>
                   <span>Rutina</span>
-                  <span>Carga</span>
-                  <span>RPE</span>
-                  <span>Duracion</span>
-                  <span>IA</span>
                   <span className="text-right">Acciones</span>
                 </div>
               <div className="grid gap-2 pt-2">
                 {history.map((session) => {
-                  const volume = sessionVolume(session);
                   const date = parseLocalDate(session.date);
                   const day = date.getDate().toString().padStart(2, "0");
                   const setCount = session.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
@@ -1366,26 +1361,18 @@ export default function GymModule() {
                   const detailVolume = sessionVolume(detailSession);
                   const detailSetCount = detailSession.exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
                   const aiAnalysis = savedAnalysisFor(session);
-                  const aiLabel = aiAnalysis ? (session.aiAcknowledgedAt ? "IA leida" : "IA nueva") : "Generar IA";
                   return (
                     <Fragment key={session.id}>
-                      <article className={`grid grid-cols-1 items-start gap-3 rounded-lg border px-3 py-3 transition min-[1100px]:grid-cols-[76px_minmax(210px,1fr)_110px_95px_95px_110px_166px] min-[1100px]:items-center min-[1100px]:gap-3 ${selected ? "border-blue-200 bg-blue-50/70" : "border-slate-100 bg-white hover:bg-slate-50"}`}>
-                        <div className="flex items-center gap-3 min-[1100px]:block">
-                          <span className="grid h-10 w-10 place-items-center rounded-lg bg-slate-950 text-base font-black text-white min-[1100px]:h-auto min-[1100px]:w-auto min-[1100px]:place-items-start min-[1100px]:bg-transparent min-[1100px]:text-lg min-[1100px]:text-slate-900">{day}</span>
-                          <span className="text-xs font-black uppercase text-slate-500 min-[1100px]:mt-0.5 min-[1100px]:block">{shortMonth(session.date)}</span>
+                      <article className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border px-3 py-2.5 transition min-[900px]:grid-cols-[94px_minmax(220px,1fr)_166px] ${selected ? "border-blue-200 bg-blue-50/70" : "border-slate-100 bg-white hover:bg-slate-50"}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="grid h-9 w-9 place-items-center rounded-lg bg-slate-950 text-sm font-black text-white">{day}</span>
+                          <span className="text-xs font-black uppercase text-slate-500">{shortMonth(session.date)}</span>
                         </div>
-                        <div className="min-w-0">
+                        <button className="min-w-0 text-left" type="button" onClick={() => viewSession(session)}>
                           <strong className="line-clamp-1 block text-sm font-black text-slate-900">{session.routineName}</strong>
                           <span className="mt-0.5 block text-xs font-semibold text-slate-500">{session.exercises.length} ejercicios - {setCount} series</span>
-                        </div>
-                        <div><strong className="block text-sm font-black text-slate-900">{volume.toFixed(0)} {loadUnit}</strong><span className="text-[10px] font-semibold uppercase text-slate-400 min-[1100px]:hidden">Carga</span></div>
-                        <div><strong className="block text-sm font-black text-slate-900">{session.intensity}/10</strong><span className="text-[10px] font-semibold uppercase text-slate-400 min-[1100px]:hidden">RPE</span></div>
-                        <div><strong className="block text-sm font-black text-slate-900">{minutesToHHMM(session.duration)}</strong><span className="text-[10px] font-semibold uppercase text-slate-400 min-[1100px]:hidden">Duracion</span></div>
-                        <div>
-                          <strong className={`block text-xs font-black ${aiAnalysis && !session.aiAcknowledgedAt ? "text-blue-600" : "text-slate-900"}`}>{aiLabel}</strong>
-                          <span className="text-[10px] font-semibold text-slate-500">{aiAnalysis ? "Guardado" : "Sin IA"}</span>
-                        </div>
-                        <div className="flex justify-start gap-2 min-[1100px]:justify-end">
+                        </button>
+                        <div className="col-span-2 flex justify-start gap-2 min-[900px]:col-span-1 min-[900px]:justify-end">
                           <button className="grid h-9 w-9 place-items-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" type="button" title={selected ? "Cerrar sesion" : "Ver sesion"} onClick={() => viewSession(session)}><Icon name="eye" /></button>
                           <button className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 disabled:opacity-60" type="button" onClick={() => analyzeSessionFromHistory(session)} disabled={aiLoadingId === session.id}>{aiLoadingId === session.id ? "..." : aiAnalysis ? "Ver IA" : "IA"}</button>
                           <button className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" type="button" title="Editar" onClick={() => editSession(session)}><Icon name="edit" /></button>
