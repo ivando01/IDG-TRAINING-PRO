@@ -1129,25 +1129,25 @@ export default function GymModule() {
               </div>
             </section>
 
-            <section className="app-card gym-builder-card rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex w-full items-center justify-between gap-4 text-left">
-                <div>
-                  <span className="text-xs font-black uppercase tracking-wide text-slate-500">Iniciar rutina</span>
-                  <strong className="mt-1 block text-xl font-black text-slate-900">{routineName}</strong>
-                  <small className="mt-1 block text-sm text-slate-500">{latest ? `Ultima guardada: ${latest.date}` : "Rutina base cargada desde HTML v21"}</small>
+            {builderOpen ? (
+            <section className="app-card gym-builder-card overflow-hidden rounded-lg border border-slate-900 bg-slate-950 shadow-sm">
+              <div className="flex flex-col gap-3 border-b border-white/10 p-5 text-white lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0">
+                  <span className="text-xs font-black uppercase tracking-[0.18em] text-emerald-300">Rutina en ejecucion</span>
+                  <strong className="mt-1 block text-xl font-black text-white">{routineName}</strong>
+                  <small className="mt-1 block text-sm font-semibold text-slate-400">{latest ? `Ultima guardada: ${latest.date}` : "Sesion activa lista para registrar carga por ejercicio"}</small>
                 </div>
-                <span className="flex flex-wrap justify-end gap-2">
-                  <button className="rounded-lg bg-white px-3 py-2 text-sm font-black text-blue-600 ring-1 ring-blue-100" type="button" onClick={startNewRoutine}>
+                <span className="flex flex-wrap gap-2 lg:justify-end">
+                  <button className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-black text-white" type="button" onClick={startNewRoutine}>
                     Nueva rutina
                   </button>
-                  <button className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-black text-blue-600" type="button" onClick={toggleBuilder}>
-                    {builderOpen ? "Cerrar rutina" : "Iniciar rutina"}
+                  <button className="rounded-lg bg-white px-3 py-2 text-sm font-black text-slate-950" type="button" onClick={toggleBuilder}>
+                    Cerrar rutina
                   </button>
                 </span>
               </div>
 
-              {builderOpen ? (
-                <>
+              <div className="bg-white p-5">
                   <div className="gym-toolbar mt-4 grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_auto_150px_130px_130px]">
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Rutina<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-800" value={routine} onChange={(event) => changeRoutine(event.target.value as RoutineKey)}>{Object.entries(routines).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></label>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Plantilla usuario<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-800" value={selectedTemplateId} onChange={(event) => applyTemplate(event.target.value)}><option value="">Sin plantilla</option>{templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></label>
@@ -1249,9 +1249,9 @@ export default function GymModule() {
                       <Icon name="save" /> Guardar sesion
                     </button>
                   </div>
-                </>
-              ) : null}
+              </div>
             </section>
+            ) : null}
 
             {builderOpen ? (
             <section className="gym-intelligence-card rounded-lg border border-blue-100 bg-blue-50 p-5 shadow-sm">
