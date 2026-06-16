@@ -1335,15 +1335,26 @@ export default function GymModule() {
               )}
             </section>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="mb-5 flex items-start justify-between gap-4">
+            <section className="overflow-hidden rounded-lg border border-slate-900 bg-slate-950 shadow-sm">
+              <div className="flex items-start justify-between gap-4 border-b border-white/10 p-5 text-white">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Historial de sesiones</h2>
-                  <p className="mt-1 text-sm font-semibold text-slate-500">{history.length ? `${history.length} sesiones guardadas` : "Aun no hay sesiones guardadas."}</p>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-300">Historial Gym</p>
+                  <h2 className="mt-1 text-xl font-black text-white">Sesiones guardadas</h2>
+                  <p className="mt-1 text-sm font-semibold text-slate-400">{history.length ? `${history.length} registros sincronizados` : "Aun no hay sesiones guardadas."}</p>
                 </div>
-                <button className="text-sm font-black text-blue-600" type="button">Ver todas</button>
+                <button className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-black text-white" type="button">Ver todas</button>
               </div>
-              <div className="grid gap-3">
+              <div className="bg-white p-3">
+                <div className="hidden grid-cols-[76px_minmax(210px,1fr)_110px_95px_95px_110px_166px] gap-3 border-b border-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-slate-400 min-[1100px]:grid">
+                  <span>Fecha</span>
+                  <span>Rutina</span>
+                  <span>Carga</span>
+                  <span>RPE</span>
+                  <span>Duracion</span>
+                  <span>IA</span>
+                  <span className="text-right">Acciones</span>
+                </div>
+              <div className="grid gap-2 pt-2">
                 {history.map((session) => {
                   const volume = sessionVolume(session);
                   const date = parseLocalDate(session.date);
@@ -1358,27 +1369,27 @@ export default function GymModule() {
                   const aiLabel = aiAnalysis ? (session.aiAcknowledgedAt ? "IA leida" : "IA nueva") : "Generar IA";
                   return (
                     <Fragment key={session.id}>
-                      <article className={`grid grid-cols-1 items-start gap-3 rounded-lg border bg-white p-4 shadow-sm min-[1100px]:grid-cols-[58px_minmax(180px,1fr)_110px_100px_100px_100px_180px] min-[1100px]:items-center min-[1100px]:gap-4 ${selected ? "border-blue-200" : "border-slate-200"}`}>
-                        <div className="border-l-4 border-emerald-500 pl-4">
-                          <strong className="block text-2xl font-black leading-none text-slate-900">{day}</strong>
-                          <span className="mt-1 block text-xs font-black uppercase text-slate-500">{shortMonth(session.date)}</span>
+                      <article className={`grid grid-cols-1 items-start gap-3 rounded-lg border px-3 py-3 transition min-[1100px]:grid-cols-[76px_minmax(210px,1fr)_110px_95px_95px_110px_166px] min-[1100px]:items-center min-[1100px]:gap-3 ${selected ? "border-blue-200 bg-blue-50/70" : "border-slate-100 bg-white hover:bg-slate-50"}`}>
+                        <div className="flex items-center gap-3 min-[1100px]:block">
+                          <span className="grid h-10 w-10 place-items-center rounded-lg bg-slate-950 text-base font-black text-white min-[1100px]:h-auto min-[1100px]:w-auto min-[1100px]:place-items-start min-[1100px]:bg-transparent min-[1100px]:text-lg min-[1100px]:text-slate-900">{day}</span>
+                          <span className="text-xs font-black uppercase text-slate-500 min-[1100px]:mt-0.5 min-[1100px]:block">{shortMonth(session.date)}</span>
                         </div>
                         <div className="min-w-0">
-                          <strong className="block text-base font-black text-slate-900">{session.routineName}</strong>
-                          <span className="mt-1 block text-sm font-semibold text-slate-500">{session.exercises.length} ejercicios - {setCount} series</span>
+                          <strong className="line-clamp-1 block text-sm font-black text-slate-900">{session.routineName}</strong>
+                          <span className="mt-0.5 block text-xs font-semibold text-slate-500">{session.exercises.length} ejercicios - {setCount} series</span>
                         </div>
-                        <div><strong className="block text-base font-black text-slate-900">{volume.toFixed(0)} {loadUnit}</strong><span className="text-xs font-semibold text-slate-500">Carga</span></div>
-                        <div><strong className="block text-base font-black text-slate-900">{session.intensity * 10}%</strong><span className="text-xs font-semibold text-slate-500">Intensidad</span></div>
-                        <div><strong className="block text-base font-black text-slate-900">{minutesToHHMM(session.duration)}</strong><span className="text-xs font-semibold text-slate-500">Duracion</span></div>
+                        <div><strong className="block text-sm font-black text-slate-900">{volume.toFixed(0)} {loadUnit}</strong><span className="text-[10px] font-semibold uppercase text-slate-400 min-[1100px]:hidden">Carga</span></div>
+                        <div><strong className="block text-sm font-black text-slate-900">{session.intensity}/10</strong><span className="text-[10px] font-semibold uppercase text-slate-400 min-[1100px]:hidden">RPE</span></div>
+                        <div><strong className="block text-sm font-black text-slate-900">{minutesToHHMM(session.duration)}</strong><span className="text-[10px] font-semibold uppercase text-slate-400 min-[1100px]:hidden">Duracion</span></div>
                         <div>
-                          <strong className={`block text-sm font-black ${aiAnalysis && !session.aiAcknowledgedAt ? "text-blue-600" : "text-slate-900"}`}>{aiLabel}</strong>
-                          <span className="text-xs font-semibold text-slate-500">{aiAnalysis ? "Analisis guardado" : "Sin analisis IA"}</span>
+                          <strong className={`block text-xs font-black ${aiAnalysis && !session.aiAcknowledgedAt ? "text-blue-600" : "text-slate-900"}`}>{aiLabel}</strong>
+                          <span className="text-[10px] font-semibold text-slate-500">{aiAnalysis ? "Guardado" : "Sin IA"}</span>
                         </div>
                         <div className="flex justify-start gap-2 min-[1100px]:justify-end">
-                          <button className="grid h-10 w-10 place-items-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" type="button" title={selected ? "Cerrar sesion" : "Ver sesion"} onClick={() => viewSession(session)}><Icon name="eye" /></button>
+                          <button className="grid h-9 w-9 place-items-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" type="button" title={selected ? "Cerrar sesion" : "Ver sesion"} onClick={() => viewSession(session)}><Icon name="eye" /></button>
                           <button className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 disabled:opacity-60" type="button" onClick={() => analyzeSessionFromHistory(session)} disabled={aiLoadingId === session.id}>{aiLoadingId === session.id ? "..." : aiAnalysis ? "Ver IA" : "IA"}</button>
-                          <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" type="button" title="Editar" onClick={() => editSession(session)}><Icon name="edit" /></button>
-                          <button className="grid h-10 w-10 place-items-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100" type="button" title="Eliminar" onClick={() => deleteSession(session.id)}><Icon name="trash" /></button>
+                          <button className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" type="button" title="Editar" onClick={() => editSession(session)}><Icon name="edit" /></button>
+                          <button className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100" type="button" title="Eliminar" onClick={() => deleteSession(session.id)}><Icon name="trash" /></button>
                         </div>
                       </article>
                       {selected ? (
@@ -1524,6 +1535,7 @@ export default function GymModule() {
                     </Fragment>
                   );
                 })}
+              </div>
               </div>
             </section>
           </section>
