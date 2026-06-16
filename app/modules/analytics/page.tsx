@@ -509,20 +509,42 @@ export default function AnalyticsModule() {
       <main className="min-h-0 flex-1 overflow-y-auto bg-[#F8FAFC] p-4 text-slate-900 lg:p-6">
         {status ? <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">{status}</div> : null}
 
-        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-bold text-slate-500">Entrenador personalizado con lectura cruzada de toda la app</p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-900">IDG Coach</h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="w-fit rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-blue-700 shadow-sm">
-              {todayLabel ? `Hoy, ${todayLabel}` : "Hoy"}
+        <section className="mb-5 overflow-hidden rounded-lg border border-slate-900 bg-slate-950 text-white shadow-sm">
+          <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)] lg:p-6">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-white/10 ring-1 ring-white/10">
+                  <AppIcon name="intelligence" className="h-8 w-8" />
+                </span>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-300">Powered by IDG Intelligence</p>
+                  <h1 className="mt-1 text-3xl font-black tracking-tight text-white">IDG Coach</h1>
+                </div>
+              </div>
+              <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-slate-300">
+                Entrenador conversacional con lectura cruzada de gym, running, ciclismo, sueno, peso y plan semanal. Propone ajustes antes de aplicarlos.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <a className="rounded-lg bg-white px-4 py-2 text-sm font-black text-slate-950" href="#coach-chat">Abrir chat</a>
+                <button className="rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white disabled:opacity-60" disabled={loading} type="button" onClick={() => runAnalysis("global")}>
+                  {loading ? "Analizando..." : "Pedir indicacion"}
+                </button>
+              </div>
             </div>
-            <button className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-sm disabled:bg-blue-300" disabled={loading} type="button" onClick={() => runAnalysis("global")}>
-              {loading ? "Analizando..." : "Pedir indicacion al coach"}
-            </button>
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              {[
+                ["Hoy", todayLabel || "Activo"],
+                ["Preparacion", `${metrics.readiness}%`],
+                ["Riesgo", fatigueRisk],
+              ].map(([label, value]) => (
+                <div className="rounded-lg border border-white/10 bg-white/[0.07] p-4" key={label}>
+                  <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</p>
+                  <p className="mt-1 text-xl font-black text-white">{value}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
 
         <section className="mb-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-center gap-2">
@@ -746,7 +768,7 @@ export default function AnalyticsModule() {
           </div>
         </section>
 
-        <section className="mb-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <section id="coach-chat" className="mb-5 scroll-mt-24 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col gap-3 border-b border-slate-100 p-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-blue-50">

@@ -1,6 +1,7 @@
 "use client";
 
 import TopNav from "@/components/TopNav";
+import { AppIcon } from "@/components/Brand";
 import { deleteCloudItem, getCloudCollection, saveCloudBackedCollection, saveCloudCollection } from "@/lib/cloud-sync";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
@@ -1039,19 +1040,58 @@ export default function GymModule() {
       <main className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-4 lg:p-6">
         <div className="grid grid-cols-1 gap-4">
           <section className="gym-main grid min-w-0 gap-4">
+            <section className="overflow-hidden rounded-lg border border-slate-900 bg-slate-950 text-white shadow-sm">
+              <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.65fr)] lg:p-6">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-white/10 ring-1 ring-white/10">
+                      <AppIcon name="gym" className="h-8 w-8" />
+                    </span>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-300">Gym Builder</p>
+                      <h1 className="mt-1 text-2xl font-black leading-tight text-white lg:text-3xl">{routineName}</h1>
+                    </div>
+                  </div>
+                  <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-slate-300">
+                    Construye, guarda y analiza sesiones con carga real por ejercicio. Las plantillas personalizadas quedan listas para reutilizarse en el plan semanal.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <button className="rounded-lg bg-white px-4 py-2 text-sm font-black text-slate-950" type="button" onClick={toggleBuilder}>
+                      {builderOpen ? "Continuar rutina" : "Iniciar rutina"}
+                    </button>
+                    <button className="rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white" type="button" onClick={startNewRoutine}>
+                      Nueva rutina
+                    </button>
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                  {[
+                    ["Series activas", stats.completedSets],
+                    ["Carga actual", `${stats.volume.toFixed(0)} ${loadUnit}`],
+                    ["Intensidad", `${intensity}/10`],
+                  ].map(([label, value]) => (
+                    <div className="rounded-lg border border-white/10 bg-white/[0.07] p-4" key={label}>
+                      <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</p>
+                      <p className="mt-1 text-xl font-black text-white">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
             <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.35fr_1fr]">
                 <div>
                   <h2 className="text-lg font-black text-slate-900">Resumen de la semana</h2>
                   <div className="mt-6 grid grid-cols-2 gap-5 md:grid-cols-4">
                     {[
-                      ["▣", stats.completedTrainingDays, "Entrenos", "text-blue-600", "bg-blue-50"],
-                      ["◴", formatDurationLong(stats.weekMinutes), "Tiempo total", "text-emerald-600", "bg-emerald-50"],
-                      ["↗", `${stats.volumeDelta > 0 ? "+" : ""}${stats.volumeDelta}%`, "Carga", "text-violet-600", "bg-violet-50"],
-                      ["☆", stats.weeklyPercent >= 75 ? "Excelente" : "En progreso", "Consistencia", "text-green-600", "bg-green-50"],
+                      ["calendar", stats.completedTrainingDays, "Entrenos", "text-blue-600", "bg-blue-50"],
+                      ["plan", formatDurationLong(stats.weekMinutes), "Tiempo total", "text-emerald-600", "bg-emerald-50"],
+                      ["analytics", `${stats.volumeDelta > 0 ? "+" : ""}${stats.volumeDelta}%`, "Carga", "text-violet-600", "bg-violet-50"],
+                      ["intelligence", stats.weeklyPercent >= 75 ? "Excelente" : "En progreso", "Consistencia", "text-green-600", "bg-green-50"],
                     ].map(([icon, value, label, color, bg]) => (
                       <article className="border-r border-slate-200 last:border-r-0" key={label}>
-                        <div className={`grid h-10 w-10 place-items-center rounded-full ${bg} ${color} mb-4 text-lg font-black`}>{icon}</div>
+                        <div className={`mb-4 grid h-10 w-10 place-items-center rounded-full ${bg} ${color}`}><AppIcon name={icon as "calendar" | "plan" | "analytics" | "intelligence"} className="h-5 w-5" /></div>
                         <strong className="block text-2xl font-black text-slate-900">{value}</strong>
                         <span className="mt-1 block text-sm font-semibold text-slate-500">{label}</span>
                       </article>
@@ -1075,7 +1115,7 @@ export default function GymModule() {
                           <div className={`mx-auto mt-4 grid h-8 w-8 place-items-center rounded-full border-2 text-sm font-black ${
                             completed ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 bg-white text-slate-300"
                           }`}>
-                            {completed ? "✓" : ""}
+                            {completed ? "OK" : ""}
                           </div>
                         </div>
                       );

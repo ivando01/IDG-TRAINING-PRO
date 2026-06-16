@@ -528,31 +528,31 @@ export default function PlanModule() {
     <>
       <TopNav title="Plan Semanal" />
       <main className="min-h-0 flex-1 overflow-y-auto bg-[#F8FAFC] p-4 text-[#0F172A] lg:p-6">
-        <div className="mb-5 rounded-lg border border-slate-200 bg-white p-5">
+        <div className="mb-5 overflow-hidden rounded-lg border border-slate-900 bg-slate-950 text-white shadow-sm">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div>
-              <p className="text-sm font-bold text-slate-500">Planificacion deportiva</p>
-              <h1 className="mt-1 text-3xl font-black tracking-tight">Plan Semanal Inteligente</h1>
-              <p className="mt-1 text-sm font-semibold text-slate-500">Programa gym, running y ciclismo; compara automaticamente contra lo realizado.</p>
+            <div className="p-5 pb-0 xl:p-6 xl:pr-0">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-300">Planificacion deportiva</p>
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-white">Plan Semanal Inteligente</h1>
+              <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-300">Programa gym, running y ciclismo; compara automaticamente contra lo realizado y deja las propuestas del Coach listas para confirmar.</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700" type="button" onClick={() => setWeekStart(addDays(weekStart, -7))}>Anterior</button>
-              <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700" type="button" onClick={() => setWeekStart(startOfWeek())}>Actual</button>
-              <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700" type="button" onClick={() => setWeekStart(addDays(weekStart, 7))}>Siguiente</button>
-              <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white" type="button" onClick={generateWeek}>Generar propuesta IA</button>
+            <div className="flex flex-wrap gap-2 p-5 pt-0 xl:p-6 xl:pl-0">
+              <button className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-black text-white" type="button" onClick={() => setWeekStart(addDays(weekStart, -7))}>Anterior</button>
+              <button className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-black text-white" type="button" onClick={() => setWeekStart(startOfWeek())}>Actual</button>
+              <button className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-black text-white" type="button" onClick={() => setWeekStart(addDays(weekStart, 7))}>Siguiente</button>
+              <button className="rounded-lg bg-white px-4 py-2 text-sm font-black text-slate-950" type="button" onClick={generateWeek}>Generar propuesta IA</button>
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-4">
+          <div className="grid gap-3 border-t border-white/10 p-5 md:grid-cols-4 xl:p-6">
             {[
               ["Semana", formatWeekRange(weekStart)],
               ["Cumplimiento", `${completion}%`],
               ["Planeado", `${weekPlan.length} sesiones - ${formatDuration(plannedMinutes)}`],
               ["Carga", `${mounted ? Math.round(realLoad) : 0} real / ${Math.round(plannedLoad)} plan`],
             ].map(([label, value]) => (
-              <div className="rounded-lg border border-slate-100 bg-slate-50 p-4" key={label}>
+              <div className="rounded-lg border border-white/10 bg-white/[0.07] p-4" key={label}>
                 <p className="text-xs font-black uppercase text-slate-400">{label}</p>
-                <p className="mt-1 text-lg font-black text-slate-900">{value}</p>
+                <p className="mt-1 text-lg font-black text-white">{value}</p>
               </div>
             ))}
           </div>
