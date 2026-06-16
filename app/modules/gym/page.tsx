@@ -1033,6 +1033,11 @@ export default function GymModule() {
 
   const selectedSession = history.find((session) => session.id === selectedSessionId) || null;
   const selectedSessionAnalysis = selectedSession ? savedAnalysisFor(selectedSession) || usableIntelligence(selectedSession.intelligence) : "";
+  const selectedSessionVolume = selectedSession ? sessionVolume(selectedSession) : 0;
+  const selectedSessionSetCount = selectedSession ? selectedSession.exercises.reduce((sum, exercise) => sum + exercise.sets, 0) : 0;
+  const selectedSessionMaxWeight = selectedSession
+    ? Math.max(0, ...selectedSession.exercises.flatMap((exercise) => exercise.weights.map((weight) => Number(weight) || 0)))
+    : 0;
 
   return (
     <>
@@ -1345,6 +1350,82 @@ export default function GymModule() {
                 <button className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-black text-white" type="button">Ver todas</button>
               </div>
               <div className="bg-white p-3">
+                {selectedSession ? (
+                  <article className="mb-3 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                    <div className="grid gap-4 border-b border-slate-100 bg-slate-950 p-4 text-white lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Sesion seleccionada</p>
+                        <h3 className="mt-1 truncate text-lg font-black text-white">{selectedSession.routineName}</h3>
+                        <p className="mt-1 text-xs font-semibold text-slate-400">
+                          {selectedSession.date} - {selectedSession.exercises.length} ejercicios - {selectedSessionSetCount} series
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-xs font-black text-white hover:bg-white/15" type="button" onClick={() => editSession(selectedSession)}>
+                          Editar rutina
+                        </button>
+                        <button
+                          className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-black text-white disabled:bg-blue-300"
+                          type="button"
+                          disabled={aiLoadingId === selectedSession.id}
+                          onClick={() => analyzeSessionFromHistory(selectedSession, !selectedSessionAnalysis)}
+                        >
+                          {aiLoadingId === selectedSession.id ? "Analizando..." : selectedSessionAnalysis ? "Ver IA" : "Generar IA"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 p-4">
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                        {[
+                          ["Carga", `${selectedSessionVolume.toFixed(0)} ${loadUnit}`],
+                          ["Duracion", minutesToHHMM(selectedSession.duration)],
+                          ["Intensidad", `${selectedSession.intensity}/10`],
+                          ["Dolor", `${selectedSession.painLevel}/10`],
+                          ["Maximo", selectedSessionMaxWeight > 0 ? `${selectedSessionMaxWeight} ${unit}` : "--"],
+                        ].map(([label, value]) => (
+                          <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2" key={label}>
+                            <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</p>
+                            <p className="mt-1 truncate text-base font-black text-slate-900">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="grid gap-2">
+                        <div className="grid grid-cols-[34px_minmax(0,1fr)_64px_110px] gap-2 px-2 text-[10px] font-black uppercase tracking-wide text-slate-400">
+                          <span>#</span>
+                          <span>Ejercicio</span>
+                          <span>Series</span>
+                          <span>Maximo</span>
+                        </div>
+                        {selectedSession.exercises.map((exercise, index) => {
+                          const maxWeight = Math.max(0, ...exercise.weights.map((weight) => Number(weight) || 0));
+                          return (
+                            <div className="grid grid-cols-[34px_minmax(0,1fr)_64px_110px] items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-2 py-2 text-sm" key={`${selectedSession.id}-summary-${exercise.id}`}>
+                              <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500 text-xs font-black text-white">{index + 1}</span>
+                              <div className="min-w-0">
+                                <p className="truncate font-black text-slate-900">{exercise.name}</p>
+                                <p className="truncate text-xs font-semibold text-slate-500">
+                                  {exercise.weights.map((weight, setIndex) => `${exercise.repsBySet?.[setIndex] ?? exercise.reps}x${weight || "--"}`).join(" · ")}
+                                </p>
+                              </div>
+                              <span className="font-black text-slate-700">{exercise.sets}</span>
+                              <span className="font-black text-blue-700">{maxWeight > 0 ? `${maxWeight} ${unit}` : "--"}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {selectedSession.notes ? (
+                        <p className="rounded-lg bg-slate-50 p-3 text-sm font-semibold leading-6 text-slate-600">{selectedSession.notes}</p>
+                      ) : null}
+                    </div>
+                  </article>
+                ) : (
+                  <div className="mb-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500">
+                    Selecciona una sesion para revisar el detalle completo en este panel.
+                  </div>
+                )}
                 <div className="hidden grid-cols-[94px_minmax(220px,1fr)_166px] gap-3 border-b border-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-slate-400 min-[900px]:grid">
                   <span>Fecha</span>
                   <span>Rutina</span>
@@ -1379,7 +1460,7 @@ export default function GymModule() {
                           <button className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100" type="button" title="Eliminar" onClick={() => deleteSession(session.id)}><Icon name="trash" /></button>
                         </div>
                       </article>
-                      {selected ? (
+                      {false ? (
                         <article className="rounded-lg border border-blue-100 bg-white p-5 shadow-sm">
                           <div className="flex flex-col gap-4 border-b border-slate-100 pb-4 lg:flex-row lg:items-start lg:justify-between">
                             <div>
