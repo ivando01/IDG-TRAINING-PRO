@@ -1340,18 +1340,14 @@ export default function GymModule() {
               )}
             </section>
 
-            <section className="overflow-hidden rounded-lg border border-slate-900 bg-slate-950 shadow-sm">
-              <div className="flex items-start justify-between gap-4 border-b border-white/10 p-5 text-white">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-300">Historial Gym</p>
-                  <h2 className="mt-1 text-xl font-black text-white">Sesiones guardadas</h2>
-                  <p className="mt-1 text-sm font-semibold text-slate-400">{history.length ? `${history.length} registros sincronizados` : "Aun no hay sesiones guardadas."}</p>
-                </div>
-                <button className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-black text-white" type="button">Ver todas</button>
+            <section>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-lg font-black text-slate-900">Historial de sesiones</h2>
+                <p className="text-sm font-bold text-slate-500">{history.length} registros totales</p>
               </div>
-              <div className="bg-white p-3">
+              <div>
                 {selectedSession ? (
-                  <article className="mb-3 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                  <article className="hidden">
                     <div className="grid gap-4 border-b border-slate-100 bg-slate-950 p-4 text-white lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
                       <div className="min-w-0">
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Sesion seleccionada</p>
@@ -1422,16 +1418,11 @@ export default function GymModule() {
                     </div>
                   </article>
                 ) : (
-                  <div className="mb-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500">
+                  <div className="hidden">
                     Selecciona una sesion para revisar el detalle completo en este panel.
                   </div>
                 )}
-                <div className="hidden grid-cols-[94px_minmax(220px,1fr)_166px] gap-3 border-b border-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-slate-400 min-[900px]:grid">
-                  <span>Fecha</span>
-                  <span>Rutina</span>
-                  <span className="text-right">Acciones</span>
-                </div>
-              <div className="grid gap-2 pt-2">
+              <div className="grid gap-3">
                 {history.map((session) => {
                   const date = parseLocalDate(session.date);
                   const day = date.getDate().toString().padStart(2, "0");
@@ -1444,20 +1435,40 @@ export default function GymModule() {
                   const aiAnalysis = savedAnalysisFor(session);
                   return (
                     <Fragment key={session.id}>
-                      <article className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border px-3 py-2.5 transition min-[900px]:grid-cols-[94px_minmax(220px,1fr)_166px] ${selected ? "border-blue-200 bg-blue-50/70" : "border-slate-100 bg-white hover:bg-slate-50"}`}>
-                        <div className="flex items-center gap-2">
-                          <span className="grid h-9 w-9 place-items-center rounded-lg bg-slate-950 text-sm font-black text-white">{day}</span>
-                          <span className="text-xs font-black uppercase text-slate-500">{shortMonth(session.date)}</span>
-                        </div>
-                        <button className="min-w-0 text-left" type="button" onClick={() => viewSession(session)}>
-                          <strong className="line-clamp-1 block text-sm font-black text-slate-900">{session.routineName}</strong>
-                          <span className="mt-0.5 block text-xs font-semibold text-slate-500">{session.exercises.length} ejercicios - {setCount} series</span>
-                        </button>
-                        <div className="col-span-2 flex justify-start gap-2 min-[900px]:col-span-1 min-[900px]:justify-end">
-                          <button className="grid h-9 w-9 place-items-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" type="button" title={selected ? "Cerrar sesion" : "Ver sesion"} onClick={() => viewSession(session)}><Icon name="eye" /></button>
-                          <button className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 disabled:opacity-60" type="button" onClick={() => analyzeSessionFromHistory(session)} disabled={aiLoadingId === session.id}>{aiLoadingId === session.id ? "..." : aiAnalysis ? "Ver IA" : "IA"}</button>
-                          <button className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" type="button" title="Editar" onClick={() => editSession(session)}><Icon name="edit" /></button>
-                          <button className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100" type="button" title="Eliminar" onClick={() => deleteSession(session.id)}><Icon name="trash" /></button>
+                      <article className={`rounded-lg border bg-white p-4 transition hover:border-blue-100 hover:shadow-md ${selected ? "border-blue-200 shadow-sm" : "border-slate-200"}`}>
+                        <div className="grid gap-4 lg:grid-cols-[minmax(260px,1.25fr)_minmax(340px,1fr)_auto] lg:items-center">
+                          <button className="flex min-w-0 items-center gap-3 text-left" type="button" onClick={() => viewSession(session)}>
+                            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-700">
+                              <AppIcon name="gym" className="h-5 w-5" />
+                            </span>
+                            <span className="min-w-0">
+                              <strong className="block truncate font-black text-slate-900">{session.routineName}</strong>
+                              <span className="mt-0.5 block text-xs font-semibold text-slate-500">{day} {shortMonth(session.date).toLowerCase()} · {session.exercises.length} ejercicios · {setCount} series</span>
+                            </span>
+                          </button>
+
+                          <div className="grid grid-cols-3 gap-3 text-xs">
+                            <div>
+                              <p className="font-semibold text-slate-500">Duracion</p>
+                              <p className="font-black text-slate-900">{session.duration} min</p>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-500">Carga</p>
+                              <p className="font-black text-slate-900">{sessionVolume(session).toFixed(0)} {loadUnit}</p>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-500">Intensidad</p>
+                              <p className="font-black text-slate-900">{session.intensity}/10</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2 lg:justify-end">
+                            <span className="mr-1 rounded-full bg-green-100 px-2 py-1 text-xs font-black text-green-700">Completada</span>
+                            <button className="grid h-9 w-9 place-items-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100" type="button" title="Ver detalle" onClick={() => viewSession(session)}><Icon name="eye" /></button>
+                            <button className="grid h-9 w-9 place-items-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-60" type="button" title={aiAnalysis ? "Ver analisis IA" : "Generar analisis IA"} onClick={() => analyzeSessionFromHistory(session)} disabled={aiLoadingId === session.id}>{aiLoadingId === session.id ? <span className="text-[10px] font-black">...</span> : <Icon name="spark" />}</button>
+                            <button className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" type="button" title="Editar" onClick={() => editSession(session)}><Icon name="edit" /></button>
+                            <button className="grid h-9 w-9 place-items-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100" type="button" title="Eliminar" onClick={() => deleteSession(session.id)}><Icon name="trash" /></button>
+                          </div>
                         </div>
                       </article>
                       {false ? (
@@ -1606,6 +1617,64 @@ export default function GymModule() {
               </div>
               </div>
             </section>
+
+            {selectedSession ? (
+              <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-3 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setSelectedSessionId(""); }}>
+                <article className="max-h-[90dvh] w-full max-w-5xl overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-label={`Detalle de ${selectedSession.routineName}`}>
+                  <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-white/10 bg-slate-950 p-4 text-white sm:p-5">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Detalle de sesion</p>
+                      <h3 className="mt-1 truncate text-xl font-black text-white">{selectedSession.routineName}</h3>
+                      <p className="mt-1 text-xs font-semibold text-slate-400">{selectedSession.date} · {selectedSession.exercises.length} ejercicios · {selectedSessionSetCount} series</p>
+                    </div>
+                    <button className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/15 bg-white/10 text-lg font-black text-white hover:bg-white/15" type="button" aria-label="Cerrar detalle" onClick={() => setSelectedSessionId("")}>×</button>
+                  </div>
+
+                  <div className="grid gap-4 p-4 sm:p-5">
+                    <div className="grid gap-2 grid-cols-2 lg:grid-cols-5">
+                      {[
+                        ["Carga", `${selectedSessionVolume.toFixed(0)} ${loadUnit}`],
+                        ["Duracion", minutesToHHMM(selectedSession.duration)],
+                        ["Intensidad", `${selectedSession.intensity}/10`],
+                        ["Dolor", `${selectedSession.painLevel}/10`],
+                        ["Maximo", selectedSessionMaxWeight > 0 ? `${selectedSessionMaxWeight} ${unit}` : "--"],
+                      ].map(([label, value]) => (
+                        <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2" key={label}>
+                          <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">{label}</p>
+                          <p className="mt-1 truncate text-base font-black text-slate-900">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid gap-2">
+                      {selectedSession.exercises.map((exercise, index) => {
+                        const maxWeight = Math.max(0, ...exercise.weights.map((weight) => Number(weight) || 0));
+                        return (
+                          <div className="grid grid-cols-[32px_minmax(0,1fr)_52px_86px] items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm sm:grid-cols-[32px_minmax(0,1fr)_70px_120px]" key={`${selectedSession.id}-modal-${exercise.id}`}>
+                            <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500 text-xs font-black text-white">{index + 1}</span>
+                            <div className="min-w-0">
+                              <p className="truncate font-black text-slate-900">{exercise.name}</p>
+                              <p className="truncate text-xs font-semibold text-slate-500">{exercise.weights.map((weight, setIndex) => `${exercise.repsBySet?.[setIndex] ?? exercise.reps}x${weight || "--"}`).join(" · ")}</p>
+                            </div>
+                            <span className="text-center text-xs font-black text-slate-700">{exercise.sets} s.</span>
+                            <span className="text-right text-xs font-black text-blue-700">{maxWeight > 0 ? `${maxWeight} ${unit}` : "--"}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {selectedSession.notes ? <p className="rounded-lg bg-slate-50 p-3 text-sm font-semibold leading-6 text-slate-600">{selectedSession.notes}</p> : null}
+
+                    <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
+                      <button className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700" type="button" onClick={() => editSession(selectedSession)}>Editar rutina</button>
+                      <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white disabled:bg-blue-300" type="button" disabled={aiLoadingId === selectedSession.id} onClick={() => analyzeSessionFromHistory(selectedSession, !selectedSessionAnalysis)}>
+                        {aiLoadingId === selectedSession.id ? "Analizando..." : selectedSessionAnalysis ? "Ver analisis IA" : "Generar analisis IA"}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            ) : null}
           </section>
         </div>
       </main>
