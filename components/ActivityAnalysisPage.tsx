@@ -1,6 +1,7 @@
 "use client";
 
 import TopNav from "@/components/TopNav";
+import { AppIcon } from "@/components/Brand";
 import { getCloudCollection, getCloudProfile } from "@/lib/cloud-sync";
 import {
   ActivityAnalysis,
@@ -1621,57 +1622,60 @@ export default function ActivityAnalysisPage({ sport }: Props) {
             )}
           </section>
 
-          <section className="mt-5 rounded-lg border border-[#E2E8F0] bg-white p-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-lg font-black text-slate-900">Historial de sesiones</h2>
-                <p className="text-sm font-semibold text-slate-500">{activities.length} actividades importadas - cada fila conserva su analisis IA</p>
-              </div>
+          <section className="mt-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-lg font-black text-slate-900">Historial de sesiones</h2>
+              <p className="text-sm font-bold text-slate-500">{activities.length} registros totales</p>
             </div>
-            <div className="mt-4 overflow-x-auto">
-              <div className="min-w-[920px]">
-                <div className="grid grid-cols-[96px_1.4fr_86px_86px_86px_86px_120px_132px] gap-3 border-b border-slate-100 px-3 pb-2 text-xs font-black uppercase tracking-wide text-slate-400">
-                  <span>Fecha</span>
-                  <span>Sesion</span>
-                  <span>Distancia</span>
-                  <span>Tiempo</span>
-                  <span>{sport === "cycling" ? "Velocidad" : "Ritmo"}</span>
-                  <span>FC</span>
-                  <span>Zonas</span>
-                  <span className="text-right">Acciones</span>
-                </div>
-                <div className="grid gap-2 pt-2">
-                  {activities.map((activity) => {
-                    const strongest = [...activity.zoneTotals].sort((a, b) => b.seconds - a.seconds)[0];
-                    const aiLabel = activity.aiAnalysis ? (activity.aiAcknowledgedAt ? "IA leida" : "IA pendiente") : "Sin analisis IA";
-                    return (
-                      <div className={`grid grid-cols-[96px_1.4fr_86px_86px_86px_86px_120px_132px] items-center gap-3 rounded-lg border px-3 py-3 text-sm transition ${activity.id === selected.id ? "border-blue-200 bg-blue-50/50" : "border-slate-100 bg-white hover:bg-slate-50"}`} key={activity.id}>
+            <div className="grid gap-3">
+              {activities.map((activity) => {
+                const strongest = [...activity.zoneTotals].sort((a, b) => b.seconds - a.seconds)[0];
+                const aiLabel = activity.aiAnalysis ? (activity.aiAcknowledgedAt ? "IA leida" : "IA nueva") : "IA pendiente";
+                return (
+                  <article className={`rounded-lg border bg-white p-4 transition hover:border-blue-100 hover:shadow-md ${activity.id === selected.id ? "border-blue-200 shadow-sm" : "border-slate-200"}`} key={activity.id}>
+                    <div className="grid gap-4 lg:grid-cols-[minmax(260px,1.2fr)_minmax(430px,1fr)_auto] lg:items-center">
+                      <button className="flex min-w-0 items-center gap-3 text-left" type="button" onClick={() => viewActivity(activity)}>
+                        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-700">
+                          <AppIcon name={sport === "cycling" ? "cycling" : "running"} className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0">
+                          <strong className="block truncate font-black text-slate-900">{activity.name}</strong>
+                          <span className="mt-0.5 block truncate text-xs font-semibold text-slate-500">
+                            {activity.date.slice(8, 10)}/{activity.date.slice(5, 7)}/{activity.date.slice(0, 4)} · {activity.source}{isSupportActivity(activity) ? " · Soporte/recuperacion" : ""}
+                          </span>
+                        </span>
+                      </button>
+
+                      <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
                         <div>
-                          <p className="font-black text-slate-900">{activity.date.slice(8, 10)}</p>
-                          <p className="text-xs font-bold uppercase text-slate-400">{activity.date.slice(5, 7)}/{activity.date.slice(0, 4)}</p>
+                          <p className="font-semibold text-slate-500">Distancia</p>
+                          <p className="font-black text-slate-900">{activity.metrics.distanceKm.toFixed(2)} km</p>
                         </div>
-                        <button className="text-left" type="button" onClick={() => viewActivity(activity)}>
-                          <p className="font-black text-slate-900">{activity.name}</p>
-                          <p className="text-xs font-bold text-slate-500">{activity.source} - {isSupportActivity(activity) ? "Soporte/recuperacion - " : ""}{aiLabel}</p>
-                        </button>
-                        <span className="font-black text-slate-900">{activity.metrics.distanceKm.toFixed(2)} km</span>
-                        <span className="font-bold text-slate-700">{formatDuration(activity.metrics.durationSec)}</span>
-                        <span className="font-bold text-slate-700">{sport === "cycling" ? metric(activity.metrics.avgSpeedKmh, "km/h") : metric(activity.metrics.pace, "/km")}</span>
-                        <span className="font-bold text-slate-700">{metric(activity.metrics.avgHr, "bpm")}</span>
-                        <div className="flex items-center gap-2">
-                          {strongest ? <ZoneBadge segment={strongest} /> : <span className="text-xs font-bold text-slate-400">Sin FC</span>}
-                          <span className={`text-xs font-bold ${activity.aiAnalysis && !activity.aiAcknowledgedAt ? "text-blue-600" : "text-slate-500"}`}>{activity.aiAnalysis ? (activity.aiAcknowledgedAt ? "IA leida" : "IA nueva") : "Generar IA"}</span>
+                        <div>
+                          <p className="font-semibold text-slate-500">Duracion</p>
+                          <p className="font-black text-slate-900">{formatDuration(activity.metrics.durationSec)}</p>
                         </div>
-                        <div className="flex justify-end gap-2">
-                          <button className="rounded-lg border border-slate-200 px-2 py-2 text-xs font-black text-slate-700" type="button" onClick={() => viewActivity(activity)}>Ver</button>
-                          <button className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-xs font-black text-blue-700" type="button" onClick={() => analyzeActivityFromHistory(activity)} disabled={aiLoadingId === activity.id}>{aiLoadingId === activity.id ? "..." : activity.aiAnalysis ? "Ver IA" : "IA"}</button>
-                          <button className="rounded-lg border border-red-200 bg-red-50 px-2 py-2 text-xs font-black text-red-600" type="button" onClick={() => deleteActivity(activity)}>Eliminar</button>
+                        <div>
+                          <p className="font-semibold text-slate-500">{sport === "cycling" ? "Velocidad" : "Ritmo"}</p>
+                          <p className="font-black text-slate-900">{sport === "cycling" ? metric(activity.metrics.avgSpeedKmh, "km/h") : metric(activity.metrics.pace, "/km")}</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-500">FC promedio</p>
+                          <p className="font-black text-slate-900">{metric(activity.metrics.avgHr, "bpm")}</p>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 lg:justify-end">
+                        {strongest ? <ZoneBadge segment={strongest} /> : <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-black text-slate-500">Sin FC</span>}
+                        <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-black text-green-700">Completada</span>
+                        <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50" type="button" onClick={() => viewActivity(activity)}>Ver</button>
+                        <button className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 hover:bg-blue-100" type="button" onClick={() => analyzeActivityFromHistory(activity)} disabled={aiLoadingId === activity.id}>{aiLoadingId === activity.id ? "..." : aiLabel}</button>
+                        <button className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-600 hover:bg-red-100" type="button" onClick={() => deleteActivity(activity)}>Eliminar</button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </section>
           </>
