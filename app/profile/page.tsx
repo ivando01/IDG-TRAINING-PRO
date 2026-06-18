@@ -539,8 +539,8 @@ export default function ProfilePage() {
     }
   };
 
-  const inputClass = "h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
-  const labelClass = "grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500";
+  const inputClass = "h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+  const labelClass = "grid min-w-0 gap-1 text-xs font-black uppercase tracking-wide text-slate-500";
 
   return (
     <>
@@ -590,7 +590,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="grid grid-cols-1 gap-5">
           <section className="grid gap-5">
             <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-black text-slate-900">Identidad</h2>
@@ -774,7 +774,7 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          <aside className="grid content-start gap-5">
+          <aside className="grid content-start gap-5 xl:grid-cols-2">
             <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-black text-slate-900">Resumen del perfil</h2>
               <div className="mt-4 grid gap-3">
