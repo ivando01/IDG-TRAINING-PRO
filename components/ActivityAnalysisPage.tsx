@@ -1365,7 +1365,10 @@ export default function ActivityAnalysisPage({ sport }: Props) {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await readJsonResponse(response);
-      if (!response.ok) throw new Error(data.error || "No se pudo sincronizar Strava.");
+      if (!response.ok) {
+        const detail = data.detail ? ` ${data.detail}` : "";
+        throw new Error(`${data.error || "No se pudo sincronizar Strava."}${detail}`);
+      }
       const imported = (data.activities || []).map((item: StravaSyncedActivity) => stravaToActivity(item, sport)).filter((activity: ActivityAnalysis) => keepActivityForSport(activity, sport));
       if (!imported.length) {
         const types = Array.isArray(data.availableTypes) && data.availableTypes.length ? ` Tipos recibidos: ${data.availableTypes.join(", ")}.` : "";
