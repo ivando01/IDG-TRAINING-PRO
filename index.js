@@ -34,6 +34,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID || "232892";
 const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
 const STRAVA_REDIRECT_URI = process.env.STRAVA_REDIRECT_URI || "http://localhost:3000/auth/strava/callback";
+const STRAVA_WEBHOOK_VERIFY_TOKEN = process.env.STRAVA_WEBHOOK_VERIFY_TOKEN;
 const FULL_ACCESS_EMAILS = new Set(
   String(process.env.IDG_FULL_ACCESS_EMAILS || process.env.FULL_ACCESS_EMAILS || "")
     .split(/[,\n;]/)
@@ -502,6 +503,12 @@ function isSportMatch(activity, sport) {
   return true;
 }
 
+function sportFromStravaActivity(activity) {
+  if (isSportMatch(activity, "running")) return "running";
+  if (isSportMatch(activity, "cycling")) return "cycling";
+  return "";
+}
+
 function externalErrorDetail(error) {
   const status = error.response?.status;
   const data = error.response?.data;
@@ -537,6 +544,96 @@ function scopeSet(value) {
       .map((scope) => scope.trim())
       .filter(Boolean),
   );
+}
+
+async function getUserByStravaId(stravaId) {
+  const result = await pool.query(
+    `SELECT email FROM users WHERE strava_id=$1`,
+    [String(stravaId)],
+  );
+  return result.rows[0]?.email || null;
+}
+
+async function importStravaActivityForUser({ userId, credentials, activityId, summary = null }) {
+  const streamsKeys = "time,latlng,distance,altitude,heartrate,cadence,watts,velocity_smooth,temp,grade_smooth";
+  let detail = summary;
+  let streams = null;
+
+  if (!detail) {
+    const detailResponse = await axios.get(`https://www.strava.com/api/v3/activities/${activityId}`, {
+      headers: { Authorization: `Bearer ${credentials.strava_access_token}` },
+    });
+    detail = detailResponse.data;
+  }
+
+  const sport = sportFromStravaActivity(detail);
+  if (!sport) {
+    return { saved: 0, skipped: true, reason: "unsupported_sport", type: detail?.sport_type || detail?.type || null };
+  }
+
+  try {
+    const streamsResponse = await axios.get(`https://www.strava.com/api/v3/activities/${activityId}/streams`, {
+      headers: { Authorization: `Bearer ${credentials.strava_access_token}` },
+      params: { keys: streamsKeys, key_by_type: true },
+    });
+    streams = streamsResponse.data;
+  } catch (streamError) {
+    console.error("No se pudo leer stream Strava", activityId, streamError.response?.data || streamError.message);
+  }
+
+  const saved = await saveStravaActivities([{ summary: detail, streams }], userId, sport);
+  return { saved, skipped: false, sport };
+}
+
+async function processStravaWebhookEvent(event) {
+  if (!event || typeof event !== "object") return;
+
+  const objectType = String(event.object_type || "");
+  const aspectType = String(event.aspect_type || "");
+  const objectId = event.object_id ? String(event.object_id) : "";
+  const ownerId = event.owner_id ? String(event.owner_id) : "";
+
+  if (objectType === "athlete" && aspectType === "update" && event.updates?.authorized === "false") {
+    await pool.query(
+      `UPDATE users SET
+        strava_id=NULL,
+        strava_access_token=NULL,
+        strava_refresh_token=NULL,
+        strava_expires_at=NULL
+       WHERE strava_id=$1`,
+      [objectId],
+    );
+    console.log("Strava desautorizado por webhook", { athleteId: objectId });
+    return;
+  }
+
+  if (objectType !== "activity" || !objectId || !ownerId) return;
+
+  const userId = await getUserByStravaId(ownerId);
+  if (!userId) {
+    console.warn("Webhook Strava sin usuario local", { ownerId, objectId, aspectType });
+    return;
+  }
+
+  if (aspectType === "delete") {
+    await pool.query(
+      `DELETE FROM activities WHERE user_id=$1 AND source='strava' AND external_id=$2`,
+      [userId, objectId],
+    );
+    console.log("Actividad Strava eliminada por webhook", { userId, objectId });
+    return;
+  }
+
+  if (aspectType !== "create" && aspectType !== "update") return;
+
+  const credentials = await getStravaCredentials(userId);
+  if (!credentials) {
+    console.warn("Webhook Strava sin credenciales activas", { userId, objectId });
+    return;
+  }
+
+  const result = await importStravaActivityForUser({ userId, credentials, activityId: objectId });
+  console.log("Actividad Strava procesada por webhook", { userId, objectId, aspectType, ...result });
 }
 
 function isRunningSupportActivity(activity) {
@@ -1102,6 +1199,40 @@ app.put('/intelligence', authMiddleware, async (req, res) => {
 });
 
 /* ================= STRAVA ================= */
+
+app.get('/strava/webhook', (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+
+  if (!STRAVA_WEBHOOK_VERIFY_TOKEN) {
+    return res.status(500).json({ error: "Falta STRAVA_WEBHOOK_VERIFY_TOKEN" });
+  }
+
+  if (mode === "subscribe" && token === STRAVA_WEBHOOK_VERIFY_TOKEN && challenge) {
+    return res.json({ "hub.challenge": challenge });
+  }
+
+  res.status(403).json({ error: "Verificacion Strava invalida" });
+});
+
+app.post('/strava/webhook', (req, res) => {
+  const event = req.body;
+  res.status(200).json({ ok: true });
+
+  setImmediate(() => {
+    processStravaWebhookEvent(event).catch((error) => {
+      console.error("No se pudo procesar webhook Strava", {
+        event,
+        detail: externalErrorDetail(error),
+        status: error.response?.status,
+        data: error.response?.data,
+        code: error.code,
+        message: error.message,
+      });
+    });
+  });
+});
 
 // RedirecciÃ³n
 app.get('/auth/strava', (req, res) => {
