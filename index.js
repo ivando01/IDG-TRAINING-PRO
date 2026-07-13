@@ -59,6 +59,46 @@ async function initDatabase() {
   await pool.query(schema);
 }
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function describeDatabaseTarget() {
+  if (!process.env.DATABASE_URL) {
+    return "PGHOST/PGDATABASE local config";
+  }
+
+  try {
+    const url = new URL(process.env.DATABASE_URL);
+    return `${url.protocol}//${url.username ? "<user>" : ""}@${url.hostname}:${url.port || "5432"}${url.pathname}`;
+  } catch {
+    return "invalid DATABASE_URL";
+  }
+}
+
+async function initDatabaseWithRetry() {
+  const maxAttempts = Number(process.env.DB_INIT_RETRIES) || 3;
+  const retryDelayMs = Number(process.env.DB_INIT_RETRY_DELAY_MS) || 5000;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await initDatabase();
+      return;
+    } catch (error) {
+      console.error(
+        `No se pudo inicializar la base de datos (intento ${attempt}/${maxAttempts}, target ${describeDatabaseTarget()})`,
+        error,
+      );
+
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+
+      await wait(retryDelayMs);
+    }
+  }
+}
+
 async function ensureWeeklyPlanTable() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS weekly_plan (
@@ -460,6 +500,34 @@ function isSportMatch(activity, sport) {
     ].some((keyword) => text.includes(keyword));
   }
   return true;
+}
+
+function externalErrorDetail(error) {
+  const status = error.response?.status;
+  const data = error.response?.data;
+  const providerMessage = typeof data === "string"
+    ? data
+    : data?.message || data?.error || data?.errors?.[0]?.message || error.message;
+
+  if (status === 400 && String(providerMessage || "").toLowerCase().includes("refresh")) {
+    return "Strava rechazo el refresh token. Desconecta Strava y vuelve a conectarlo.";
+  }
+  if (status === 401) {
+    return "Strava rechazo el token de acceso. Vuelve a conectar Strava desde tu perfil.";
+  }
+  if (status === 403) {
+    return "Strava no dio permisos suficientes. Reconecta Strava aceptando activity:read_all.";
+  }
+  if (status === 429) {
+    return "Strava limito temporalmente las solicitudes. Intenta sincronizar de nuevo mas tarde.";
+  }
+  if (status) {
+    return `Strava respondio ${status}: ${providerMessage || "sin detalle"}`;
+  }
+  if (error.code) {
+    return `Error de conexion/base de datos (${error.code}): ${error.message}`;
+  }
+  return error.message || "Error desconocido sincronizando Strava.";
 }
 
 function isRunningSupportActivity(activity) {
@@ -1243,8 +1311,15 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
     const saved = await saveStravaActivities(normalizedForStorage, userId, sport);
     res.json({ sport, days, after: new Date(afterMs).toISOString(), scanned: fetched.length, inRange: inRange.length, availableTypes, recent, count: enriched.length, saved, activities: enriched });
   } catch (error) {
-    console.error(error.response?.data || error);
-    res.status(500).json({ error: "No se pudo sincronizar Strava" });
+    const detail = externalErrorDetail(error);
+    console.error("No se pudo sincronizar Strava", {
+      detail,
+      status: error.response?.status,
+      data: error.response?.data,
+      code: error.code,
+      message: error.message,
+    });
+    res.status(500).json({ error: "No se pudo sincronizar Strava", detail });
   }
 });
 
@@ -1368,13 +1443,13 @@ RIESGO: ${fatigue === "alta" ? "Elevado" : loadLevel === "alta" ? "Moderado" : "
 
 const PORT = Number(process.env.PORT) || 3001;
 
-initDatabase()
+initDatabaseWithRetry()
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Backend IDG listo en puerto ${PORT}`);
     });
   })
   .catch((error) => {
-    console.error("No se pudo inicializar la base de datos", error);
+    console.error("Backend detenido: no se pudo inicializar la base de datos", error);
     process.exit(1);
   });
