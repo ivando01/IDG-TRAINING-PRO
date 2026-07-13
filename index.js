@@ -530,6 +530,15 @@ function externalErrorDetail(error) {
   return error.message || "Error desconocido sincronizando Strava.";
 }
 
+function scopeSet(value) {
+  return new Set(
+    String(value || "")
+      .split(/[,\s]+/)
+      .map((scope) => scope.trim())
+      .filter(Boolean),
+  );
+}
+
 function isRunningSupportActivity(activity) {
   const text = `${activity?.sport_type || ""} ${activity?.type || ""} ${activity?.activitySubType || ""} ${activity?.name || ""}`.toLowerCase();
   return /\b(walk|hike|caminar|caminata|senderismo)\b/.test(text);
@@ -1110,7 +1119,7 @@ app.get('/auth/strava', (req, res) => {
 
 // Callback
 app.get('/auth/strava/callback', async (req, res) => {
-  const { code, state } = req.query;
+  const { code, state, scope } = req.query;
 
   try {
     const decoded = jwt.verify(state, JWT_SECRET);
@@ -1127,6 +1136,12 @@ app.get('/auth/strava/callback', async (req, res) => {
     );
 
     const { access_token, refresh_token, expires_at, athlete } = response.data;
+    const grantedScopes = scopeSet(response.data.scope || scope);
+    if (!grantedScopes.has("activity:read_all")) {
+      return res.status(403).send(
+        "Strava conectado sin permiso de actividades privadas. Vuelve a conectar Strava y marca el permiso para leer todas tus actividades.",
+      );
+    }
 
     await pool.query(
       `UPDATE users SET
