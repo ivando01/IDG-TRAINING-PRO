@@ -15,21 +15,21 @@ const sports = [
     title: "GYM",
     icon: "/icons/GYM.png",
     image: "/sport-gym.png",
-    items: ["Fuerza", "Hipertrofia", "Movilidad"],
+    items: ["Series", "Carga", "Progreso"],
   },
   {
     key: "cycling",
     title: "CICLISMO",
     icon: "/icons/BIKE.png",
     image: "/sport-cycling.png",
-    items: ["Resistencia", "Potencia", "Velocidad"],
+    items: ["Rutas", "Zonas", "Potencia"],
   },
   {
     key: "running",
     title: "RUNNING",
     icon: "/icons/RUNER.png",
     image: "/sport-running.png",
-    items: ["Resistencia", "Ritmo", "Recuperacion"],
+    items: ["Ritmo", "FC", "Historial"],
   },
 ];
 
@@ -115,13 +115,20 @@ export default function Home() {
     <main className="login-screen">
       <div className="login-layout">
         <section className="product-side" aria-label="IDG Training Pro">
+          <Image className="hero-backdrop" src="/login-runner.png" alt="" fill sizes="100vw" priority />
           <div className="intro-row">
             <BrandMark />
             <div className="hero-copy">
+              <p className="hero-kicker">Vercel + Supabase Sync</p>
               <h1>
-                Entrena como un <span>sistema completo.</span>
+                Tu entrenamiento, <span>sin friccion.</span>
               </h1>
-              <p>Running, ciclismo y gimnasio en un solo ecosistema inteligente.</p>
+              <p>Planifica, registra y sincroniza gimnasio, running y ciclismo entre PC, movil y tablet.</p>
+              <div className="hero-metrics" aria-label="Resumen de capacidades">
+                <span><strong>3</strong> modulos</span>
+                <span><strong>24/7</strong> historial</span>
+                <span><strong>Sync</strong> directo</span>
+              </div>
             </div>
           </div>
 
@@ -149,8 +156,9 @@ export default function Home() {
           <BrandMark compact />
 
           <div className="auth-heading">
+            <span>Acceso privado</span>
             <h2>Bienvenido de nuevo</h2>
-            <p>Inicia sesion para continuar optimizando tu rendimiento.</p>
+            <p>Entra a tu panel y manten tus datos deportivos sincronizados.</p>
           </div>
 
           {error ? <p className="status-message error">{error}</p> : null}
@@ -169,14 +177,14 @@ export default function Home() {
 
           <form className="email-form" onSubmit={handleEmailLogin}>
             <label>
-              <span aria-hidden="true">✉</span>
+              <span aria-hidden="true">@</span>
               <input type="email" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
             </label>
             <label>
-              <span aria-hidden="true">▢</span>
-              <input type={showPassword ? "text" : "password"} placeholder="Contraseña" value={password} onChange={(event) => setPassword(event.target.value)} />
+              <span aria-hidden="true">#</span>
+              <input type={showPassword ? "text" : "password"} placeholder="Contrasena" value={password} onChange={(event) => setPassword(event.target.value)} />
               <button type="button" aria-label="Mostrar contrasena" onClick={() => setShowPassword((current) => !current)}>
-                ◉
+                {showPassword ? "Ocultar" : "Ver"}
               </button>
             </label>
             <div className="form-meta">
@@ -184,7 +192,7 @@ export default function Home() {
                 <input type="checkbox" />
                 Recordarme
               </label>
-              <button type="button" onClick={() => setError("Recuperacion de contrasena pendiente de activar.")}>Olvidaste tu contraseña?</button>
+              <button type="button" onClick={() => setError("Recuperacion de contrasena pendiente de activar.")}>Olvidaste tu contrasena?</button>
             </div>
             <button className="login-button" type="submit" disabled={loading}>
               {loading ? "Iniciando..." : "Iniciar sesion"}
@@ -196,7 +204,7 @@ export default function Home() {
           </p>
           <p className="legal-links">
             <a href="/privacy">Politica de privacidad</a>
-            <span aria-hidden="true">·</span>
+            <span aria-hidden="true">-</span>
             <a href="/term">Terminos de servicio</a>
           </p>
         </aside>
