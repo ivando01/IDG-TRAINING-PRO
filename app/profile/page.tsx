@@ -318,7 +318,7 @@ export default function ProfilePage() {
         localStorage.setItem(LEGACY_PROFILE_KEY, JSON.stringify(synced));
       })
       .catch(() => {
-        if (alive) setStatus("Perfil local cargado. La nube se sincronizara cuando el backend este disponible.");
+        if (alive) setStatus("Perfil local cargado. La nube directa se sincronizara cuando Supabase este disponible.");
       });
     return () => {
       alive = false;
@@ -496,9 +496,9 @@ export default function ProfilePage() {
   };
 
   const connectStrava = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("render_token");
     if (!token) {
-      setStatus("Inicia sesion con Google antes de conectar Strava.");
+      setStatus("Strava depende de Render como funcion secundaria. Vuelve a iniciar sesion cuando Render este disponible para vincularlo.");
       return;
     }
     setStravaBusy(true);
@@ -517,9 +517,9 @@ export default function ProfilePage() {
   };
 
   const disconnectStrava = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("render_token");
     if (!token) {
-      setStatus("Inicia sesion con Google antes de desconectar Strava.");
+      setStatus("Strava depende de Render como funcion secundaria. No hay token de Render activo para desconectarlo.");
       return;
     }
     setStravaBusy(true);

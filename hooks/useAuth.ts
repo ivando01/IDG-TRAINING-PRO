@@ -2,13 +2,14 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { clearSupabaseSession, getSupabaseAccessToken } from "@/lib/supabase-direct";
 
 export function useAuth() {
   const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
+    if (!token && !getSupabaseAccessToken()) {
       router.push("/");
     }
   }, [router]);
@@ -19,8 +20,8 @@ export function useAuth() {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    clearSupabaseSession();
+    localStorage.removeItem("render_token");
     router.push("/");
   };
 

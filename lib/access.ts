@@ -47,7 +47,7 @@ export function canUseCoach(access = getStoredAccess()) {
 
 export async function refreshAccess() {
   if (typeof window === "undefined") return DEFAULT_ACCESS;
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("render_token");
   if (!token) return DEFAULT_ACCESS;
 
   const response = await fetch(`${API_URL}/access`, {

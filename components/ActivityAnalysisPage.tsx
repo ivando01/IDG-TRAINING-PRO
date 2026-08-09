@@ -2,7 +2,7 @@
 
 import TopNav from "@/components/TopNav";
 import { AppIcon } from "@/components/Brand";
-import { getCloudCollection, getCloudProfile } from "@/lib/cloud-sync";
+import { deleteCloudItem, getCloudCollection, getCloudProfile, saveCloudCollection } from "@/lib/cloud-sync";
 import {
   ActivityAnalysis,
   ActivityPoint,
@@ -215,37 +215,6 @@ function apiUrl() {
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 }
 
-async function saveActivityBatchToCloud(sport: SportType, activities: ActivityAnalysis[], token: string) {
-  const payload = compactActivitiesForCloud(activities);
-  const chunkSize = 4;
-  let saved = 0;
-  for (let index = 0; index < payload.length; index += chunkSize) {
-    const chunk = payload.slice(index, index + chunkSize);
-    const response = await fetch(`${apiUrl()}/activities/upsert`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ sport, activities: chunk }),
-    });
-    const data = await readJsonResponse(response);
-    if (!response.ok) throw new Error(data.error || "No se pudo guardar el lote de actividades.");
-    saved += Number(data.saved || chunk.length || 0);
-  }
-  return { ok: true, saved };
-}
-
-async function deleteActivityFromCloud(id: string, token: string) {
-  const response = await fetch(`${apiUrl()}/activities/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await readJsonResponse(response);
-  if (!response.ok) throw new Error(data.error || "No se pudo eliminar la actividad en nube.");
-  return data;
-}
-
 function stravaActivityText(summary: StravaSyncedActivity["summary"]) {
   return `${summary.sport_type || ""} ${summary.type || ""} ${summary.name || ""}`.toLowerCase();
 }
@@ -369,23 +338,8 @@ function compactActivityForStorage(activity: ActivityAnalysis): ActivityAnalysis
   return { ...activity, points };
 }
 
-function sampleArray<T>(items: T[], maxItems: number) {
-  if (items.length <= maxItems) return items;
-  const step = items.length / maxItems;
-  return Array.from({ length: maxItems }, (_, index) => items[Math.min(items.length - 1, Math.round(index * step))]);
-}
-
 function compactActivitiesForStorage(items: ActivityAnalysis[]) {
   return items.slice(0, 80).map(compactActivityForStorage);
-}
-
-function compactActivitiesForCloud(items: ActivityAnalysis[]) {
-  return items.map((activity) => ({
-    ...activity,
-    points: sampleArray(activity.points, activity.sport === "cycling" ? 120 : 150),
-    zoneTimeline: sampleArray(activity.zoneTimeline, 120),
-    aiAnalysis: activity.aiAnalysis ? activity.aiAnalysis.slice(0, 1400) : undefined,
-  }));
 }
 
 function activitySessionTime(activity: ActivityAnalysis) {
@@ -1231,11 +1185,8 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     const ordered = sortActivitiesBySessionDate(next.filter((activity) => keepActivityForSport(activity, sport)));
     const stored = safeSetActivities(storageKeyForSport(sport), ordered);
     setActivities(ordered);
-    const token = localStorage.getItem("token");
-    if (token) {
-      saveActivityBatchToCloud(sport, ordered, token)
-        .catch((error) => setStatus(error instanceof Error ? `No se pudo guardar en nube: ${error.message}` : "No se pudo guardar en nube."));
-    }
+    saveCloudCollection(`/activities?sport=${sport}`, "activities", ordered)
+      .catch((error) => setStatus(error instanceof Error ? `No se pudo guardar en Supabase: ${error.message}` : "No se pudo guardar en Supabase."));
     if (stored.length !== ordered.length) {
       setStatus("Se guardaron las actividades compactadas para no superar el limite local del navegador.");
     }
@@ -1308,11 +1259,8 @@ export default function ActivityAnalysisPage({ sport }: Props) {
   const deleteActivity = (activity: ActivityAnalysis) => {
     const next = activities.filter((item) => item.id !== activity.id);
     saveActivities(next);
-    const token = localStorage.getItem("token");
-    if (token) {
-      deleteActivityFromCloud(activity.id, token)
-        .catch((error) => setStatus(error instanceof Error ? `No se pudo eliminar en nube: ${error.message}` : "No se pudo eliminar en nube."));
-    }
+    deleteCloudItem(`/activities/${encodeURIComponent(activity.id)}`)
+      .catch((error) => setStatus(error instanceof Error ? `No se pudo eliminar en Supabase: ${error.message}` : "No se pudo eliminar en Supabase."));
     setSelectedId(next[0]?.id || "");
     setStatus(`${activity.name} eliminado del historial local.`);
   };
@@ -1348,9 +1296,9 @@ export default function ActivityAnalysisPage({ sport }: Props) {
   };
 
   const syncStrava = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("render_token");
     if (!token) {
-      setStatus("Inicia sesion con Google antes de sincronizar Strava.");
+      setStatus("Strava depende de Render como funcion secundaria. La app principal funciona; vuelve a iniciar sesion cuando Render este disponible para sincronizar Strava.");
       return;
     }
     setSyncingStrava(true);
@@ -1395,7 +1343,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
       safeSetActivities(storageKeyForSport(sport), ordered);
       setActivities(ordered);
       setSelectedId(imported[0].id);
-      setStatus(`${imported.length} actividades sincronizadas desde Strava. El backend las guardo en Supabase como filas individuales.`);
+      setStatus(`${imported.length} actividades sincronizadas desde Strava. La app las guardo en Supabase como registros individuales.`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "No se pudo sincronizar Strava.");
     } finally {

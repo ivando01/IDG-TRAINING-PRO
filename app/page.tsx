@@ -2,6 +2,7 @@
 
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { storeAccess } from "@/lib/access";
+import { signInWithGoogleIdToken } from "@/lib/supabase-direct";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
@@ -60,16 +61,20 @@ export default function Home() {
     try {
       setLoading(true);
       setError("");
-      const response = await fetch(`${API_URL}/auth/google`, {
+      if (!credentialResponse.credential) throw new Error("Google no devolvio credencial de inicio de sesion.");
+      await signInWithGoogleIdToken(credentialResponse.credential);
+      fetch(`${API_URL}/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: credentialResponse.credential }),
-      });
-      const data = await response.json();
-      if (!response.ok || !data.token) throw new Error(data.error || "No se pudo iniciar sesion.");
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      storeAccess(data.access);
+      })
+        .then(async (response) => {
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || !data.token) return;
+          localStorage.setItem("render_token", data.token);
+          storeAccess(data.access);
+        })
+        .catch(() => undefined);
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al iniciar sesion.");
@@ -79,9 +84,9 @@ export default function Home() {
   };
 
   const connectStrava = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("render_token");
     if (!token) {
-      setError("Primero inicia sesion con Google para vincular Strava.");
+      setError("Strava usa Render como funcion secundaria. Inicia sesion de nuevo cuando Render este disponible para vincularlo.");
       return;
     }
     setLoading(true);
