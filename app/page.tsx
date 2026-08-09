@@ -9,28 +9,30 @@ import { FormEvent, useEffect, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-const sports = [
-  {
-    key: "gym",
-    title: "GYM",
-    icon: "/icons/GYM.png",
-    image: "/sport-gym.png",
-    items: ["Series", "Carga", "Progreso"],
-  },
-  {
-    key: "cycling",
-    title: "CICLISMO",
-    icon: "/icons/BIKE.png",
-    image: "/sport-cycling.png",
-    items: ["Rutas", "Zonas", "Potencia"],
-  },
-  {
-    key: "running",
-    title: "RUNNING",
-    icon: "/icons/RUNER.png",
-    image: "/sport-running.png",
-    items: ["Ritmo", "FC", "Historial"],
-  },
+const highlights = [
+  ["3 MODULOS", "Gimnasio, Running y Ciclismo", "/icons/idg/muscle.png"],
+  ["SINCRONIZACION TOTAL", "Tus datos contigo en todos tus dispositivos", "/icons/idg/progress.png"],
+  ["TUS DATOS SEGUROS", "Privados, respaldados y 100% tuyos", "/icons/idg/settings.png"],
+];
+
+const stats = [
+  ["FUERZA", "+24%", "Progreso promedio", "/icons/GYM.png"],
+  ["RESISTENCIA", "+18%", "En tus tiempos", "/icons/RUNER.png"],
+  ["DISTANCIA", "+32%", "En tus rutas", "/icons/BIKE.png"],
+];
+
+const workflow = [
+  ["PLANIFICA", "tus entrenamientos", "/icons/idg/calendar.png"],
+  ["REGISTRA", "cada sesion", "/icons/idg/add-session.png"],
+  ["ANALIZA", "tu rendimiento", "/icons/idg/analytics.png"],
+  ["MEJORA", "cada dia", "/icons/idg/achievement.png"],
+];
+
+const benefits = [
+  ["AHORRA TIEMPO", "Todo tu entrenamiento en un solo lugar", "/icons/idg/timer.png"],
+  ["ENFOCADO EN TI", "Planes y metricas adaptados a tus objetivos", "/icons/idg/route.png"],
+  ["MIDE TU PROGRESO", "Estadisticas claras para tomar decisiones", "/icons/idg/trophy.png"],
+  ["VIDA EN EQUILIBRIO", "Entrena, recupera y mejora tu estilo de vida", "/icons/idg/recovery.png"],
 ];
 
 function BrandMark({ compact = false }: { compact?: boolean }) {
@@ -115,38 +117,81 @@ export default function Home() {
     <main className="login-screen">
       <div className="login-layout">
         <section className="product-side" aria-label="IDG Training Pro">
-          <Image className="hero-backdrop" src="/login-runner.png" alt="" fill sizes="100vw" priority />
-          <div className="intro-row">
+          <header className="login-nav" aria-label="Navegacion principal">
             <BrandMark />
-            <div className="hero-copy">
-              <p className="hero-kicker">Vercel + Supabase Sync</p>
+            <nav>
+              {["Inicio", "App", "Planes", "Caracteristicas", "Premium", "Contacto"].map((item, index) => (
+                <a className={index === 0 ? "active" : ""} href="#" key={item}>{item}</a>
+              ))}
+            </nav>
+            <button type="button">Modo claro</button>
+          </header>
+
+          <div className="hero-grid">
+            <section className="hero-copy">
+              <p className="hero-kicker">Tu plataforma integral</p>
               <h1>
-                Tu entrenamiento, <span>sin friccion.</span>
+                Entrena.
+                <br />
+                Registra.
+                <br />
+                <span>Evoluciona.</span>
               </h1>
-              <p>Planifica, registra y sincroniza gimnasio, running y ciclismo entre PC, movil y tablet.</p>
-              <div className="hero-metrics" aria-label="Resumen de capacidades">
-                <span><strong>3</strong> modulos</span>
-                <span><strong>24/7</strong> historial</span>
-                <span><strong>Sync</strong> directo</span>
+              <p>Planifica, registra y analiza tu entrenamiento de gimnasio, running y ciclismo en un solo lugar.</p>
+
+              <div className="hero-highlights">
+                {highlights.map(([title, text, icon]) => (
+                  <article key={title}>
+                    <span><img src={icon} alt="" aria-hidden="true" /></span>
+                    <div>
+                      <strong>{title}</strong>
+                      <p>{text}</p>
+                    </div>
+                  </article>
+                ))}
               </div>
-            </div>
+            </section>
+
+            <section className="hero-athlete" aria-label="Entrenamiento integrado">
+              <div className="hero-ring" />
+              <Image className="athlete-main" src="/login-runner.png" alt="" fill sizes="(max-width: 1180px) 90vw, 42vw" priority />
+              <Image className="athlete-card athlete-gym" src="/sport-gym.png" alt="" width={168} height={132} />
+              <Image className="athlete-card athlete-bike" src="/sport-cycling.png" alt="" width={196} height={140} />
+            </section>
           </div>
 
-          <div className="sport-cards" aria-label="Modulos deportivos">
-            {sports.map((sport) => (
-              <article className={`sport-card sport-${sport.key}`} key={sport.key}>
-                <Image src={sport.image} alt="" fill sizes="(max-width: 1180px) 290px, 25vw" priority={sport.key === "gym"} />
-                <div className="sport-title">
-                  <span>
-                    <img src={sport.icon} alt="" aria-hidden="true" className="h-8 w-8 rounded-md object-cover" />
-                  </span>
-                  <h2>{sport.title}</h2>
+          <div className="stat-cards" aria-label="Metricas destacadas">
+            {stats.map(([label, value, text, icon]) => (
+              <article key={label}>
+                <span><img src={icon} alt="" aria-hidden="true" /></span>
+                <div>
+                  <p>{label}</p>
+                  <strong>{value}</strong>
+                  <small>{text}</small>
                 </div>
-                <ul>
-                  {sport.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
+                <i aria-hidden="true" />
+              </article>
+            ))}
+          </div>
+
+          <div className="workflow-strip" aria-label="Flujo de uso">
+            {workflow.map(([title, text, icon]) => (
+              <article key={title}>
+                <img src={icon} alt="" aria-hidden="true" />
+                <strong>{title}</strong>
+                <span>{text}</span>
+              </article>
+            ))}
+          </div>
+
+          <div className="benefit-strip" aria-label="Beneficios">
+            {benefits.map(([title, text, icon]) => (
+              <article key={title}>
+                <img src={icon} alt="" aria-hidden="true" />
+                <div>
+                  <strong>{title}</strong>
+                  <span>{text}</span>
+                </div>
               </article>
             ))}
           </div>
@@ -207,6 +252,15 @@ export default function Home() {
             <span aria-hidden="true">-</span>
             <a href="/term">Terminos de servicio</a>
           </p>
+          <div className="device-sync">
+            <div>
+              <span>PC</span>
+              <span>Movil</span>
+              <span>Tablet</span>
+              <span>Smartwatch</span>
+            </div>
+            <p>Sincronizado en todos tus dispositivos</p>
+          </div>
         </aside>
       </div>
     </main>
