@@ -374,7 +374,13 @@ export default function GymModule() {
   const [weeklyTarget, setWeeklyTarget] = useState(4);
   const [savedExerciseIds, setSavedExerciseIds] = useState<string[]>([]);
 
-  const buildExercises = (nextRoutine: RoutineKey, savedHistory: GymSession[]) => {
+  const defaultTemplateForRoutine = (nextRoutine: RoutineKey, sourceTemplates = templates) =>
+    sortTemplates(sourceTemplates).find((template) => template.routineKey === nextRoutine);
+
+  const buildExercises = (nextRoutine: RoutineKey, savedHistory: GymSession[], sourceTemplates = templates) => {
+    const defaultTemplate = defaultTemplateForRoutine(nextRoutine, sourceTemplates);
+    if (defaultTemplate?.exercises.length) return cloneExercises(defaultTemplate.exercises);
+
     const previous = savedHistory.find((session) => session.routine === nextRoutine);
     const byName = new Map((previous?.exercises ?? []).map((exercise) => [exercise.name, exercise]));
 
@@ -424,19 +430,24 @@ export default function GymModule() {
         setPain(draft.pain || "");
         setCalories(draft.calories || "");
         setNotes(draft.notes || "");
-        setExercises(draft.exercises.length ? draft.exercises : buildExercises(draft.routine, sorted));
+        setExercises(draft.exercises.length ? draft.exercises : buildExercises(draft.routine, sorted, savedTemplates));
         setEditingId(draft.id);
         setIntelligence(`Rutina en curso recuperada: ${draft.routineName}.`);
         const matchingTemplate = savedTemplates.find((template) => template.name === draft.routineName);
         if (matchingTemplate) setSelectedTemplateId(matchingTemplate.id);
       } else {
-        setExercises(buildExercises("4", sorted));
+        const defaultTemplate = defaultTemplateForRoutine("4", savedTemplates);
+        if (defaultTemplate) {
+          setSelectedTemplateId(defaultTemplate.id);
+          setCustomRoutineName(defaultTemplate.name);
+        }
+        setExercises(buildExercises("4", sorted, savedTemplates));
       }
       const profileRaw = localStorage.getItem(PROFILE_KEY);
       const profile = profileRaw ? JSON.parse(profileRaw) : {};
       setWeeklyTarget(Math.max(1, Math.min(7, Number(profile.gymDaysPerWeek) || 4)));
     } catch {
-      setExercises(buildExercises("4", []));
+      setExercises(buildExercises("4", [], []));
     } finally {
       setDraftReady(true);
     }
@@ -447,7 +458,7 @@ export default function GymModule() {
         const merged = mergeGymSessions(cloudSessions, latestLocal.length ? latestLocal : localSessions);
         if (!merged.length) return;
         setHistory(merged);
-        if (!localStorage.getItem(DRAFT_KEY)) setExercises(buildExercises("4", merged));
+        if (!localStorage.getItem(DRAFT_KEY)) setExercises(buildExercises(routine, merged, templates));
         safeSaveGymLocal(merged);
         if (latestLocal.length && merged.length >= cloudSessions.length) {
           saveCloudBackedCollection({ path: "/gym/sessions", key: "sessions", cacheKey: STORAGE_KEY, items: merged }).catch(() => undefined);
@@ -460,6 +471,12 @@ export default function GymModule() {
         const sorted = sortTemplates(cloudTemplates);
         setTemplates(sorted);
         localStorage.setItem(TEMPLATES_KEY, JSON.stringify(sorted));
+        const defaultTemplate = defaultTemplateForRoutine(routine, sorted);
+        if (!localStorage.getItem(DRAFT_KEY) && defaultTemplate && !selectedTemplateId) {
+          setSelectedTemplateId(defaultTemplate.id);
+          setCustomRoutineName(defaultTemplate.name);
+          setExercises(buildExercises(routine, history, sorted));
+        }
       })
       .catch(() => undefined);
     return () => {
@@ -577,10 +594,15 @@ export default function GymModule() {
 
   const changeRoutine = (nextRoutine: RoutineKey) => {
     setRoutine(nextRoutine);
-    setSelectedTemplateId("");
-    setCustomRoutineName(nextRoutine === "custom" ? "Personalizado" : "");
+    const defaultTemplate = defaultTemplateForRoutine(nextRoutine);
+    setSelectedTemplateId(defaultTemplate?.id || "");
+    setCustomRoutineName(defaultTemplate?.name || (nextRoutine === "custom" ? "Personalizado" : ""));
     setExercises(buildExercises(nextRoutine, history));
     setEditingId("");
+    if (defaultTemplate) {
+      setIntelligence(`Rutina definitiva cargada desde tu plantilla "${defaultTemplate.name}".`);
+      return;
+    }
     const previous = history.find((session) => session.routine === nextRoutine);
     setIntelligence(previous ? `Pesos cargados desde la sesion ${previous.date}.` : "Rutina base cargada desde IDG Training Pro v21.");
   };
@@ -593,7 +615,7 @@ export default function GymModule() {
     }
     setSelectedTemplateId(template.id);
     setCustomRoutineName(template.name);
-    setRoutine("custom");
+    setRoutine(template.routineKey);
     setExercises(cloneExercises(template.exercises));
     setEditingId("");
     setIntelligence(`Plantilla personalizada cargada: ${template.name}. Puedes editarla y guardar una nueva version.`);
@@ -621,8 +643,8 @@ export default function GymModule() {
     const template: GymTemplate = {
       id: selectedTemplateId || `template-${Date.now()}`,
       name: name.trim(),
-      focus: selectedTemplate?.focus || routines[routine].name,
-      routineKey: routine,
+      focus: selectedTemplate?.focus || routines[selectedTemplate?.routineKey || routine].name,
+      routineKey: selectedTemplate?.routineKey || routine,
       source: "user",
       exercises: cloneExercises(exercises),
       updatedAt: Date.now(),
@@ -631,8 +653,8 @@ export default function GymModule() {
     persistTemplates([template, ...withoutCurrent]);
     setSelectedTemplateId(template.id);
     setCustomRoutineName(template.name);
-    setRoutine("custom");
-    setIntelligence(`Plantilla "${template.name}" guardada. IDG Coach ya puede usar esta version personalizada como base.`);
+    setRoutine(template.routineKey);
+    setIntelligence(`Plantilla "${template.name}" guardada como rutina definitiva. La proxima vez se cargara automaticamente al elegir esta rutina.`);
   };
 
   const updateExercise = (id: string, patch: Partial<ExerciseDraft>) => {
@@ -1155,7 +1177,7 @@ export default function GymModule() {
               <div className="bg-white p-5">
                   <div className="gym-toolbar mt-4 grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_auto_150px_130px_130px]">
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Rutina<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-800" value={routine} onChange={(event) => changeRoutine(event.target.value as RoutineKey)}>{Object.entries(routines).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></label>
-                    <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Plantilla usuario<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-800" value={selectedTemplateId} onChange={(event) => applyTemplate(event.target.value)}><option value="">Sin plantilla</option>{templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></label>
+                    <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Version definitiva<select className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-800" value={selectedTemplateId} onChange={(event) => applyTemplate(event.target.value)}><option value="">Rutina base IDG</option>{templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></label>
                     <div className="unit-switch flex h-10 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">{(["kg", "lbs"] as const).map((value) => <button className="min-w-12 px-3 text-sm font-black" key={value} type="button" style={unit === value ? { background: value === "lbs" ? "#ea580c" : "#2563eb", color: "#ffffff" } : undefined} onClick={() => setUnit(value)}>{value}</button>)}</div>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Fecha<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
                     <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-slate-500">Duracion HH:MM<input className="h-10 rounded-lg border border-slate-200 px-3 text-sm text-slate-800" value={duration} onChange={(event) => setDuration(event.target.value)} /></label>
@@ -1248,7 +1270,7 @@ export default function GymModule() {
                       <Icon name="spark" /> Analizar rutina
                     </button>
                     <button className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-3 font-black text-blue-700" type="button" onClick={saveCurrentTemplate}>
-                      <Icon name="save" /> Guardar plantilla
+                      <Icon name="save" /> Guardar version definitiva
                     </button>
                     <button className="save-main-btn inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-3 font-black text-white" type="button" onClick={saveSession}>
                       <Icon name="save" /> Guardar sesion
