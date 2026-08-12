@@ -2,7 +2,7 @@
 
 import TopNav from "@/components/TopNav";
 import { AppIcon } from "@/components/Brand";
-import { deleteCloudItem, getCloudCollection, saveCloudBackedCollection, saveCloudCollection } from "@/lib/cloud-sync";
+import { deleteCloudItem, getCloudCollection, saveCloudBackedCollection } from "@/lib/cloud-sync";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 type RoutineKey = "1" | "2" | "3" | "4" | "5" | "wod" | "custom";
@@ -44,6 +44,9 @@ type GymTemplate = {
   routineKey: RoutineKey;
   source: "user" | "coach";
   exercises: ExerciseDraft[];
+  intelligence?: string;
+  aiAnalysis?: string;
+  aiGeneratedAt?: string;
   updatedAt: number;
 };
 
@@ -306,6 +309,9 @@ function normalizeTemplate(template: Partial<GymTemplate>): GymTemplate | null {
     routineKey: routines[routineKey] ? routineKey : "custom",
     source: template.source === "coach" ? "coach" : "user",
     exercises: exercises.map(normalizeExerciseDraft),
+    intelligence: template.intelligence ? String(template.intelligence) : undefined,
+    aiAnalysis: template.aiAnalysis ? String(template.aiAnalysis) : undefined,
+    aiGeneratedAt: template.aiGeneratedAt ? String(template.aiGeneratedAt) : undefined,
     updatedAt: Number(template.updatedAt) || Date.now(),
   };
 }
@@ -403,8 +409,12 @@ export default function GymModule() {
   const persistTemplates = (next: GymTemplate[]) => {
     const sorted = sortTemplates(next);
     setTemplates(sorted);
-    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(sorted));
-    saveCloudCollection("/gym/templates", "templates", sorted).catch(() => undefined);
+    try {
+      localStorage.setItem(TEMPLATES_KEY, JSON.stringify(sorted));
+    } catch {
+      // Cloud sync still runs when mobile storage is unavailable or full.
+    }
+    saveCloudBackedCollection({ path: "/gym/templates", key: "templates", cacheKey: TEMPLATES_KEY, items: sorted }).catch(() => undefined);
     return sorted;
   };
 
@@ -476,6 +486,8 @@ export default function GymModule() {
           setSelectedTemplateId(defaultTemplate.id);
           setCustomRoutineName(defaultTemplate.name);
           setExercises(buildExercises(routine, history, sorted));
+          const templateAnalysis = templateAnalysisText(defaultTemplate);
+          if (templateAnalysis) setIntelligence(templateAnalysis);
         }
       })
       .catch(() => undefined);
@@ -600,7 +612,8 @@ export default function GymModule() {
     setExercises(buildExercises(nextRoutine, history));
     setEditingId("");
     if (defaultTemplate) {
-      setIntelligence(`Rutina definitiva cargada desde tu plantilla "${defaultTemplate.name}".`);
+      const templateAnalysis = templateAnalysisText(defaultTemplate);
+      setIntelligence(templateAnalysis || `Rutina definitiva cargada desde tu plantilla "${defaultTemplate.name}".`);
       return;
     }
     const previous = history.find((session) => session.routine === nextRoutine);
@@ -618,7 +631,8 @@ export default function GymModule() {
     setRoutine(template.routineKey);
     setExercises(cloneExercises(template.exercises));
     setEditingId("");
-    setIntelligence(`Plantilla personalizada cargada: ${template.name}. Puedes editarla y guardar una nueva version.`);
+    const templateAnalysis = templateAnalysisText(template);
+    setIntelligence(templateAnalysis || `Plantilla personalizada cargada: ${template.name}. Puedes editarla y guardar una nueva version.`);
   };
 
   const startNewRoutine = () => {
@@ -640,21 +654,8 @@ export default function GymModule() {
   const saveCurrentTemplate = () => {
     const name = window.prompt("Nombre de la plantilla personalizada", routineName);
     if (!name?.trim()) return;
-    const template: GymTemplate = {
-      id: selectedTemplateId || `template-${Date.now()}`,
-      name: name.trim(),
-      focus: selectedTemplate?.focus || routines[selectedTemplate?.routineKey || routine].name,
-      routineKey: selectedTemplate?.routineKey || routine,
-      source: "user",
-      exercises: cloneExercises(exercises),
-      updatedAt: Date.now(),
-    };
-    const withoutCurrent = templates.filter((item) => item.id !== template.id);
-    persistTemplates([template, ...withoutCurrent]);
-    setSelectedTemplateId(template.id);
-    setCustomRoutineName(template.name);
-    setRoutine(template.routineKey);
-    setIntelligence(`Plantilla "${template.name}" guardada como rutina definitiva. La proxima vez se cargara automaticamente al elegir esta rutina.`);
+    const template = upsertDefinitiveTemplate(buildTemplateFromCurrent(name.trim(), selectedTemplateId));
+    setIntelligence(template.aiAnalysis || `Plantilla "${template.name}" guardada como rutina definitiva. La proxima vez se cargara automaticamente al elegir esta rutina.`);
   };
 
   const updateExercise = (id: string, patch: Partial<ExerciseDraft>) => {
@@ -782,6 +783,34 @@ export default function GymModule() {
     return text;
   };
 
+  const templateAnalysisText = (template?: GymTemplate) => usableIntelligence(template?.aiAnalysis || template?.intelligence || "");
+
+  const buildTemplateFromCurrent = (name = routineName, templateId = selectedTemplateId): GymTemplate => {
+    const analysis = usableIntelligence(intelligence);
+    const templateRoutine = selectedTemplate?.routineKey || routine;
+    return {
+      id: templateId || `template-${Date.now()}`,
+      name: name.trim() || routineName,
+      focus: selectedTemplate?.focus || routines[templateRoutine].name,
+      routineKey: templateRoutine,
+      source: "user",
+      exercises: cloneExercises(exercises),
+      intelligence: analysis || undefined,
+      aiAnalysis: analysis || undefined,
+      aiGeneratedAt: analysis ? new Date().toISOString() : selectedTemplate?.aiGeneratedAt,
+      updatedAt: Date.now(),
+    };
+  };
+
+  const upsertDefinitiveTemplate = (template: GymTemplate) => {
+    const withoutCurrent = templates.filter((item) => item.id !== template.id);
+    persistTemplates([template, ...withoutCurrent]);
+    setSelectedTemplateId(template.id);
+    setCustomRoutineName(template.name);
+    setRoutine(template.routineKey);
+    return template;
+  };
+
   const buildDraftSession = (): GymSession => ({
     id: editingId || "draft",
     date,
@@ -822,10 +851,36 @@ export default function GymModule() {
   const analyzeRoutine = async () => {
     const draft = buildDraftSession();
     setIntelligence("IDG Coach esta analizando carga, intensidad y coherencia de la rutina...");
+    let analysis = "";
+    const generatedAt = new Date().toISOString();
     try {
-      setIntelligence(await requestGymAnalysis(draft));
+      analysis = await requestGymAnalysis(draft);
     } catch {
-      setIntelligence(buildIntelligence(draft));
+      analysis = buildIntelligence(draft);
+    }
+    setIntelligence(analysis);
+    const analyzedDraft: GymSession = {
+      ...draft,
+      id: editingId || draft.id,
+      intelligence: analysis,
+      aiAnalysis: analysis,
+      aiGeneratedAt: generatedAt,
+      aiAcknowledgedAt: undefined,
+      updatedAt: Date.now(),
+    };
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(analyzedDraft));
+    } catch {
+      // The visible analysis remains available even when browser storage is temporarily unavailable.
+    }
+    if (selectedTemplateId) {
+      upsertDefinitiveTemplate({
+        ...buildTemplateFromCurrent(routineName, selectedTemplateId),
+        intelligence: analysis,
+        aiAnalysis: analysis,
+        aiGeneratedAt: generatedAt,
+        updatedAt: Date.now(),
+      });
     }
     window.requestAnimationFrame(() => {
       document.querySelector(".gym-intelligence-card")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -918,6 +973,15 @@ export default function GymModule() {
 
     const withoutCurrent = history.filter((item) => item.id !== session.id);
     persistHistory([session, ...withoutCurrent]);
+    if (selectedTemplateId) {
+      upsertDefinitiveTemplate({
+        ...buildTemplateFromCurrent(routineName, selectedTemplateId),
+        intelligence: session.intelligence,
+        aiAnalysis: session.aiAnalysis || session.intelligence,
+        aiGeneratedAt: session.aiGeneratedAt,
+        updatedAt: Date.now(),
+      });
+    }
     localStorage.removeItem(DRAFT_KEY);
     setIntelligence(session.intelligence);
     setBuilderOpen(false);
