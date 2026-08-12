@@ -10,29 +10,15 @@ import { FormEvent, useEffect, useState } from "react";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 const highlights = [
-  ["3 MODULOS", "Gimnasio, Running y Ciclismo", "/icons/idg/muscle.png"],
-  ["SINCRONIZACION TOTAL", "Tus datos contigo en todos tus dispositivos", "/icons/idg/progress.png"],
-  ["TUS DATOS SEGUROS", "Privados, respaldados y 100% tuyos", "/icons/idg/settings.png"],
+  ["3 MODULOS", "Gimnasio, Running y Ciclismo", "/icons/GYM.png"],
+  ["SINCRONIZADO", "En todos tus dispositivos", "/icons/idg/progress.png"],
+  ["SEGURO", "Tus datos siempre protegidos", "/icons/idg/settings.png"],
 ];
 
-const stats = [
-  ["FUERZA", "+24%", "Progreso promedio", "/icons/GYM.png"],
-  ["RESISTENCIA", "+18%", "En tus tiempos", "/icons/RUNER.png"],
-  ["DISTANCIA", "+32%", "En tus rutas", "/icons/BIKE.png"],
-];
-
-const workflow = [
-  ["PLANIFICA", "tus entrenamientos", "/icons/idg/calendar.png"],
-  ["REGISTRA", "cada sesion", "/icons/idg/add-session.png"],
-  ["ANALIZA", "tu rendimiento", "/icons/idg/analytics.png"],
-  ["MEJORA", "cada dia", "/icons/idg/achievement.png"],
-];
-
-const benefits = [
-  ["AHORRA TIEMPO", "Todo tu entrenamiento en un solo lugar", "/icons/idg/timer.png"],
-  ["ENFOCADO EN TI", "Planes y metricas adaptados a tus objetivos", "/icons/idg/route.png"],
-  ["MIDE TU PROGRESO", "Estadisticas claras para tomar decisiones", "/icons/idg/trophy.png"],
-  ["VIDA EN EQUILIBRIO", "Entrena, recupera y mejora tu estilo de vida", "/icons/idg/recovery.png"],
+const trainingOptions = [
+  ["GIMNASIO", "Rutinas y registro de ejercicios", "/icons/GYM.png"],
+  ["RUNNING", "Planifica y registra tus carreras", "/icons/RUNER.png"],
+  ["CICLISMO", "Rutas, metricas y tus salidas", "/icons/BIKE.png"],
 ];
 
 function BrandMark({ compact = false }: { compact?: boolean }) {
@@ -119,23 +105,17 @@ export default function Home() {
         <section className="product-side" aria-label="IDG Training Pro">
           <header className="login-nav" aria-label="Navegacion principal">
             <BrandMark />
-            <nav>
-              {["Inicio", "App", "Planes", "Caracteristicas", "Premium", "Contacto"].map((item, index) => (
-                <a className={index === 0 ? "active" : ""} href="#" key={item}>{item}</a>
-              ))}
-            </nav>
             <button type="button">Modo claro</button>
           </header>
 
           <div className="hero-grid">
             <section className="hero-copy">
-              <p className="hero-kicker">Tu plataforma integral</p>
               <h1>
-                Entrena.
+                Tu entrenamiento.
                 <br />
-                Registra.
+                Tu progreso.
                 <br />
-                <span>Evoluciona.</span>
+                <span>Tu mejor version.</span>
               </h1>
               <p>Planifica, registra y analiza tu entrenamiento de gimnasio, running y ciclismo en un solo lugar.</p>
 
@@ -153,48 +133,23 @@ export default function Home() {
             </section>
 
             <section className="hero-athlete" aria-label="Entrenamiento integrado">
-              <div className="hero-ring" />
-              <Image className="athlete-main" src="/login-runner.png" alt="" fill sizes="(max-width: 1180px) 90vw, 42vw" priority />
-              <Image className="athlete-card athlete-gym" src="/sport-gym.png" alt="" width={168} height={132} />
-              <Image className="athlete-card athlete-bike" src="/sport-cycling.png" alt="" width={196} height={140} />
+              <Image className="athlete-main" src="/imagen_inicio.png" alt="" fill sizes="(max-width: 1180px) 92vw, 50vw" priority />
             </section>
           </div>
 
-          <div className="stat-cards" aria-label="Metricas destacadas">
-            {stats.map(([label, value, text, icon]) => (
-              <article key={label}>
-                <span><img src={icon} alt="" aria-hidden="true" /></span>
-                <div>
-                  <p>{label}</p>
-                  <strong>{value}</strong>
-                  <small>{text}</small>
-                </div>
-                <i aria-hidden="true" />
-              </article>
-            ))}
-          </div>
-
-          <div className="workflow-strip" aria-label="Flujo de uso">
-            {workflow.map(([title, text, icon]) => (
-              <article key={title}>
-                <img src={icon} alt="" aria-hidden="true" />
-                <strong>{title}</strong>
-                <span>{text}</span>
-              </article>
-            ))}
-          </div>
-
-          <div className="benefit-strip" aria-label="Beneficios">
-            {benefits.map(([title, text, icon]) => (
-              <article key={title}>
-                <img src={icon} alt="" aria-hidden="true" />
-                <div>
+          <section className="training-choice" aria-label="Elige tu entrenamiento">
+            <h2>Elige tu entrenamiento</h2>
+            <div>
+              {trainingOptions.map(([title, text, icon]) => (
+                <article key={title}>
+                  <span><img src={icon} alt="" aria-hidden="true" /></span>
                   <strong>{title}</strong>
-                  <span>{text}</span>
-                </div>
-              </article>
-            ))}
-          </div>
+                  <p>{text}</p>
+                  <small aria-hidden="true">-&gt;</small>
+                </article>
+              ))}
+            </div>
+          </section>
         </section>
 
         <aside className="auth-card" aria-label="Inicio de sesion">
@@ -202,7 +157,7 @@ export default function Home() {
 
           <div className="auth-heading">
             <span>Acceso privado</span>
-            <h2>Bienvenido de nuevo</h2>
+            <h2>Bienvenido de <strong>nuevo</strong></h2>
             <p>Entra a tu panel y manten tus datos deportivos sincronizados.</p>
           </div>
 
@@ -218,12 +173,12 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="divider">o continuar con email</div>
+          <div className="divider">o continua con email</div>
 
           <form className="email-form" onSubmit={handleEmailLogin}>
             <label>
               <span aria-hidden="true">@</span>
-              <input type="email" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
+              <input type="email" placeholder="Correo electronico" value={email} onChange={(event) => setEmail(event.target.value)} />
             </label>
             <label>
               <span aria-hidden="true">#</span>
@@ -245,12 +200,7 @@ export default function Home() {
           </form>
 
           <p className="create-account">
-            No tienes una cuenta? <button type="button" onClick={() => setError("Crea tu cuenta entrando con Google.")}>Crear cuenta</button>
-          </p>
-          <p className="legal-links">
-            <a href="/privacy">Politica de privacidad</a>
-            <span aria-hidden="true">-</span>
-            <a href="/term">Terminos de servicio</a>
+            No tienes cuenta? <button type="button" onClick={() => setError("Crea tu cuenta entrando con Google.")}>Crear cuenta</button>
           </p>
           <div className="device-sync">
             <div>
