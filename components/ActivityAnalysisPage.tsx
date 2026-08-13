@@ -2,7 +2,7 @@
 
 import TopNav from "@/components/TopNav";
 import { AppIcon } from "@/components/Brand";
-import { deleteCloudItem, getCloudCollection, getCloudProfile, saveCloudCollection } from "@/lib/cloud-sync";
+import { deleteCloudItem, getCloudCollection, getCloudProfile, saveCloudBackedCollection } from "@/lib/cloud-sync";
 import { getRenderToken } from "@/lib/render-auth";
 import {
   ActivityAnalysis,
@@ -1126,25 +1126,33 @@ export default function ActivityAnalysisPage({ sport }: Props) {
 
   useEffect(() => {
     let alive = true;
+    let localActivities: ActivityAnalysis[] = [];
+    const storageKey = storageKeyForSport(sport);
     const loadCloudActivities = () => {
       getCloudCollection<ActivityAnalysis>(`/activities?sport=${sport}`, "activities")
         .then((cloudActivities) => {
-          if (!alive || !cloudActivities.length) return;
+          if (!alive) return;
           setActivities((currentActivities) => {
-            const merged = mergeCloudActivities(cloudActivities, currentActivities).filter((activity) => keepActivityForSport(activity, sport));
+            const localSource = currentActivities.length ? currentActivities : localActivities;
+            const merged = mergeCloudActivities(cloudActivities, localSource).filter((activity) => keepActivityForSport(activity, sport));
+            if (!merged.length) return currentActivities;
             setSelectedId((current) => current && merged.some((activity) => activity.id === current) ? current : merged[0]?.id || "");
-            safeSetActivities(storageKeyForSport(sport), merged);
+            safeSetActivities(storageKey, merged);
+            if (localSource.length && merged.length >= cloudActivities.length) {
+              saveCloudBackedCollection({ path: `/activities?sport=${sport}`, key: "activities", cacheKey: storageKey, items: merged }).catch(() => undefined);
+            }
             return merged;
           });
         })
         .catch(() => undefined);
     };
     try {
-      const saved = localStorage.getItem(storageKeyForSport(sport));
+      const saved = localStorage.getItem(storageKey);
       const parsed = saved ? JSON.parse(saved) : [];
       const recalculated = Array.isArray(parsed) ? sortActivitiesBySessionDate(parsed.map(hydrateCloudActivity).filter((activity) => keepActivityForSport(activity, sport))) : [];
+      localActivities = recalculated;
       setActivities(recalculated);
-      safeSetActivities(storageKeyForSport(sport), recalculated);
+      safeSetActivities(storageKey, recalculated);
       setSelectedId(recalculated[0]?.id || "");
     } catch {
       setActivities([]);
@@ -1194,7 +1202,7 @@ export default function ActivityAnalysisPage({ sport }: Props) {
     const ordered = sortActivitiesBySessionDate(next.filter((activity) => keepActivityForSport(activity, sport)));
     const stored = safeSetActivities(storageKeyForSport(sport), ordered);
     setActivities(ordered);
-    saveCloudCollection(`/activities?sport=${sport}`, "activities", ordered)
+    saveCloudBackedCollection({ path: `/activities?sport=${sport}`, key: "activities", cacheKey: storageKeyForSport(sport), items: ordered })
       .catch((error) => setStatus(error instanceof Error ? `No se pudo guardar en Supabase: ${error.message}` : "No se pudo guardar en Supabase."));
     if (stored.length !== ordered.length) {
       setStatus("Se guardaron las actividades compactadas para no superar el limite local del navegador.");
@@ -1348,8 +1356,10 @@ export default function ActivityAnalysisPage({ sport }: Props) {
         ...activities.filter((activity) => !imported.some((item: ActivityAnalysis) => item.id === activity.id)),
       ];
       const ordered = sortActivitiesBySessionDate(next.map(hydrateCloudActivity).filter((activity) => keepActivityForSport(activity, sport)));
-      safeSetActivities(storageKeyForSport(sport), ordered);
+      const storageKey = storageKeyForSport(sport);
+      safeSetActivities(storageKey, ordered);
       setActivities(ordered);
+      saveCloudBackedCollection({ path: `/activities?sport=${sport}`, key: "activities", cacheKey: storageKey, items: ordered }).catch(() => undefined);
       setSelectedId(imported[0].id);
       setStatus(`${imported.length} actividades sincronizadas desde Strava. La app las guardo en Supabase como registros individuales.`);
     } catch (error) {

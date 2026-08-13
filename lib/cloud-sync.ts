@@ -353,9 +353,26 @@ export function getPendingSyncCount() {
 
 export async function retryPendingSyncs() {
   const pending = readPendingSyncs();
+  const localCollections = [
+    { path: "/gym/sessions", key: "sessions", cacheKey: "idg_gym_sessions_json" },
+    { path: "/gym/templates", key: "templates", cacheKey: "idg_gym_templates_json" },
+    { path: "/activities?sport=running", key: "activities", cacheKey: "idg_running_activities_json" },
+    { path: "/activities?sport=cycling", key: "activities", cacheKey: "idg_cycling_activities_json" },
+    { path: "/weight", key: "records", cacheKey: "idg_weight_records_json" },
+    { path: "/sleep", key: "records", cacheKey: "idg_sleep_records_json" },
+    { path: "/goals", key: "goals", cacheKey: "idg_goals_json" },
+    { path: "/plan", key: "plan", cacheKey: "idg_weekly_plan_json" },
+    { path: "/intelligence", key: "entries", cacheKey: "idg_intelligence_history_json" },
+  ];
   if (!pending.length) {
-    publishSyncStatus({ cloud: canSyncCloud(), lastError: "", lastPath: "", lastSyncAt: new Date().toISOString() });
-    return 0;
+    for (const item of localCollections) {
+      const cached = readCache<unknown[]>(item.cacheKey, []);
+      if (Array.isArray(cached) && cached.length) {
+        await saveCloudCollection(item.path, item.key, cached, {}, item.cacheKey);
+      }
+    }
+    publishSyncStatus({ cloud: canSyncCloud(), lastError: "", lastPath: "/sync/retry", lastSyncAt: new Date().toISOString() });
+    return getPendingSyncCount();
   }
   for (const item of pending) {
     const cached = readCache<unknown[]>(item.cacheKey, []);
