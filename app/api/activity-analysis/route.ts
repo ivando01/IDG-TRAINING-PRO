@@ -1,5 +1,54 @@
 import { NextResponse } from "next/server";
 
+function textFromContent(content: unknown) {
+  if (typeof content === "string") return content.trim();
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part === "string") return part;
+        if (part && typeof part === "object") {
+          const record = part as Record<string, unknown>;
+          return String(record.text || record.content || "");
+        }
+        return "";
+      })
+      .join("\n")
+      .trim();
+  }
+  return "";
+}
+
+function modelAnalysisText(data: Record<string, any>) {
+  const choice = Array.isArray(data?.choices) ? data.choices[0] : null;
+  const message = choice?.message || {};
+  return (
+    textFromContent(message.content) ||
+    textFromContent(message.reasoning) ||
+    textFromContent(choice?.text) ||
+    ""
+  );
+}
+
+function localFallbackAnalysis(activity: any, profile: any, zones: string, timeline: string) {
+  const metrics = activity?.metrics || {};
+  const sport = activity?.sport === "cycling" ? "ciclismo" : "running";
+  const durationMin = metrics.durationSec ? Math.round(metrics.durationSec / 60) : null;
+  const distance = metrics.distanceKm ? `${metrics.distanceKm} km` : "distancia sin dato";
+  const hr = metrics.avgHr ? `${metrics.avgHr} bpm promedio${metrics.maxHr ? `, max ${metrics.maxHr}` : ""}` : "FC sin dato suficiente";
+  const intensity = metrics.tss ? `TSS ${metrics.tss}` : metrics.avgHr ? `carga cardiaca basada en ${metrics.avgHr} bpm` : "carga estimada con datos incompletos";
+  const technique = activity?.sport === "cycling"
+    ? `Cadencia ${metrics.avgCadence || "sin dato"} rpm, potencia media ${metrics.avgPower || "sin dato"} W y NP ${metrics.normalizedPower || "sin dato"} W.`
+    : `Cadencia ${metrics.avgCadence || "sin dato"} ppm, zancada ${metrics.strideMeters || "sin dato"} m y ritmo ${metrics.pace || "sin dato"}.`;
+
+  return [
+    `Estado fisiologico de la sesion: ${activity?.name || "Actividad"} (${sport}) registro ${distance}${durationMin ? ` en ${durationMin} min` : ""}. La lectura disponible indica ${intensity}.`,
+    `Lectura cardiaca y zonas: ${hr}. Distribucion: ${zones || "sin zonas consolidadas"}. Cronologia: ${timeline || "sin timeline suficiente"}.`,
+    `${activity?.sport === "cycling" ? "Eficiencia de cadencia/potencia" : "Tecnica de carrera"}: ${technique} Usa esta lectura como referencia tecnica, especialmente si hubo cambios bruscos de ritmo o terreno.`,
+    `Alertas: no es diagnostico medico. Si hubo dolor, fatiga inusual, mareo o molestia reportada, reduce intensidad y prioriza recuperacion. Perfil registrado: lesiones ${profile?.injuries || "sin registro"}.`,
+    `Proxima sesion recomendada: realiza una sesion controlada de 35-50 min en zona facil/media, cuidando tecnica y estabilidad. Sube carga solo si recuperaste bien y la FC responde normal.`,
+  ].join("\n\n");
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -87,8 +136,11 @@ No des diagnostico medico. Maximo 420 palabras. Usa datos reales y no rellenes m
     );
   }
 
+  const analysis = modelAnalysisText(data) || localFallbackAnalysis(activity, profile, zones, timeline);
+
   return NextResponse.json({
-    analysis: data?.choices?.[0]?.message?.content || "IDG Intelligence no devolvio contenido.",
+    analysis,
     model: data?.model,
+    fallback: !modelAnalysisText(data),
   });
 }
