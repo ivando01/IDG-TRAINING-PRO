@@ -3,6 +3,7 @@
 import TopNav from "@/components/TopNav";
 import { AppIcon } from "@/components/Brand";
 import { deleteCloudItem, getCloudCollection, getCloudProfile, saveCloudCollection } from "@/lib/cloud-sync";
+import { getRenderToken } from "@/lib/render-auth";
 import {
   ActivityAnalysis,
   ActivityPoint,
@@ -246,6 +247,14 @@ async function readJsonResponse(response: Response) {
     const compact = text.replace(/\s+/g, " ").slice(0, 180);
     throw new Error(`El servidor no devolvio JSON. Respuesta recibida: ${compact || response.statusText}`);
   }
+}
+
+function latestActivityDateIso(activities: ActivityAnalysis[]) {
+  const latestMs = activities.reduce((latest, activity) => {
+    const dateMs = new Date(activity.startTime || activity.date).getTime();
+    return Number.isFinite(dateMs) ? Math.max(latest, dateMs) : latest;
+  }, 0);
+  return latestMs ? new Date(latestMs).toISOString() : "";
 }
 
 function stravaToActivity(item: StravaSyncedActivity, sport: SportType) {
@@ -1296,19 +1305,18 @@ export default function ActivityAnalysisPage({ sport }: Props) {
   };
 
   const syncStrava = async () => {
-    const token = localStorage.getItem("render_token");
-    if (!token) {
-      setStatus("Strava depende de Render como funcion secundaria. La app principal funciona; vuelve a iniciar sesion cuando Render este disponible para sincronizar Strava.");
-      return;
-    }
     setSyncingStrava(true);
     setStatus("Sincronizando Strava desde la ultima actividad guardada. Primera sincronizacion: hasta 90 dias.");
     try {
+      const token = await getRenderToken();
+      if (!token) throw new Error("Strava depende de Render como funcion secundaria. La app principal funciona; vuelve a iniciar sesion cuando Render este disponible para sincronizar Strava.");
+      const afterSaved = latestActivityDateIso(activities);
       const params = new URLSearchParams({
         sport,
         days: "90",
         limit: "100",
       });
+      if (afterSaved) params.set("afterSaved", afterSaved);
       const response = await fetch(`${apiUrl()}/strava/sync?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });

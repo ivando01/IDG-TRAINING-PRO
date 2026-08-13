@@ -3,6 +3,7 @@
 import TopNav from "@/components/TopNav";
 import { getCloudProfile, saveCloudProfile } from "@/lib/cloud-sync";
 import { estimatePerformance } from "@/lib/performance-insights";
+import { getRenderToken } from "@/lib/render-auth";
 import { useEffect, useMemo, useState } from "react";
 
 type Zone = { name: string; min: number; max: number; color: string };
@@ -496,14 +497,11 @@ export default function ProfilePage() {
   };
 
   const connectStrava = async () => {
-    const token = localStorage.getItem("render_token");
-    if (!token) {
-      setStatus("Strava depende de Render como funcion secundaria. Vuelve a iniciar sesion cuando Render este disponible para vincularlo.");
-      return;
-    }
     setStravaBusy(true);
     setStatus("Validando sesion antes de conectar Strava...");
     try {
+      const token = await getRenderToken();
+      if (!token) throw new Error("Strava depende de Render como funcion secundaria. Vuelve a iniciar sesion cuando Render este disponible para vincularlo.");
       const response = await fetch(`${API_URL}/access`, { headers: { Authorization: `Bearer ${token}` } });
       if (response.status === 401) {
         localStorage.removeItem("token");
@@ -517,13 +515,10 @@ export default function ProfilePage() {
   };
 
   const disconnectStrava = async () => {
-    const token = localStorage.getItem("render_token");
-    if (!token) {
-      setStatus("Strava depende de Render como funcion secundaria. No hay token de Render activo para desconectarlo.");
-      return;
-    }
     setStravaBusy(true);
     try {
+      const token = await getRenderToken();
+      if (!token) throw new Error("Strava depende de Render como funcion secundaria. No hay token de Render activo para desconectarlo.");
       const response = await fetch(`${API_URL}/strava/disconnect`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },

@@ -1,6 +1,7 @@
 "use client";
 
 import { completeSupabaseOAuthRedirect, startSupabaseGoogleLogin } from "@/lib/supabase-direct";
+import { getRenderToken } from "@/lib/render-auth";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
@@ -43,7 +44,12 @@ export default function Home() {
     completeSupabaseOAuthRedirect()
       .then((session) => {
         if (!alive) return;
-        if (session?.access_token || localStorage.getItem("token")) {
+        if (session?.access_token) {
+          getRenderToken().catch(() => undefined);
+          router.replace("/dashboard");
+          return;
+        }
+        if (localStorage.getItem("token")) {
           router.replace("/dashboard");
           return;
         }
@@ -71,14 +77,11 @@ export default function Home() {
   };
 
   const connectStrava = async () => {
-    const token = localStorage.getItem("render_token");
-    if (!token) {
-      setError("Strava usa Render como funcion secundaria. Inicia sesion de nuevo cuando Render este disponible para vincularlo.");
-      return;
-    }
     setLoading(true);
     setError("");
     try {
+      const token = await getRenderToken();
+      if (!token) throw new Error("Strava usa Render como funcion secundaria. Inicia sesion de nuevo cuando Render este disponible para vincularlo.");
       const response = await fetch(`${API_URL}/access`, { headers: { Authorization: `Bearer ${token}` } });
       if (response.status === 401) {
         localStorage.removeItem("token");
