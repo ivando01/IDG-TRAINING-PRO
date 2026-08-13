@@ -20,7 +20,7 @@ export type SupabaseUser = {
 
 const SESSION_KEY = "idg_supabase_session_json";
 
-function supabaseUrl() {
+export function supabaseUrl() {
   return (process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/+$/, "");
 }
 
@@ -90,6 +90,51 @@ export async function signInWithGoogleIdToken(googleIdToken: string) {
   return data as SupabaseSession;
 }
 
+async function fetchSupabaseUser(accessToken: string) {
+  const response = await fetch(`${supabaseUrl()}/auth/v1/user`, {
+    headers: {
+      apikey: supabaseAnonKey(),
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  if (!response.ok) return null;
+  return await response.json().catch(() => null) as SupabaseUser | null;
+}
+
+export function startSupabaseGoogleLogin() {
+  if (!hasSupabaseConfig()) throw new Error("Faltan NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+  const redirectTo = typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL || "";
+  const params = new URLSearchParams({
+    provider: "google",
+    redirect_to: redirectTo,
+  });
+  window.location.href = `${supabaseUrl()}/auth/v1/authorize?${params.toString()}`;
+}
+
+export async function completeSupabaseOAuthRedirect() {
+  if (typeof window === "undefined" || !hasSupabaseConfig()) return null;
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const authError = hash.get("error_description") || hash.get("error") || "";
+  if (authError) {
+    window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+    throw new Error(authError);
+  }
+  const accessToken = hash.get("access_token") || "";
+  if (!accessToken) return null;
+  const refreshToken = hash.get("refresh_token") || undefined;
+  const expiresIn = Number(hash.get("expires_in") || 0);
+  const user = await fetchSupabaseUser(accessToken);
+  const session: SupabaseSession = {
+    access_token: accessToken,
+    refresh_token: refreshToken,
+    expires_at: expiresIn ? Math.floor(Date.now() / 1000) + expiresIn : undefined,
+    user: user || undefined,
+  };
+  storeSupabaseSession(session);
+  window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+  return session;
+}
+
 type RestOptions = {
   method?: string;
   query?: string;
@@ -120,4 +165,3 @@ export async function supabaseRest<T>(table: string, options: RestOptions = {}) 
   }
   return data as T;
 }
-

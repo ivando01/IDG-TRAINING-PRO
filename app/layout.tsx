@@ -1,6 +1,5 @@
 import "./globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 
 export const metadata = {
   title: "IDG Training Pro",
@@ -16,14 +15,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
   return (
     <html lang="es">
-      <body>
-        <GoogleOAuthProvider clientId={googleClientId}>
-          {children}
-        </GoogleOAuthProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

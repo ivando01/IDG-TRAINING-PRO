@@ -1,8 +1,6 @@
 "use client";
 
-import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
-import { storeAccess } from "@/lib/access";
-import { signInWithGoogleIdToken } from "@/lib/supabase-direct";
+import { completeSupabaseOAuthRedirect, startSupabaseGoogleLogin } from "@/lib/supabase-direct";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
@@ -41,32 +39,33 @@ export default function Home() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setReady(true);
-    if (localStorage.getItem("token")) router.replace("/dashboard");
+    let alive = true;
+    completeSupabaseOAuthRedirect()
+      .then((session) => {
+        if (!alive) return;
+        if (session?.access_token || localStorage.getItem("token")) {
+          router.replace("/dashboard");
+          return;
+        }
+        setReady(true);
+      })
+      .catch((error) => {
+        if (!alive) return;
+        setError(error instanceof Error ? error.message : "No se pudo completar el inicio de sesion.");
+        setReady(true);
+      });
+    return () => {
+      alive = false;
+    };
   }, [router]);
 
-  const handleSuccess = async (credentialResponse: CredentialResponse) => {
+  const handleGoogleLogin = () => {
     try {
       setLoading(true);
       setError("");
-      if (!credentialResponse.credential) throw new Error("Google no devolvio credencial de inicio de sesion.");
-      await signInWithGoogleIdToken(credentialResponse.credential);
-      fetch(`${API_URL}/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: credentialResponse.credential }),
-      })
-        .then(async (response) => {
-          const data = await response.json().catch(() => ({}));
-          if (!response.ok || !data.token) return;
-          localStorage.setItem("render_token", data.token);
-          storeAccess(data.access);
-        })
-        .catch(() => undefined);
-      router.push("/dashboard");
+      startSupabaseGoogleLogin();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al iniciar sesion.");
-    } finally {
       setLoading(false);
     }
   };
@@ -165,7 +164,10 @@ export default function Home() {
 
           <div className="social-actions">
             <div className="google-frame">
-              <GoogleLogin onSuccess={handleSuccess} onError={() => setError("Error al iniciar con Google.")} width="100%" theme="outline" />
+              <button className="google-login-button" type="button" onClick={handleGoogleLogin} disabled={loading}>
+                <span aria-hidden="true">G</span>
+                {loading ? "Abriendo Google..." : "Continuar con Google"}
+              </button>
             </div>
             <button className="strava-button" type="button" onClick={connectStrava} disabled={loading}>
               <span>STRAVA</span>

@@ -3544,6 +3544,37 @@ svg {
   min-height: 58px;
 }
 
+.google-login-button {
+  display: flex;
+  min-height: 58px;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.google-login-button span {
+  display: grid;
+  height: 24px;
+  width: 24px;
+  place-items: center;
+  color: #4285f4;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.google-login-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .login-button {
   font-size: 18px;
 }
