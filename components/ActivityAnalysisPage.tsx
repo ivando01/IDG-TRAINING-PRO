@@ -411,8 +411,18 @@ function ultraCompactActivitiesForStorage(items: ActivityAnalysis[]) {
       ? Array.from({ length: 80 }, (_, index) => activity.points[Math.min(activity.points.length - 1, Math.round(index * (activity.points.length / 80)))])
       : activity.points,
     zoneTimeline: activity.zoneTimeline.slice(0, 60),
-    aiAnalysis: activity.aiAnalysis ? activity.aiAnalysis.slice(0, 1200) : undefined,
+    aiAnalysis: activity.aiAnalysis,
   }));
+}
+
+function readableAIAnalysis(text?: string) {
+  return String(text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/^---+\s*$/gm, "")
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function safeSetActivities(key: string, items: ActivityAnalysis[]) {
@@ -1577,8 +1587,8 @@ export default function ActivityAnalysisPage({ sport }: Props) {
               </div>
             ) : (
               <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">
-                  {selected.aiAnalysis || "Aun no hay analisis IA para esta sesion. Genera uno para guardar lectura fisiologica, tecnica, alertas y proxima sesion recomendada."}
+                <p className="max-h-[62vh] overflow-y-auto whitespace-pre-wrap break-words pr-1 text-sm font-semibold leading-7 text-slate-700 sm:max-h-none sm:overflow-visible sm:pr-0">
+                  {readableAIAnalysis(selected.aiAnalysis) || "Aun no hay analisis IA para esta sesion. Genera uno para guardar lectura fisiologica, tecnica, alertas y proxima sesion recomendada."}
                 </p>
                 {selected.aiAnalysis ? (
                   <div className="mt-4 flex justify-end border-t border-slate-200 pt-4">
