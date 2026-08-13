@@ -3373,8 +3373,9 @@ svg {
 
 .hero-copy h1 {
   color: #07111f;
-  font-size: clamp(48px, 4.7vw, 72px);
-  line-height: 1.04;
+  max-width: 980px;
+  font-size: clamp(34px, 3.2vw, 52px);
+  line-height: 1.08;
   letter-spacing: 0;
   text-transform: none;
 }
