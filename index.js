@@ -30,6 +30,8 @@ app.use(express.json({ limit: "25mb" }));
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "1046758819137-ao6ablnce565uj89bifcovh2jbfltjin.apps.googleusercontent.com";
 const JWT_SECRET = process.env.JWT_SECRET;
+const SUPABASE_URL = String(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/+$/, "");
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID || "232892";
 const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
@@ -509,6 +511,16 @@ function sportFromStravaActivity(activity) {
   return "";
 }
 
+function parseSyncAfter(value) {
+  if (!value) return 0;
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return numeric > 100000000000 ? numeric : numeric * 1000;
+  }
+  const parsed = new Date(String(value)).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function externalErrorDetail(error) {
   const status = error.response?.status;
   const data = error.response?.data;
@@ -729,6 +741,43 @@ app.get('/access', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "No se pudo leer el acceso del usuario" });
+  }
+});
+
+app.post('/auth/supabase', async (req, res) => {
+  try {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return res.status(500).json({ error: "Supabase no esta configurado en Render" });
+    }
+    const auth = req.headers.authorization || "";
+    const supabaseToken = auth.split(" ")[1];
+    if (!supabaseToken) return res.status(401).json({ error: "Sesion de Supabase requerida" });
+
+    const userResponse = await axios.get(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${supabaseToken}`,
+      },
+    });
+    const user = userResponse.data || {};
+    const email = String(user.email || "").toLowerCase();
+    if (!email) return res.status(401).json({ error: "Supabase no devolvio email del usuario" });
+
+    const metadata = user.user_metadata || {};
+    const name = metadata.name || metadata.full_name || email;
+    const picture = metadata.avatar_url || metadata.picture || "";
+    const userId = await getUserId(email, { name, picture });
+    const access = await getUserAccess(userId);
+    const tokenJWT = jwt.sign({ email: userId, name }, JWT_SECRET, { expiresIn: "7d" });
+
+    res.json({
+      user: { name, email: userId, picture },
+      token: tokenJWT,
+      access,
+    });
+  } catch (error) {
+    console.error("Login Supabase fallido", error.response?.data || error.message);
+    res.status(401).json({ error: "Login Supabase fallido" });
   }
 });
 
@@ -1359,18 +1408,19 @@ app.get('/strava/sync', authMiddleware, async (req, res) => {
     const days = Math.min(Math.max(Number(req.query.days) || 90, 1), 120);
     const cutoffMs = Date.now() - days * 86400000;
     let afterMs = cutoffMs;
+    const requestedAfterMs = parseSyncAfter(req.query.afterSaved || req.query.after);
     if (sport) {
       if (sport === "running") {
         await deleteRunningSupportActivities(userId);
       }
       const latestResult = await pool.query(
-        `SELECT MAX(date) AS latest_date
+        `SELECT MAX(COALESCE(activity_date, date)) AS latest_date
          FROM activities
-         WHERE user_id=$1 AND sport=$2 AND source='strava'`,
+         WHERE user_id=$1 AND sport=$2`,
         [userId, sport],
       );
       const latestMs = latestResult.rows[0]?.latest_date ? new Date(latestResult.rows[0].latest_date).getTime() : 0;
-      if (Number.isFinite(latestMs) && latestMs > 0) afterMs = Math.max(cutoffMs, latestMs + 1000);
+      afterMs = Math.max(cutoffMs, requestedAfterMs, Number.isFinite(latestMs) && latestMs > 0 ? latestMs + 1000 : 0);
     }
     const after = Math.floor(afterMs / 1000);
     const excluded = new Set(
