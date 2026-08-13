@@ -113,7 +113,11 @@ export default function Home() {
           <div className="hero-grid">
             <section className="hero-copy">
               <h1>
-                Tu entrenamiento. Tu progreso. <span>Tu mejor version.</span>
+                Tu entrenamiento.
+                <br />
+                Tu progreso.
+                <br />
+                <span>Tu mejor version.</span>
               </h1>
               <p>Planifica, registra y analiza tu entrenamiento de gimnasio, running y ciclismo en un solo lugar.</p>
 
