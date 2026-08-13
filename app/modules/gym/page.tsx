@@ -783,6 +783,15 @@ export default function GymModule() {
     return text;
   };
 
+  const readableAIAnalysis = (text?: string) =>
+    usableIntelligence(String(text || "")
+      .replace(/\r\n/g, "\n")
+      .replace(/^---+\s*$/gm, "")
+      .replace(/^#{1,6}\s*/gm, "")
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim());
+
   const templateAnalysisText = (template?: GymTemplate) => usableIntelligence(template?.aiAnalysis || template?.intelligence || "");
 
   const buildTemplateFromCurrent = (name = routineName, templateId = selectedTemplateId): GymTemplate => {
@@ -1118,7 +1127,7 @@ export default function GymModule() {
   };
 
   const selectedSession = history.find((session) => session.id === selectedSessionId) || null;
-  const selectedSessionAnalysis = selectedSession ? savedAnalysisFor(selectedSession) || usableIntelligence(selectedSession.intelligence) : "";
+  const selectedSessionAnalysis = selectedSession ? readableAIAnalysis(savedAnalysisFor(selectedSession) || selectedSession.intelligence) : "";
   const selectedSessionVolume = selectedSession ? sessionVolume(selectedSession) : 0;
   const selectedSessionSetCount = selectedSession ? selectedSession.exercises.reduce((sum, exercise) => sum + exercise.sets, 0) : 0;
   const selectedSessionMaxWeight = selectedSession
@@ -1391,6 +1400,34 @@ export default function GymModule() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <select
+                    className="min-h-11 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-800 sm:min-w-64"
+                    value={selectedSessionId}
+                    onChange={(event) => {
+                      const session = history.find((item) => item.id === event.target.value);
+                      if (!session) {
+                        setSelectedSessionId("");
+                        setShowAI(true);
+                        return;
+                      }
+                      viewSession(session);
+                      setShowAI(true);
+                    }}
+                  >
+                    <option value="">Elegir sesion</option>
+                    {history.map((session) => (
+                      <option key={session.id} value={session.id}>{session.date} - {session.routineName}</option>
+                    ))}
+                  </select>
+                  {selectedSession && selectedSessionAnalysis && !showAI ? (
+                    <button
+                      className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-black text-blue-700"
+                      type="button"
+                      onClick={() => setShowAI(true)}
+                    >
+                      Ver analisis IA
+                    </button>
+                  ) : null}
                   <button
                     className="rounded-lg bg-blue-600 px-4 py-3 text-sm font-black text-white disabled:bg-blue-300"
                     type="button"
@@ -1751,9 +1788,41 @@ export default function GymModule() {
 
                     {selectedSession.notes ? <p className="rounded-lg bg-slate-50 p-3 text-sm font-semibold leading-6 text-slate-600">{selectedSession.notes}</p> : null}
 
+                    {selectedSessionAnalysis && showAI ? (
+                      <section className="rounded-lg border border-blue-100 bg-blue-50/60 p-4">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-wide text-blue-600">IDG Intelligence</p>
+                            <h4 className="mt-1 text-base font-black text-slate-900">Analisis IA de esta sesion</h4>
+                          </div>
+                          <button className="rounded-lg bg-white px-3 py-2 text-xs font-black text-blue-700" type="button" onClick={() => markSessionAnalysisRead(selectedSession)}>
+                            Enterado
+                          </button>
+                        </div>
+                        <p className="mt-3 max-h-[42dvh] overflow-y-auto whitespace-pre-wrap break-words rounded-lg border border-blue-100 bg-white p-3 text-sm font-semibold leading-7 text-slate-700">
+                          {selectedSessionAnalysis}
+                        </p>
+                      </section>
+                    ) : selectedSessionAnalysis ? (
+                      <button className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-left text-sm font-black text-blue-700" type="button" onClick={() => setShowAI(true)}>
+                        Hay un analisis IA guardado. Toca para leerlo aqui.
+                      </button>
+                    ) : null}
+
                     <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
                       <button className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700" type="button" onClick={() => editSession(selectedSession)}>Editar rutina</button>
-                      <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white disabled:bg-blue-300" type="button" disabled={aiLoadingId === selectedSession.id} onClick={() => analyzeSessionFromHistory(selectedSession, !selectedSessionAnalysis)}>
+                      <button
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white disabled:bg-blue-300"
+                        type="button"
+                        disabled={aiLoadingId === selectedSession.id}
+                        onClick={() => {
+                          if (selectedSessionAnalysis) {
+                            setShowAI(true);
+                            return;
+                          }
+                          analyzeSessionFromHistory(selectedSession, true);
+                        }}
+                      >
                         {aiLoadingId === selectedSession.id ? "Analizando..." : selectedSessionAnalysis ? "Ver analisis IA" : "Generar analisis IA"}
                       </button>
                     </div>
