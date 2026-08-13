@@ -103,7 +103,9 @@ async function fetchSupabaseUser(accessToken: string) {
 
 export function startSupabaseGoogleLogin() {
   if (!hasSupabaseConfig()) throw new Error("Faltan NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.");
-  const redirectTo = typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL || "";
+  const configuredUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+  const browserOrigin = typeof window !== "undefined" ? window.location.origin : "";
+  const redirectTo = configuredUrl && !configuredUrl.includes("localhost") ? configuredUrl : browserOrigin;
   const params = new URLSearchParams({
     provider: "google",
     redirect_to: redirectTo,
@@ -160,6 +162,7 @@ export async function supabaseRest<T>(table: string, options: RestOptions = {}) 
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
   if (!response.ok) {
+    if (response.status === 401) clearSupabaseSession();
     const message = data?.message || data?.hint || data?.details || `Error Supabase ${response.status}`;
     throw new Error(message);
   }

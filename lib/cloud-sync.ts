@@ -1,4 +1,4 @@
-import { getSupabaseAccessToken, getSupabaseUser, hasSupabaseConfig, supabaseRest } from "@/lib/supabase-direct";
+import { clearSupabaseSession, getSupabaseAccessToken, getSupabaseUser, hasSupabaseConfig, supabaseRest } from "@/lib/supabase-direct";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 const SYNC_STATUS_KEY = "idg_sync_status_json";
@@ -25,6 +25,13 @@ export function canSyncCloud() {
 function renderToken() {
   if (typeof window === "undefined") return "";
   return localStorage.getItem("render_token") || "";
+}
+
+function clearExpiredAuth() {
+  if (typeof window === "undefined") return;
+  clearSupabaseSession();
+  localStorage.removeItem("render_token");
+  localStorage.removeItem("token");
 }
 
 type CollectionRoute = {
@@ -346,6 +353,10 @@ export function getPendingSyncCount() {
 
 export async function retryPendingSyncs() {
   const pending = readPendingSyncs();
+  if (!pending.length) {
+    publishSyncStatus({ cloud: canSyncCloud(), lastError: "", lastPath: "", lastSyncAt: new Date().toISOString() });
+    return 0;
+  }
   for (const item of pending) {
     const cached = readCache<unknown[]>(item.cacheKey, []);
     await saveCloudCollection(item.path, item.key, cached, {}, item.cacheKey);
@@ -354,7 +365,7 @@ export async function retryPendingSyncs() {
 }
 
 async function request(path: string, options: RequestInit = {}) {
-  const authToken = renderToken() || token();
+  const authToken = token() || renderToken();
   if (!authToken) return null;
   try {
     const response = await fetch(`${API_URL}${path}`, {
@@ -374,7 +385,7 @@ async function request(path: string, options: RequestInit = {}) {
       throw new Error(`El backend no devolvio JSON para ${path}. URL llamada: ${API_URL}${path}. Respuesta: ${preview}`);
     }
     if (response.status === 401 && typeof data.error === "string" && data.error.toLowerCase().includes("token")) {
-      localStorage.removeItem("token");
+      clearExpiredAuth();
       throw new Error("Sesion expirada. Vuelve a iniciar sesion con Google para reactivar la sincronizacion.");
     }
     if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : `Error sincronizando ${path}`);
