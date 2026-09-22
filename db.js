@@ -1,33 +1,38 @@
 const { Pool } = require('pg');
 
-const useDatabaseUrl = Boolean(process.env.DATABASE_URL);
+let databaseUrl = process.env.DATABASE_URL || "";
+let useDatabaseUrl = Boolean(databaseUrl);
 
 function assertValidDatabaseUrl(connectionString) {
-  if (!connectionString) return;
+  if (!connectionString) return true;
 
   let url;
   try {
     url = new URL(connectionString);
   } catch (error) {
-    throw new Error("DATABASE_URL no es una URL valida. Usa la cadena PostgreSQL de Supabase, no la URL web del proyecto.");
+    console.error("DATABASE_URL no es una URL valida. Usa la cadena PostgreSQL, no la URL web del proyecto.");
+    return false;
   }
 
   const validProtocol = url.protocol === "postgresql:" || url.protocol === "postgres:";
   const hasWebUrlInside = connectionString.includes("https://") || connectionString.includes("http://");
 
   if (!validProtocol || hasWebUrlInside || !url.username || !url.password || !url.hostname || url.hostname === "https") {
-    throw new Error(
-      "DATABASE_URL debe ser la cadena de conexion PostgreSQL de Supabase. Formato esperado: postgresql://usuario:password@host:5432/postgres. No uses https://.",
-    );
+    console.error("DATABASE_URL debe ser PostgreSQL. Formato esperado: postgresql://usuario:password@host:5432/postgres. No uses https://.");
+    return false;
   }
+  return true;
 }
 
-assertValidDatabaseUrl(process.env.DATABASE_URL);
+if (!assertValidDatabaseUrl(databaseUrl)) {
+  databaseUrl = "";
+  useDatabaseUrl = false;
+}
 
 const pool = new Pool(
   useDatabaseUrl
     ? {
-        connectionString: process.env.DATABASE_URL,
+        connectionString: databaseUrl,
         ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false },
       }
     : {

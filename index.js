@@ -46,16 +46,21 @@ const FULL_ACCESS_EMAILS = new Set(
 const BETA_FULL_ACCESS = /^(1|true|yes|on)$/i.test(String(process.env.PUBLIC_BETA_FULL_ACCESS || process.env.BETA_FULL_ACCESS || ""));
 const TRIAL_FULL_ACCESS_UNTIL = process.env.TRIAL_FULL_ACCESS_UNTIL || null;
 
+const CONFIG_WARNINGS = [];
 if (!JWT_SECRET) {
-  throw new Error("Falta JWT_SECRET en variables de entorno.");
+  CONFIG_WARNINGS.push("Falta JWT_SECRET en variables de entorno. Auth secundaria/Strava no estara disponible.");
 }
 
 if (!STRAVA_CLIENT_SECRET) {
-  throw new Error("Falta STRAVA_CLIENT_SECRET en variables de entorno.");
+  CONFIG_WARNINGS.push("Falta STRAVA_CLIENT_SECRET en variables de entorno. Strava no estara disponible.");
 }
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 const DATA_DIR = path.join(__dirname, 'data', 'profiles');
+
+function missingConfig(res, message) {
+  return res.status(503).json({ error: message });
+}
 
 async function initDatabase() {
   const schema = await fs.promises.readFile(path.join(__dirname, "schema.sql"), "utf8");
@@ -677,13 +682,14 @@ async function deleteRunningSupportActivities(userId) {
 /* ================= TEST ================= */
 
 app.get('/', (req, res) => {
-  res.send('API IDG funcionando ðŸš€');
+  res.json({ ok: true, service: "IDG Training backend", warnings: CONFIG_WARNINGS });
 });
 
 /* ================= LOGIN GOOGLE ================= */
 
 app.post('/auth/google', async (req, res) => {
   try {
+    if (!JWT_SECRET) return missingConfig(res, "JWT_SECRET no esta configurado en Render.");
     const { token } = req.body;
 
     const ticket = await googleClient.verifyIdToken({
@@ -718,6 +724,7 @@ app.post('/auth/google', async (req, res) => {
 /* ================= MIDDLEWARE ================= */
 
 function authMiddleware(req, res, next) {
+  if (!JWT_SECRET) return missingConfig(res, "JWT_SECRET no esta configurado en Render.");
   const auth = req.headers.authorization;
   if (!auth) return res.status(401).json({ error: "Token requerido" });
 
@@ -746,6 +753,7 @@ app.get('/access', authMiddleware, async (req, res) => {
 
 app.post('/auth/supabase', async (req, res) => {
   try {
+    if (!JWT_SECRET) return missingConfig(res, "JWT_SECRET no esta configurado en Render.");
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       return res.status(500).json({ error: "Supabase no esta configurado en Render" });
     }
@@ -1286,6 +1294,8 @@ app.post('/strava/webhook', (req, res) => {
 // RedirecciÃ³n
 app.get('/auth/strava', (req, res) => {
   const { token } = req.query;
+  if (!JWT_SECRET) return res.status(503).send("JWT_SECRET no esta configurado en Render.");
+  if (!STRAVA_CLIENT_SECRET) return res.status(503).send("STRAVA_CLIENT_SECRET no esta configurado en Render.");
   try {
     jwt.verify(token, JWT_SECRET);
   } catch {
@@ -1302,6 +1312,8 @@ app.get('/auth/strava/callback', async (req, res) => {
   const { code, state, scope } = req.query;
 
   try {
+    if (!JWT_SECRET) return res.status(503).send("JWT_SECRET no esta configurado en Render.");
+    if (!STRAVA_CLIENT_SECRET) return res.status(503).send("STRAVA_CLIENT_SECRET no esta configurado en Render.");
     const decoded = jwt.verify(state, JWT_SECRET);
     const email = decoded.email;
 
@@ -1639,13 +1651,16 @@ RIESGO: ${fatigue === "alta" ? "Elevado" : loadLevel === "alta" ? "Moderado" : "
 
 const PORT = Number(process.env.PORT) || 3001;
 
-initDatabaseWithRetry()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Backend IDG listo en puerto ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Backend IDG listo en puerto ${PORT}`);
+  if (CONFIG_WARNINGS.length) {
+    console.warn("Backend iniciado con advertencias:", CONFIG_WARNINGS);
+  }
+  initDatabaseWithRetry()
+    .then(() => {
+      console.log("Base de datos inicializada.");
+    })
+    .catch((error) => {
+      console.error("Backend en modo degradado: no se pudo inicializar la base de datos", error);
     });
-  })
-  .catch((error) => {
-    console.error("Backend detenido: no se pudo inicializar la base de datos", error);
-    process.exit(1);
   });
