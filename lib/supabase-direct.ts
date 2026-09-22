@@ -101,6 +101,16 @@ async function fetchSupabaseUser(accessToken: string) {
   return await response.json().catch(() => null) as SupabaseUser | null;
 }
 
+export async function ensureSupabaseUser() {
+  const session = getSupabaseSession();
+  if (!session?.access_token) return null;
+  if (session.user?.id) return session.user;
+  const user = await fetchSupabaseUser(session.access_token);
+  if (!user?.id) return null;
+  storeSupabaseSession({ ...session, user });
+  return user;
+}
+
 export function startSupabaseGoogleLogin() {
   if (!hasSupabaseConfig()) throw new Error("Faltan NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.");
   const configuredUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");

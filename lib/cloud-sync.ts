@@ -1,4 +1,4 @@
-import { clearSupabaseSession, getSupabaseAccessToken, getSupabaseUser, hasSupabaseConfig, supabaseRest } from "@/lib/supabase-direct";
+import { clearSupabaseSession, ensureSupabaseUser, getSupabaseAccessToken, getSupabaseUser, hasSupabaseConfig, supabaseRest } from "@/lib/supabase-direct";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 const SYNC_STATUS_KEY = "idg_sync_status_json";
@@ -44,6 +44,14 @@ type CollectionRoute = {
 
 function ownerId() {
   return getSupabaseUser()?.id || "";
+}
+
+async function ensureOwnerId() {
+  if (!hasSupabaseConfig()) return "";
+  const currentOwnerId = ownerId();
+  if (currentOwnerId) return currentOwnerId;
+  await ensureSupabaseUser();
+  return ownerId();
 }
 
 function collectionRoute(path: string, key: string): CollectionRoute | null {
@@ -106,6 +114,42 @@ function rowForCollectionItem(route: CollectionRoute, item: unknown) {
   return row;
 }
 
+function recordTime(item: unknown) {
+  const record = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+  const candidates = [
+    record.updatedAt,
+    record.updated_at,
+    record.aiGeneratedAt,
+    record.completedAt,
+    record.startTime,
+    record.date,
+    record.session_date,
+    record.record_date,
+    record.goal_date,
+  ];
+  for (const value of candidates) {
+    if (!value) continue;
+    const timestamp = Date.parse(String(value));
+    if (Number.isFinite(timestamp)) return timestamp;
+  }
+  return 0;
+}
+
+function mergeCollectionById<T>(localItems: T[], cloudItems: T[]) {
+  const byId = new Map<string, T>();
+  localItems.forEach((item) => {
+    const record = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+    byId.set(String(record.id || JSON.stringify(item)), item);
+  });
+  cloudItems.forEach((item) => {
+    const record = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+    const id = String(record.id || JSON.stringify(item));
+    const current = byId.get(id);
+    if (!current || recordTime(item) >= recordTime(current)) byId.set(id, item);
+  });
+  return Array.from(byId.values());
+}
+
 function chunks<T>(items: T[], size: number) {
   const result: T[][] = [];
   for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size));
@@ -154,13 +198,14 @@ function gymSetRows(session: Record<string, unknown>) {
 }
 
 async function hydrateGymSessions<T>(sessions: T[]) {
-  if (!sessions.length || !ownerId()) return sessions;
+  const currentOwnerId = await ensureOwnerId();
+  if (!sessions.length || !currentOwnerId) return sessions;
   const [exerciseRows, setRows] = await Promise.all([
     supabaseRest<Array<Record<string, unknown>>>("gym_exercises", {
-      query: new URLSearchParams({ select: "*", owner_id: `eq.${ownerId()}`, order: "session_id.asc,position.asc" }).toString(),
+      query: new URLSearchParams({ select: "*", owner_id: `eq.${currentOwnerId}`, order: "session_id.asc,position.asc" }).toString(),
     }).catch(() => []),
     supabaseRest<Array<Record<string, unknown>>>("gym_sets", {
-      query: new URLSearchParams({ select: "*", owner_id: `eq.${ownerId()}`, order: "session_id.asc,set_number.asc" }).toString(),
+      query: new URLSearchParams({ select: "*", owner_id: `eq.${currentOwnerId}`, order: "session_id.asc,set_number.asc" }).toString(),
     }).catch(() => []),
   ]);
   const setsBySessionExercise = new Map<string, Array<Record<string, unknown>>>();
@@ -195,10 +240,11 @@ async function hydrateGymSessions<T>(sessions: T[]) {
 }
 
 async function getSupabaseProfile<T>() {
-  if (!hasSupabaseConfig() || !ownerId()) return null;
+  const currentOwnerId = await ensureOwnerId();
+  if (!hasSupabaseConfig() || !currentOwnerId) return null;
   const query = new URLSearchParams({
     select: "data,updated_at",
-    owner_id: `eq.${ownerId()}`,
+    owner_id: `eq.${currentOwnerId}`,
     limit: "1",
   });
   const rows = await supabaseRest<Array<{ data: T }>>("user_profiles", { query: query.toString() });
@@ -206,21 +252,23 @@ async function getSupabaseProfile<T>() {
 }
 
 async function saveSupabaseProfile<T>(profile: T) {
-  if (!hasSupabaseConfig() || !ownerId()) return null;
+  const currentOwnerId = await ensureOwnerId();
+  if (!hasSupabaseConfig() || !currentOwnerId) return null;
   return supabaseRest("user_profiles", {
     method: "POST",
     query: "on_conflict=owner_id",
     prefer: "resolution=merge-duplicates,return=representation",
-    body: [{ owner_id: ownerId(), user_id: ownerId(), data: profile, updated_at: new Date().toISOString() }],
+    body: [{ owner_id: currentOwnerId, user_id: currentOwnerId, data: profile, updated_at: new Date().toISOString() }],
   });
 }
 
 async function getSupabaseCollection<T>(path: string, key: string) {
   const route = collectionRoute(path, key);
-  if (!route || !hasSupabaseConfig() || !ownerId()) return null;
+  const currentOwnerId = await ensureOwnerId();
+  if (!route || !hasSupabaseConfig() || !currentOwnerId) return null;
   const query = new URLSearchParams({
     select: "data",
-    owner_id: `eq.${ownerId()}`,
+    owner_id: `eq.${currentOwnerId}`,
   });
   if (route.sport) query.set("sport", `eq.${route.sport}`);
   if (route.order) query.set("order", route.order);
@@ -231,7 +279,8 @@ async function getSupabaseCollection<T>(path: string, key: string) {
 
 async function saveSupabaseCollection<T>(path: string, key: string, items: T[]) {
   const route = collectionRoute(path, key);
-  if (!route || !hasSupabaseConfig() || !ownerId()) return null;
+  const currentOwnerId = await ensureOwnerId();
+  if (!route || !hasSupabaseConfig() || !currentOwnerId) return null;
   const rows = items.map((item) => rowForCollectionItem(route, item));
   if (!rows.length) return { ok: true, [key]: [] };
   const rowChunkSize = route.table === "activities" ? 3 : 50;
@@ -270,15 +319,16 @@ async function saveSupabaseCollection<T>(path: string, key: string, items: T[]) 
 }
 
 async function deleteSupabaseItem(path: string) {
-  if (!hasSupabaseConfig() || !ownerId()) return null;
+  const currentOwnerId = await ensureOwnerId();
+  if (!hasSupabaseConfig() || !currentOwnerId) return null;
   const match = path.match(/^\/(gym\/sessions|gym\/templates|activities)\/(.+)$/);
   if (!match) return null;
   const table = match[1] === "gym/sessions" ? "gym_sessions" : match[1] === "gym/templates" ? "gym_templates" : "activities";
   const id = decodeURIComponent(match[2]);
-  const query = new URLSearchParams({ owner_id: `eq.${ownerId()}`, id: `eq.${id}` });
+  const query = new URLSearchParams({ owner_id: `eq.${currentOwnerId}`, id: `eq.${id}` });
   if (table === "gym_sessions") {
-    await supabaseRest("gym_sets", { method: "DELETE", query: new URLSearchParams({ owner_id: `eq.${ownerId()}`, session_id: `eq.${id}` }).toString(), prefer: "return=minimal" });
-    await supabaseRest("gym_exercises", { method: "DELETE", query: new URLSearchParams({ owner_id: `eq.${ownerId()}`, session_id: `eq.${id}` }).toString(), prefer: "return=minimal" });
+    await supabaseRest("gym_sets", { method: "DELETE", query: new URLSearchParams({ owner_id: `eq.${currentOwnerId}`, session_id: `eq.${id}` }).toString(), prefer: "return=minimal" });
+    await supabaseRest("gym_exercises", { method: "DELETE", query: new URLSearchParams({ owner_id: `eq.${currentOwnerId}`, session_id: `eq.${id}` }).toString(), prefer: "return=minimal" });
   }
   return supabaseRest(table, { method: "DELETE", query: query.toString(), prefer: "return=minimal" });
 }
@@ -367,8 +417,11 @@ export async function retryPendingSyncs() {
   if (!pending.length) {
     for (const item of localCollections) {
       const cached = readCache<unknown[]>(item.cacheKey, []);
-      if (Array.isArray(cached) && cached.length) {
-        await saveCloudCollection(item.path, item.key, cached, {}, item.cacheKey);
+      const cloud = await getCloudCollection<unknown>(item.path, item.key);
+      const merged = mergeCollectionById(Array.isArray(cached) ? cached : [], cloud);
+      if (merged.length) {
+        writeCache(item.cacheKey, merged);
+        await saveCloudCollection(item.path, item.key, merged, {}, item.cacheKey);
       }
     }
     publishSyncStatus({ cloud: canSyncCloud(), lastError: "", lastPath: "/sync/retry", lastSyncAt: new Date().toISOString() });
@@ -537,9 +590,13 @@ export async function loadCloudBackedCollection<T>(options: {
   try {
     const cloudItems = await getCloudCollection<T>(options.path, options.key);
     if (cloudItems.length) {
-      writeCache(options.cacheKey, cloudItems);
+      const merged = mergeCollectionById(localItems, cloudItems);
+      writeCache(options.cacheKey, merged);
+      if (merged.length !== cloudItems.length) {
+        await saveCloudCollection(options.path, options.key, merged, {}, options.cacheKey);
+      }
       options.onStatus?.("Datos sincronizados desde la nube.");
-      return { items: cloudItems, source: "cloud" as const };
+      return { items: merged, source: "cloud" as const };
     }
     if (localItems.length) {
       await saveCloudCollection(options.path, options.key, localItems, {}, options.cacheKey);
